@@ -70,14 +70,17 @@ command-level workflow such as validation, inspection, or conversion.
 
 Define and document one explicit conversion policy:
 
-- declared `float` values written as `nan` become a documented pandas missing
-  floating-point value;
+- declared `float` values written as `nan` become `pandas.NA` in a nullable
+  `Float64` column;
 - declared `integer` values written as `nan` become `pandas.NA` in a nullable
   `Int64` column;
-- strings remain literal strings unless an explicit, documented missing-string
-  policy is adopted;
-- datetimes must be parsed as timezone-aware UTC values when the source uses
-  the canonical trailing `Z` form.
+- declared `string` values written as `nan` become `pandas.NA` in a nullable
+  pandas `string` column;
+- declared `datetime` values written as `nan` become `pandas.NaT`; nonmissing
+  datetimes with explicit offsets are converted to UTC.
+
+Match `nan` case-insensitively across all declared types. Preserve other
+strings unless a source `field_missing` declaration marks them as missing.
 
 Do not silently substitute zero, empty strings, or inferred values.
 
@@ -130,11 +133,9 @@ pressure and thermocline record at `2019-04-23T19:31:14.000Z`. Keeping time as
 a column preserves every source row and makes time selections return all
 matching, provenance-bearing rows.
 
-Use pandas' nullable `Int64` dtype for declared integer columns that contain
-missing values. Use timezone-aware pandas datetimes for declared datetime
-columns. Decide and document the missing-value representation for declared
-float and string columns during implementation, following the file's declared
-metadata rather than inferred MERMAID semantics.
+Use pandas' nullable `Int64`, `Float64`, and `string` dtypes for declared
+integer, float, and string columns. Use timezone-aware pandas datetimes for
+declared datetime columns. Follow the native missing-value policy above.
 
 ## Deferred: Multiple Datasets per File
 

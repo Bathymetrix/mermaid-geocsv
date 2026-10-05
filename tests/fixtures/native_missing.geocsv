@@ -1,0 +1,6 @@
+#dataset: GeoCSV
+#field_type: datetime,float,integer,string
+#field_unit: iso8601,meters,unitless,unitless
+Time,Height,Count,Label
+nan,NaN,NAN,nAn
+2025-01-01T00:00:00Z,1.25,3,NA

@@ -1,0 +1,8 @@
+#dataset: GeoCSV
+#delimiter: |
+#field_type: datetime|float|integer|string
+#field_unit: iso8601|meters|unitless|unitless
+#field_missing: missing|-999|-1|absent
+Time|Height|Count|Label
+2025-01-01T00:00:00Z|12.5|3|nan
+missing|-999|-1|absent

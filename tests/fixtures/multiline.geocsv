@@ -1,0 +1,9 @@
+#dataset: GeoCSV 2.0
+#field_type: string,integer
+#field_unit: unitless,unitless
+Description,Count
+"first line
+#not_a_comment: inside a cell
+last line",1
+#note: outside the cell
+"#a quoted data cell",2

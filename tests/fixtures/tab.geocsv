@@ -1,0 +1,6 @@
+#dataset: GeoCSV 2.0
+#delimiter: \t
+#field_type: string	float
+#field_unit: unitless	meters
+Unmodified Column	Height
+café	1.25
