@@ -324,8 +324,8 @@ value is `ABSENT`.
   every type, including strings, whether or not another sentinel is declared.
 - [x] Honor each explicitly declared `field_missing` sentinel for its column.
 - [x] Document this policy and its precedence over `field_missing` in the README.
-- [x] Identify the proposed specification amendment in `TODO.md` as a proposal,
-  not part of the existing standard.
+- [x] Distinguish the universal `nan` policy from GeoCSV v2.0.4; the README
+  documents it as a MERMAID convention.
 - [x] Verify literal-string and explicit-sentinel behavior under the chosen
   policy, including case variants of `nan`.
 

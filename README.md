@@ -26,6 +26,8 @@ records = tables[0]  # P0006 contains one dataset
 
 For a hands-on introduction using the included P0006 file, see the
 [pandas tutorial](TUTORIAL.md).
+Possible future workflows for writing, fetching, and associating GeoCSV
+metadata with ObsPy traces are outlined in [Future workflows](docs/FUTURE.md).
 
 `geocsv.read` returns a list of typed DataFrames, one per dataset in file
 order. Select a table from that list before using pandas. Each table's columns
