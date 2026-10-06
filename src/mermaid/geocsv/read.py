@@ -21,6 +21,7 @@ class GeoCSVError(ValueError):
     """A GeoCSV declaration, CSV record, or typed field is invalid/unsupported."""
 
 
+# Adding a keyword here may also require handling its parsing semantics below.
 _KNOWN_KEYWORDS = {
     "dataset",
     "field_unit",
