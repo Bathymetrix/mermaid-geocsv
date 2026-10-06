@@ -101,6 +101,10 @@ boundary, with no preceding whitespace. Declaration syntax permits whitespace
 after `#` and around `:`, as in `# field_type : string`. Raw comments and parsed
 keyword/value pairs are retained in the GeoCSV metadata, including unknown
 keywords; supported declarations also control parsing.
+Every present `field_*` declaration must have exactly one entry per header
+column. For `A,B`, `#field_type: ,` declares two empty type entries, while bare
+`#field_type:` has only one and raises an error. The declaration may be omitted
+entirely when no type is specified.
 
 Quoted cells such as `"#Label"` and `"#dataset: hello"` are header or data values,
 including in one-column datasets. A line starting with `#` inside a multiline

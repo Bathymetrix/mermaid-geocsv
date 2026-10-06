@@ -161,6 +161,8 @@ blank unit for a one-column dataset all fail.
   entries within otherwise populated lists.
 - [x] Test omitted declarations, empty one-column declarations, and partially
   undeclared field attributes.
+- [x] Require every present `field_*` declaration to match the header width;
+  never expand a bare empty declaration across multiple columns.
 - [x] Document the supported behavior and distinguish it from unknown type
   names.
 
@@ -168,6 +170,9 @@ blank unit for a one-column dataset all fail.
 header. Missing or empty field types are represented as strings and recorded
 as empty in `metadata.field_types`; missing or empty units remain empty in
 `metadata.field_units`. Unknown nonempty type names still raise an error.
+Since 0.7.1, a bare empty declaration represents one empty entry and is valid
+only for a one-column header. Multicolumn headers require an explicit empty
+entry for each column, or omission of the declaration.
 
 ## 5. Dataset identity and placement are not checked
 
@@ -508,7 +513,7 @@ establish full specification compliance.
 - [x] Keep version 1.0.0, tags, commits, pushes, and publication subject to the
   user's explicit instructions.
 
-Current verification: version 0.7.0, 79 tests passed, including the canonical
+Current verification: version 0.7.1, 84 tests passed, including the canonical
 P0006 checks. Finding 5's version and first-line placement decisions remain
 explicitly open by prior agreement. The newly identified final-line and
 space-separated datetime questions are recorded above.

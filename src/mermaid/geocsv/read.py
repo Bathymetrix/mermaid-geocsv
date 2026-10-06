@@ -149,47 +149,44 @@ def _decode_delimiter(value: str) -> str:
 def _field_values(
     declaration: GeoCSVComment, delimiter: str, width: int
 ) -> list[str]:
-    if declaration.value == "":
-        values = [""] * width
-    else:
-        values = []
-        cell: list[str] = []
-        state = "start"
-        for character in declaration.value + delimiter:
-            if character == delimiter and state != "quoted":
-                values.append("".join(cell).strip())
-                cell = []
-                state = "start"
-            elif state == "start":
-                if character.isspace():
-                    continue
-                if character == '"':
-                    state = "quoted"
-                else:
-                    cell.append(character)
-                    state = "unquoted"
-            elif state == "unquoted":
-                if character == '"':
-                    raise GeoCSVError(
-                        f"line {declaration.line_number}: invalid {declaration.key} quote"
-                    )
-                cell.append(character)
-            elif state == "quoted":
-                if character == '"':
-                    state = "after_quote"
-                else:
-                    cell.append(character)
-            elif character == '"':
-                cell.append('"')
+    values = []
+    cell: list[str] = []
+    state = "start"
+    for character in declaration.value + delimiter:
+        if character == delimiter and state != "quoted":
+            values.append("".join(cell).strip())
+            cell = []
+            state = "start"
+        elif state == "start":
+            if character.isspace():
+                continue
+            if character == '"':
                 state = "quoted"
-            elif not character.isspace():
+            else:
+                cell.append(character)
+                state = "unquoted"
+        elif state == "unquoted":
+            if character == '"':
                 raise GeoCSVError(
                     f"line {declaration.line_number}: invalid {declaration.key} quote"
                 )
-        if state == "quoted":
+            cell.append(character)
+        elif state == "quoted":
+            if character == '"':
+                state = "after_quote"
+            else:
+                cell.append(character)
+        elif character == '"':
+            cell.append('"')
+            state = "quoted"
+        elif not character.isspace():
             raise GeoCSVError(
-                f"line {declaration.line_number}: unterminated {declaration.key} quote"
+                f"line {declaration.line_number}: invalid {declaration.key} quote"
             )
+    if state == "quoted":
+        raise GeoCSVError(
+            f"line {declaration.line_number}: unterminated {declaration.key} quote"
+        )
     if len(values) != width:
         raise GeoCSVError(
             f"line {declaration.line_number}: {declaration.key} has {len(values)} "

@@ -117,10 +117,28 @@ def test_field_descriptions_are_trimmed_by_column_and_raw_comments_remain(
         metadata.field_long_names["Latitude"] = "changed"
 
 
-def test_empty_field_attribute_declaration_covers_each_column(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "attribute",
+    ["field_type", "field_unit", "field_long_name", "field_standard_name", "field_missing"],
+)
+def test_empty_field_attribute_declaration_does_not_expand(
+    tmp_path: Path, attribute: str
+) -> None:
     source = tmp_path / "empty_attributes.geocsv"
     source.write_text(
-        "#dataset: GeoCSV\n#field_type:\n#field_long_name:\nA,B\nx,y\n",
+        f"#dataset: GeoCSV\n#{attribute}:\nA,B\nx,y\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(
+        geocsv.GeoCSVError, match=rf"line 2: {attribute} has 1 fields; header has 2"
+    ):
+        read_one(source)
+
+
+def test_explicit_empty_field_attribute_entries_match_header_width(tmp_path: Path) -> None:
+    source = tmp_path / "empty_attributes.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#field_type: ,\n#field_long_name: ,\nA,B\nx,y\n",
         encoding="utf-8",
     )
     metadata = read_one(source).attrs["geocsv"]
