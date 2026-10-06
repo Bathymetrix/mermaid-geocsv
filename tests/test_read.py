@@ -159,6 +159,32 @@ def test_legacy_quoted_dataset_is_not_a_declaration(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
+    "dataset_value, preceding_comment, accepted",
+    [
+        ("GeoCSV", "", True),
+        ("geocsv", "", True),
+        ("GeoCSV 2.0", "", True),
+        ("MERMAID GeoCSV draft", "#title: before marker\n", True),
+        ("NOT_A_FORMAT 2.0", "", False),
+    ],
+)
+def test_dataset_value_requires_geocsv_name_only(
+    tmp_path: Path, dataset_value: str, preceding_comment: str, accepted: bool
+) -> None:
+    source = tmp_path / "dataset_identity.geocsv"
+    source.write_text(
+        f"{preceding_comment}#dataset: {dataset_value}\n"
+        "#field_type: string\n#field_unit: unitless\nName\nvalue\n",
+        encoding="utf-8",
+    )
+    if accepted:
+        assert geocsv.read(source)["Name"].tolist() == ["value"]
+    else:
+        with pytest.raises(geocsv.GeoCSVError, match=r"line 1: #dataset value must contain 'GeoCSV'"):
+            geocsv.read(source)
+
+
+@pytest.mark.parametrize(
     "declarations, header, row, expected_types, expected_units",
     [
         (

@@ -82,8 +82,10 @@ survive a longer workflow, keep the input path separately.
 ## Scope
 
 The reader loads one UTF-8 GeoCSV dataset into memory. It requires a `dataset`
-declaration before the header; `field_type` and `field_unit` are optional, and
-the delimiter defaults to comma. Comments may also appear between data records.
+declaration whose value contains `GeoCSV` (case-insensitively); versions and
+marker placement are not currently validated. `field_type` and `field_unit`
+are optional, and the delimiter defaults to comma. Comments may also appear
+between data records.
 Comments and keyword declarations begin with a literal `#` at a record
 boundary, with no preceding whitespace. Declaration syntax permits whitespace
 after `#` and around `:`, as in `# field_type : string`. Raw comments and parsed

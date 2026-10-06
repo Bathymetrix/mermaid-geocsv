@@ -139,6 +139,11 @@ def _read_dataset(lines: Iterator[tuple[int, str]], source_path: Path) -> pd.Dat
         if header is None:
             if "dataset" not in declarations or not declarations["dataset"].value:
                 raise GeoCSVError(f"line {line_number}: missing required #dataset declaration")
+            dataset_declaration = declarations["dataset"]
+            if "geocsv" not in dataset_declaration.value.casefold():
+                raise GeoCSVError(
+                    f"line {dataset_declaration.line_number}: #dataset value must contain 'GeoCSV'"
+                )
             if "delimiter" in declarations:
                 delimiter = _decode_delimiter(declarations["delimiter"].value)
             header = _csv_record(line, lines, delimiter, line_number)
