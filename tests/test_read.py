@@ -88,6 +88,34 @@ def test_multiline_csv_and_comments_at_record_boundaries() -> None:
     assert comments[-1].line_number == 8
 
 
+@pytest.mark.parametrize("quoted_value", ["#hello", "#dataset: hello"])
+def test_single_column_quoted_hash_values_are_data(
+    tmp_path: Path, quoted_value: str
+) -> None:
+    source = tmp_path / "quoted_hash.geocsv"
+    source.write_text(
+        '"#dataset: GeoCSV"\n"#field_type: string"\n'
+        '"#field_unit: unitless"\nLabel\nbefore\n'
+        f'"{quoted_value}"\n#note: between records\nafter\n',
+        encoding="utf-8",
+    )
+    frame = geocsv.read(source)
+    assert frame["Label"].tolist() == ["before", quoted_value, "after"]
+    assert isinstance(frame["Label"].dtype, pd.StringDtype)
+    assert isinstance(frame.index, pd.RangeIndex)
+    assert frame.index.name == "source_record_index"
+    assert frame.index.tolist() == [0, 1, 2]
+    metadata = frame.attrs["geocsv"]
+    assert metadata.source_path == source.resolve()
+    assert metadata.field_types == {"Label": "string"}
+    assert [comment.key for comment in metadata.comments] == [
+        "dataset", "field_type", "field_unit", "note"
+    ]
+    assert metadata.comments[0].raw == '"#dataset: GeoCSV"'
+    assert metadata.comments[-1].raw == "#note: between records"
+    assert metadata.comments[-1].line_number == 7
+
+
 def test_declared_missing_values_and_alternative_delimiter() -> None:
     frame = geocsv.read(FIXTURES / "missing.geocsv")
     assert frame.iloc[1].isna().all()

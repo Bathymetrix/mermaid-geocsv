@@ -21,7 +21,7 @@ from the implementation rather than the specification. Two confirmed cases
 silently discard data records. Findings below distinguish bugs, specification
 mismatches, validation gaps, deliberate policies, and scope limits.
 
-All reconciliation checkboxes start unchecked. Checking a box means the stated
+All reconciliation checkboxes started unchecked. Checking a box means the stated
 step has been completed and verified. Where alternatives are given, record the
 chosen resolution; documenting an intentional limitation can resolve a scope
 decision without implementing broader support. This checklist does not
@@ -44,12 +44,17 @@ treats a single quoted cell beginning with `#` as a comment.
 
 **Reconciliation:**
 
-- [ ] Restrict legacy quoted-comment recognition to the preamble.
-- [ ] After the header, recognize comments only by their literal leading `#`.
-- [ ] Add regression examples for both quoted values and verify that the records
+- [x] Restrict legacy quoted-comment recognition to the preamble.
+- [x] After the header, recognize comments only by their literal leading `#`.
+- [x] Add regression examples for both quoted values and verify that the records
   and their `source_record_index` values are retained.
-- [ ] Verify that the canonical MERMAID file's legacy quoted preamble and the
+- [x] Verify that the canonical MERMAID file's legacy quoted preamble and the
   existing multiline/two-column quoted-data examples still parse correctly.
+
+**Resolution:** Fixed in 0.2.1. Both quoted values are retained as string data
+with consecutive source-record indices, and are excluded from comment metadata.
+The focused checks passed (5 tests), including the canonical P0006 data,
+metadata, and source-integrity checks; the full suite passed (31 tests).
 
 ## 2. Whitespace-only data records disappear
 

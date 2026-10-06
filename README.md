@@ -81,6 +81,10 @@ survive a longer workflow, keep the input path separately.
 The reader loads one UTF-8 GeoCSV dataset into memory. It requires `dataset`,
 `field_type`, and `field_unit` declarations before the header; the delimiter
 defaults to comma. Comments may also appear between data records.
+Comments begin with a literal `#` at a record boundary. Legacy MERMAID comments
+quoted as a single CSV cell are accepted only in the preamble, before the
+header. After the header, quoted values such as `"#hello"` and
+`"#dataset: hello"` are data, including in one-column datasets.
 
 Declared `string`, `float`, `integer`, and `datetime` fields become nullable
 pandas `string`, `Float64`, `Int64`, and UTC datetime columns, respectively.

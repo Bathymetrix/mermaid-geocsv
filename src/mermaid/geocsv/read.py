@@ -33,6 +33,8 @@ def read(path: str | PathLike[str]) -> pd.DataFrame:
     UTC; duplicate times are retained. ``nan`` (case-insensitive) becomes the
     native pandas missing value for every declared type. Other strings remain
     literal unless a per-column ``field_missing`` is declared.
+    Comments begin with a literal ``#`` at record boundaries; legacy comments
+    quoted as a single CSV cell are recognized only before the header.
 
     Returns a pandas DataFrame indexed by the file-wide, zero-based data-record
     position (``source_record_index``), with immutable GeoCSV metadata and the
@@ -48,12 +50,13 @@ def read(path: str | PathLike[str]) -> pd.DataFrame:
             raise GeoCSVError(f"{source}: {exc}") from exc
 
 
-def _comment(line: str, line_number: int) -> GeoCSVComment | None:
+def _comment(
+    line: str, line_number: int, *, allow_quoted: bool
+) -> GeoCSVComment | None:
     raw = line.rstrip("\r\n")
     text = raw
-    if raw.startswith('"#'):
-        # The legacy writer emits whole comments as a single quoted CSV cell.
-        # A quoted first DATA cell followed by other cells is not a comment.
+    if allow_quoted and raw.startswith('"#'):
+        # The legacy writer emits preamble comments as single quoted CSV cells.
         try:
             cells = next(csv.reader([raw], strict=True))
         except csv.Error:
@@ -126,7 +129,7 @@ def _read_dataset(lines: Iterator[tuple[int, str]], source_path: Path) -> pd.Dat
     for line_number, line in lines:
         if not line.strip():
             continue
-        comment = _comment(line, line_number)
+        comment = _comment(line, line_number, allow_quoted=header is None)
         if comment is not None:
             comments.append(comment)
             key = comment.key
