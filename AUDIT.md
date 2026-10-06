@@ -395,6 +395,41 @@ and [datetime conversion](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geo
 Full support for broader ranges can remain outside scope, provided errors and
 limits are clear.
 
+## 14. Empty fields do not become typed missing values
+
+**Classification:** Implementation gap against the agreed MERMAID missing-data
+policy, identified after the original audit; not an explicit GeoCSV requirement.
+
+**Observed:** Public-API probes with valid two-column records show that an empty
+field, either unquoted or written as `""`, remains `""` in a string column and
+raises `GeoCSVError` in integer, float, and datetime columns. Case-insensitive
+`nan` already becomes a typed missing value.
+
+**Agreed policy:** Enforce record width before converting fields. An explicitly
+empty field and `nan` represent missing data in every declared type. A blank
+line must not be expanded to match the header: a 16-column missing-data record
+requires 16 cells (for example, 15 commas). Whitespace-only values such as
+`" "` are not automatically missing; preserve them in string columns and reject
+them as invalid numeric or datetime values unless explicitly declared as a
+`field_missing` sentinel. This is distinct from the blank-record issue in
+finding 2 and padded numeric conversion in finding 13.
+
+**Reconciliation:**
+
+- [ ] Convert empty CSV fields, including quoted empty cells, to `pd.NA` for
+  nullable string, integer, and float columns and `pd.NaT` for datetime columns.
+- [ ] Retain universal case-insensitive `nan` handling and explicit
+  `field_missing` sentinel handling.
+- [ ] Enforce width before missing-value conversion; do not pad blank or short
+  records with inferred cells.
+- [ ] Preserve whitespace-only strings and verify that whitespace-only numeric
+  and datetime fields raise errors identifying the source field and line.
+- [ ] Test empty, quoted-empty, whitespace-only, `nan`, and declared-sentinel
+  fields, including a correctly sized all-empty record; verify dtypes, row
+  counts, and source-record indices.
+- [ ] Document the empty-field policy and its distinction from whitespace-only
+  content, and bump the version when implemented.
+
 ## Verification and completion
 
 At audit time, `.venv/bin/pytest -q` reported **29 passed**. Adversarial probes
