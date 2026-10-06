@@ -193,16 +193,20 @@ the marker.
 - [ ] Recognize and validate supported GeoCSV versions; version validation is
   intentionally deferred while the dataset identity policy remains in flux.
 - [x] Continue accepting unversioned `GeoCSV` for current MERMAID compatibility.
-- [ ] Decide whether first-line placement is enforced or accepted permissively;
-  the specification uses "should" here.
+- [x] Keep first-line placement as a strong recommendation without enforcing
+  it; preceding comments remain accepted for files circulated during development.
 - [x] Test canonical/unversioned names, case-insensitive names, arbitrary
   version text, unsupported identifiers, and a marker preceded by metadata.
 
-**Interim decision (open):** Accept any nonempty dataset value containing
-`GeoCSV` in any letter case. Do not validate its version or require the marker
-to be first. This keeps current MERMAID files readable while the package's
-container/version policy remains in flux; revisit before declaring this finding
-resolved or claiming full v2.0.4 compliance.
+**Placement decision (resolved):** Recommend placing `#dataset` first, as the
+specification does, but accept preceding comments for files circulated during
+development. The parser already behaved this way; tests cover the accepted
+preceding-comment case.
+
+**Version decision (open):** Accept any nonempty dataset value containing
+`GeoCSV` in any letter case, without validating its version. Keep this open
+while the package's container/version policy remains in flux; do not claim full
+v2.0.4 compliance on this point.
 
 ## 6. Changed metadata can bypass the required dataset boundary
 

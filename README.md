@@ -89,9 +89,10 @@ survive a longer workflow, keep the input path separately.
 
 The reader loads UTF-8 GeoCSV datasets in one pass and returns one DataFrame
 per dataset. It requires each `dataset` declaration's value to contain `GeoCSV`
-(case-insensitively); versions and marker placement are not currently
-validated. `field_type` and `field_unit` are optional, and the delimiter
-defaults to comma. Comments may also appear between data records.
+(case-insensitively); versions are not validated. The specification recommends
+placing `#dataset` first, but the reader permits preceding comments for files
+circulated during development. `field_type` and `field_unit` are optional, and
+the delimiter defaults to comma. Comments may also appear between data records.
 Header names must be nonempty and unique so source columns and their metadata
 remain unambiguous. This is a restriction of this reader, not a v2.0.4
 requirement. The reader preserves column spellings and does not assign
