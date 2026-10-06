@@ -207,6 +207,26 @@ def test_lone_cr_is_rejected(
         read_one(source)
 
 
+@pytest.mark.parametrize(
+    "content, line_number",
+    [
+        (b"#dataset: GeoCSV", 1),
+        (b"#dataset: GeoCSV\nValue", 2),
+        (b"#dataset: GeoCSV\nValue\nx", 3),
+        (b"#dataset: GeoCSV\nValue\nx\n#note: trailing", 4),
+    ],
+)
+def test_every_line_requires_lf_or_crlf_ending(
+    tmp_path: Path, content: bytes, line_number: int
+) -> None:
+    source = tmp_path / "unterminated_line.geocsv"
+    source.write_bytes(content)
+    with pytest.raises(
+        geocsv.GeoCSVError, match=rf"line {line_number}: line must end with LF or CRLF"
+    ):
+        geocsv.read(source)
+
+
 @pytest.mark.parametrize("quoted_value", ["#hello", "#dataset: hello"])
 def test_single_column_quoted_hash_values_are_data(
     tmp_path: Path, quoted_value: str

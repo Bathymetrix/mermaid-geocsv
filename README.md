@@ -111,8 +111,9 @@ including in one-column datasets. A line starting with `#` inside a multiline
 quoted cell remains part of that cell. Since 0.3.0, legacy preambles with entire
 comments wrapped in CSV quotes are unsupported; those comments must be written
 with literal leading `#`. Unquoted double quotes, whitespace immediately
-outside quotation marks, and lone-CR line endings raise errors. Valid doubled
-quotes, embedded delimiters, and quoted multiline cells remain supported. Blank lines before
+outside quotation marks, and lines without LF or CRLF endings raise errors,
+including a final line terminated only by EOF. Valid doubled quotes, embedded
+delimiters, and quoted multiline cells remain supported. Blank lines before
 the header are skipped. After the header, an empty record fails the row-width
 check, and whitespace-only fields raise a field-conversion error.
 

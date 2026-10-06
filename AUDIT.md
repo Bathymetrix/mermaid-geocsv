@@ -359,7 +359,8 @@ require this restriction.
 failing to read valid input.
 
 **Specification:** Section 16 requires quoting values containing double quotes
-and doubling quotes within quoted cells.
+and doubling quotes within quoted cells. Section 3 defines a line as text ending
+in LF or CRLF.
 
 **Code at audit time:** [CSV parsing](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:80)
 relies on `csv.reader(strict=True)`.
@@ -374,16 +375,16 @@ section 3 specifies LF or CRLF.
 - [x] Validate unquoted quotes and padding
   outside quoted cells while preserving multiline quoted cells.
 - [x] Reject lone-CR line endings; accept LF and CRLF.
+- [x] Reject an EOF-terminated final line without LF or CRLF, whether it is a
+  declaration, header, data record, or comment.
 - [x] Verify malformed quotations alongside valid doubled quotes, embedded
   delimiters, and embedded LF/CRLF within quoted cells.
 
 **Resolution:** A streaming quote check rejects malformed header/data cells
 with a source line number. The parser also rejects lone-CR line endings on
 comments, headers, and data. It does not alter the source to repair errors.
-
-**Open edge case:** A final record without a line ending is still accepted.
-Section 3 describes lines ending in LF or CRLF; decide whether an EOF-terminated
-final record should also be rejected.
+The initial audit missed EOF-terminated final lines; version 0.7.2 rejects them
+with a source line number, including final comments and declarations.
 
 The quotation rule also appears in
 [CSVW section 7.4](https://www.w3.org/TR/2015/CR-tabular-data-model-20150716/#lines).
@@ -513,7 +514,7 @@ establish full specification compliance.
 - [x] Keep version 1.0.0, tags, commits, pushes, and publication subject to the
   user's explicit instructions.
 
-Current verification: version 0.7.1, 84 tests passed, including the canonical
+Current verification: version 0.7.2, 88 tests passed, including the canonical
 P0006 checks. Finding 5's version and first-line placement decisions remain
-explicitly open by prior agreement. The newly identified final-line and
-space-separated datetime questions are recorded above.
+explicitly open by prior agreement. The space-separated datetime question
+remains recorded above.

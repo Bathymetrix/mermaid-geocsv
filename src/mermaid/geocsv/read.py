@@ -61,7 +61,7 @@ def read(path: str | PathLike[str]) -> list[pd.DataFrame]:
     Comments and keyword declarations begin with a literal ``#`` at record
     boundaries. Quoted cells beginning with ``#`` are header or data values;
     lines inside multiline quoted cells remain cell content.
-    Malformed CSV quotes and lone-CR line endings are rejected.
+    Malformed CSV quotes and lines without LF or CRLF endings are rejected.
 
     Returns a list of DataFrames, one per dataset. Each frame is indexed by the
     file-wide, zero-based data-record position (``source_record_index``) and
@@ -81,6 +81,8 @@ def _source_lines(stream: TextIO) -> Iterator[tuple[int, str]]:
     for line_number, line in enumerate(stream, start=1):
         if line.count("\r") != int(line.endswith("\r\n")):
             raise GeoCSVError(f"line {line_number}: lone CR line ending is not supported")
+        if not line.endswith("\n"):
+            raise GeoCSVError(f"line {line_number}: line must end with LF or CRLF")
         yield line_number, line
 
 
