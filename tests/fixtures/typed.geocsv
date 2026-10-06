@@ -4,8 +4,8 @@
 #field_unit: iso8601,degrees_north,unitless,unitless,unitless
 #note: first: keeps the colon
 #note: second, keeps the comma
+#history: final comment
 StartTime,Latitude,SampleCount,MethodIdentifier,odd field-name
 2025-01-01T00:00:00.123456789Z,-14.5,9007199254740993,"Measurement:GPS,quoted",nan
 # a free-text comment between records
 2024-12-31T19:00:00.123456789-05:00,nan,nan,Algorithm(event):test,"a ""quoted"" value"
-#history: final comment

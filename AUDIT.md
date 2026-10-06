@@ -208,15 +208,15 @@ GeoWS keyword declarations; section 5 defines declaration syntax, and section 7
 lists the known keywords. Section 8 requires a new dataset marker when keyword
 values change.
 
-**Code:** [Schema tracking](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:21)
-covers only four keys. Other known declarations become passive comments.
+**Code at audit time:** schema tracking covered only delimiter, field type,
+field unit, and field missing. Other known declarations became passive comments.
 
 **Reproduced:** `#title: Before` followed by `#title: After`, or changed
 `field_long_name` declarations, is accepted within one dataset.
 
 **Reconciliation:**
 
-- [ ] Include an explicit lookup of known keywords in the pre-CSV comment and
+- [x] Include an explicit lookup of known keywords in the pre-CSV comment and
   declaration parser, using section 7 of the pinned
   [GeoCSV v2.0.4 specification](docs/references/GeoCSV_v2.0.4.pdf) as the
   authority: `dataset`, `field_unit`, `field_type`, `field_long_name`,
@@ -224,21 +224,25 @@ covers only four keys. Other known declarations become passive comments.
   `standard_name_cv`, `title`, `history`, `institution`, `source`, `comment`,
   and `references`. Keep this lookup local and versioned; a live URL lookup
   must not determine parsing behavior.
-- [ ] At record boundaries, classify literal leading-`#` lines as recognized
+- [x] At record boundaries, classify literal leading-`#` lines as recognized
   declarations or ordinary comments before CSV parsing. Accept section 5's
   optional whitespace in forms such as `# known_keyword : value`; preserve
   unknown keyword/value comments and free-text comments without inferring
   scientific semantics. Lines inside multiline quoted CSV cells remain cell
   content.
-- [ ] Track the known declarations from section 7 and detect conflicting values.
-- [ ] Until multiple datasets are supported, reject such changes with an
-  explanation that a dataset boundary is required.
-- [ ] Preserve raw comments for diagnostics and traceability.
-- [ ] Verify conflicting descriptive and field-attribute declarations, separately
+- [x] Track the known declarations from section 7 and detect conflicting values.
+- [x] Start a separate table at each `#dataset` marker so changed values apply
+  only to the following dataset.
+- [x] Preserve raw comments for diagnostics and traceability on each table.
+- [x] Verify conflicting descriptive and field-attribute declarations, separately
   from identical repetitions and ordinary free-text comments.
-- [ ] Test padded known-keyword declarations, unknown keyword/value comments,
+- [x] Test padded known-keyword declarations, unknown keyword/value comments,
   and free-text comments before the header and between data records; verify
   raw metadata preservation and exclusion from source-record numbering.
+
+**Resolution:** Multiple datasets are returned as separate DataFrames. Known
+metadata changes are accepted only after a new dataset marker; identical
+repetitions are accepted within a dataset.
 
 ## 7. Identical repeated declarations are rejected unnecessarily
 
@@ -255,11 +259,11 @@ rejects repeated schema declarations regardless of whether their values agree.
 
 **Reconciliation:**
 
-- [ ] Distinguish identical repetitions from conflicting declarations.
-- [ ] Accept identical repetitions and retain both source comments.
-- [ ] Separately document or remove the restriction that declarations must
-  precede the header.
-- [ ] Test identical declarations before the header and between data records,
+- [x] Distinguish identical repetitions from conflicting declarations.
+- [x] Accept identical repetitions and retain both source comments.
+- [x] Accept identical known declarations before the header and between data
+  records; changed values require a dataset boundary (finding 6).
+- [x] Test identical declarations before the header and between data records,
   while retaining rejection of unmarked conflicting changes.
 
 ## 8. Whitespace normalization is incomplete for recognized metadata lists
@@ -368,25 +372,24 @@ section 3 specifies LF or CRLF.
 The quotation rule also appears in
 [CSVW section 7.4](https://www.w3.org/TR/2015/CR-tabular-data-model-20150716/#lines).
 
-## 12. Multiple datasets and latitude/longitude recognition remain unsupported
+## 12. Latitude/longitude recognition remains unsupported
 
 **Classification:** Documented scope limit and recommendation gap.
 
-**Specification:** Sections 8-9 support multiple self-contained datasets.
-Section 15 recommends recognizing the stated latitude/longitude naming
-patterns.
+**Specification:** Sections 8-9 support multiple self-contained datasets,
+which the reader now returns as separate DataFrames. Section 15 recommends
+recognizing the stated latitude/longitude naming patterns.
 
-**Code:** [Dataset handling](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:133)
-rejects additional sections; there is no coordinate-name recognition.
+**Code:** [Dataset handling](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py)
+parses each dataset in one file pass and preserves file-wide record indexes.
+There is no coordinate-name recognition.
 
 **Reconciliation:**
 
-- [ ] Keep the deliberate single-dataset scope clearly identified as a subset
-  of GeoCSV support, with explicit rejection of additional sections.
-- [ ] Record multiple-dataset support as deferred, consistent with the agreed
-  scope; this audit does not require implementing it now.
-- [ ] Before future support, decide the public return structure for separate
-  tables and metadata, preserving the agreed file-wide record numbering.
+- [x] Return one DataFrame per dataset, each with its own metadata, while
+  preserving file-wide data-record numbering.
+- [x] Document that `geocsv.read` always returns a list, including for a
+  single-dataset file.
 - [ ] Document latitude/longitude recognition as an unimplemented recommendation
   if it remains downstream.
 - [ ] If recognition is implemented later, preserve column spellings and avoid

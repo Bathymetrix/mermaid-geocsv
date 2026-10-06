@@ -20,14 +20,16 @@ python -m pip install .
 from mermaid import geocsv
 import pandas as pd
 
-records = geocsv.read("P0006.geocsv")
+tables = geocsv.read("P0006.geocsv")
+records = tables[0]  # P0006 contains one dataset
 ```
 
 For a hands-on introduction using the included P0006 file, see the
 [pandas tutorial](TUTORIAL.md).
 
-`records` is the only return value: a typed pandas `DataFrame`. Its columns use
-the exact field names from the GeoCSV header. The zero-based
+`geocsv.read` returns a list of typed DataFrames, one per dataset in file
+order. Select a table from that list before using pandas. Each table's columns
+use the exact field names from its GeoCSV header. The zero-based
 `source_record_index` counts data records in file order, excluding headers and
 comments; it is not a physical line number. Datetime values preserve their
 source timezone: timezone-free values remain naive, and values with explicit
@@ -81,11 +83,11 @@ survive a longer workflow, keep the input path separately.
 
 ## Scope
 
-The reader loads one UTF-8 GeoCSV dataset into memory. It requires a `dataset`
-declaration whose value contains `GeoCSV` (case-insensitively); versions and
-marker placement are not currently validated. `field_type` and `field_unit`
-are optional, and the delimiter defaults to comma. Comments may also appear
-between data records.
+The reader loads UTF-8 GeoCSV datasets in one pass and returns one DataFrame
+per dataset. It requires each `dataset` declaration's value to contain `GeoCSV`
+(case-insensitively); versions and marker placement are not currently
+validated. `field_type` and `field_unit` are optional, and the delimiter
+defaults to comma. Comments may also appear between data records.
 Comments and keyword declarations begin with a literal `#` at a record
 boundary, with no preceding whitespace. Declaration syntax permits whitespace
 after `#` and around `:`, as in `# field_type : string`. Raw comments and parsed

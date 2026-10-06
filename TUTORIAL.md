@@ -34,7 +34,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-records = geocsv.read("data/fixtures/P0006/P0006.geocsv")
+tables = geocsv.read("data/fixtures/P0006/P0006.geocsv")
+records = tables[0]  # The P0006 file contains one dataset.
 type(records)
 records.shape
 records.head()

@@ -15,8 +15,14 @@ FIXTURES = Path(__file__).parent / "fixtures"
 CANONICAL = Path(__file__).parents[1] / "data" / "fixtures" / "P0006" / "P0006.geocsv"
 
 
+def read_one(path: str | Path) -> pd.DataFrame:
+    frames = geocsv.read(path)
+    assert len(frames) == 1
+    return frames[0]
+
+
 def test_declared_types_exact_headers_and_same_time_records() -> None:
-    frame = geocsv.read(FIXTURES / "typed.geocsv")
+    frame = read_one(FIXTURES / "typed.geocsv")
     assert isinstance(frame, pd.DataFrame)
     assert list(frame.columns) == [
         "StartTime", "Latitude", "SampleCount", "MethodIdentifier", "odd field-name"
@@ -46,8 +52,15 @@ def test_declared_types_exact_headers_and_same_time_records() -> None:
     ]
 
 
+def test_single_dataset_read_still_returns_a_list() -> None:
+    frames = geocsv.read(CANONICAL)
+    assert isinstance(frames, list)
+    assert len(frames) == 1
+    assert isinstance(frames[0], pd.DataFrame)
+
+
 def test_metadata_preserves_comments_declarations_and_immutability() -> None:
-    frame = geocsv.read(FIXTURES / "typed.geocsv")
+    frame = read_one(FIXTURES / "typed.geocsv")
     metadata = frame.attrs["geocsv"]
     assert isinstance(metadata, geocsv.GeoCSVMetadata)
     assert metadata.source_path == (FIXTURES / "typed.geocsv").resolve()
@@ -61,8 +74,9 @@ def test_metadata_preserves_comments_declarations_and_immutability() -> None:
     ]
     assert notes[1].raw == '#note: second, keeps the comma'
     assert notes[1].line_number == 6
-    assert metadata.comments[-2].key is None
-    assert metadata.comments[-1].value == "final comment"
+    assert metadata.comments[-1].key is None
+    history = next(comment for comment in metadata.comments if comment.key == "history")
+    assert history.value == "final comment"
     with pytest.raises(FrozenInstanceError):
         metadata.delimiter = "|"
     with pytest.raises(TypeError):
@@ -76,12 +90,12 @@ def test_metadata_preserves_comments_declarations_and_immutability() -> None:
 
 def test_source_path_resolves_relative_input(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(FIXTURES)
-    frame = geocsv.read("typed.geocsv")
+    frame = read_one("typed.geocsv")
     assert frame.attrs["geocsv"].source_path == (FIXTURES / "typed.geocsv").resolve()
 
 
 def test_multiline_csv_and_comments_at_record_boundaries() -> None:
-    frame = geocsv.read(FIXTURES / "multiline.geocsv")
+    frame = read_one(FIXTURES / "multiline.geocsv")
     assert frame["Description"].tolist() == [
         "first line\n#not_a_comment: inside a cell\nlast line",
         "#a quoted data cell",
@@ -103,7 +117,7 @@ def test_single_column_quoted_hash_values_are_data(
         f'"{quoted_value}"\n#note: between records\nafter\n',
         encoding="utf-8",
     )
-    frame = geocsv.read(source)
+    frame = read_one(source)
     assert frame["Label"].tolist() == ["before", quoted_value, "after"]
     assert isinstance(frame["Label"].dtype, pd.StringDtype)
     assert isinstance(frame.index, pd.RangeIndex)
@@ -131,7 +145,7 @@ def test_quoted_hash_header_and_literal_comment_boundaries(
         f'"{column_name}"\nhello\n# custom : after\n #literal data\nworld\n',
         encoding="utf-8",
     )
-    frame = geocsv.read(source)
+    frame = read_one(source)
     assert frame.columns.tolist() == [column_name]
     assert frame[column_name].tolist() == ["hello", " #literal data", "world"]
     assert isinstance(frame[column_name].dtype, pd.StringDtype)
@@ -155,7 +169,7 @@ def test_legacy_quoted_dataset_is_not_a_declaration(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     with pytest.raises(geocsv.GeoCSVError, match="line 1: missing required #dataset"):
-        geocsv.read(source)
+        read_one(source)
 
 
 @pytest.mark.parametrize(
@@ -178,10 +192,72 @@ def test_dataset_value_requires_geocsv_name_only(
         encoding="utf-8",
     )
     if accepted:
-        assert geocsv.read(source)["Name"].tolist() == ["value"]
+        assert read_one(source)["Name"].tolist() == ["value"]
     else:
         with pytest.raises(geocsv.GeoCSVError, match=r"line 1: #dataset value must contain 'GeoCSV'"):
-            geocsv.read(source)
+            read_one(source)
+
+
+def test_read_returns_each_dataset_with_file_wide_record_indices(tmp_path: Path) -> None:
+    source = tmp_path / "two_datasets.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#title: first table\n#field_type: string\n"
+        "#field_unit: unitless\nName\na\nb\n"
+        "#dataset: geocsv future-version\n#title: second table\n"
+        "#field_type: integer\n#field_unit: counts\nCount\n7\n8\n",
+        encoding="utf-8",
+    )
+    frames = geocsv.read(source)
+    assert len(frames) == 2
+    first, second = frames
+    assert first.columns.tolist() == ["Name"]
+    assert first["Name"].tolist() == ["a", "b"]
+    assert first.index.equals(pd.RangeIndex(0, 2, name="source_record_index"))
+    assert first.attrs["geocsv"].field_types == {"Name": "string"}
+    assert first.attrs["geocsv"].comments[1].value == "first table"
+    assert second.columns.tolist() == ["Count"]
+    assert second["Count"].tolist() == [7, 8]
+    assert second["Count"].dtype == "Int64"
+    assert second.index.equals(pd.RangeIndex(2, 4, name="source_record_index"))
+    assert second.attrs["geocsv"].field_types == {"Count": "integer"}
+    assert second.attrs["geocsv"].comments[1].value == "second table"
+    assert first.attrs["geocsv"].source_path == source.resolve()
+    assert second.attrs["geocsv"].source_path == source.resolve()
+
+
+def test_identical_known_declarations_may_repeat_before_and_between_rows(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "repeated_declarations.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#title: stable\n#title: stable\n"
+        "#field_type: string\n#field_unit: unitless\nName\nfirst\n"
+        "#title: stable\n#field_type: string\nsecond\n",
+        encoding="utf-8",
+    )
+    frame = read_one(source)
+    assert frame["Name"].tolist() == ["first", "second"]
+    title_values = [
+        comment.value
+        for comment in frame.attrs["geocsv"].comments
+        if comment.key == "title"
+    ]
+    assert title_values == ["stable", "stable", "stable"]
+
+
+@pytest.mark.parametrize("late_declaration", ["#title: changed", "#history: added"])
+def test_changed_or_new_known_declaration_requires_dataset_boundary(
+    tmp_path: Path, late_declaration: str
+) -> None:
+    source = tmp_path / "changed_declaration.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#title: original\n#field_type: string\n"
+        "#field_unit: unitless\nName\nfirst\n"
+        f"{late_declaration}\nsecond\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(geocsv.GeoCSVError, match="new #dataset boundary"):
+        geocsv.read(source)
 
 
 @pytest.mark.parametrize(
@@ -217,7 +293,7 @@ def test_optional_field_type_and_unit_declarations(
         f"#dataset: GeoCSV 2.0\n{declarations}{header}\n{row}\n",
         encoding="utf-8",
     )
-    frame = geocsv.read(source)
+    frame = read_one(source)
     metadata = frame.attrs["geocsv"]
     assert metadata.field_types == expected_types
     assert metadata.field_units == expected_units
@@ -239,11 +315,11 @@ def test_blank_record_is_rejected_for_width_instead_of_skipped(tmp_path: Path) -
         encoding="utf-8",
     )
     with pytest.raises(geocsv.GeoCSVError, match=r"line 5: data row has 0 fields; header has 1"):
-        geocsv.read(source)
+        read_one(source)
 
 
 def test_declared_missing_values_and_alternative_delimiter() -> None:
-    frame = geocsv.read(FIXTURES / "missing.geocsv")
+    frame = read_one(FIXTURES / "missing.geocsv")
     assert frame.iloc[1].isna().all()
     assert frame.iloc[0]["Label"] is pd.NA
     assert frame.attrs["geocsv"].delimiter == "|"
@@ -251,7 +327,7 @@ def test_declared_missing_values_and_alternative_delimiter() -> None:
 
 
 def test_escaped_tab_delimiter_and_utf8() -> None:
-    frame = geocsv.read(FIXTURES / "tab.geocsv")
+    frame = read_one(FIXTURES / "tab.geocsv")
     assert frame.columns.tolist() == ["Unmodified Column", "Height"]
     assert frame.iloc[0]["Unmodified Column"] == "café"
     assert frame.iloc[0]["Height"] == 1.25
@@ -259,7 +335,7 @@ def test_escaped_tab_delimiter_and_utf8() -> None:
 
 
 def test_native_pandas_missing_values_for_every_declared_type() -> None:
-    frame = geocsv.read(FIXTURES / "native_missing.geocsv")
+    frame = read_one(FIXTURES / "native_missing.geocsv")
     assert frame.iloc[0]["Time"] is pd.NaT
     assert frame.iloc[0]["Height"] is pd.NA
     assert frame.iloc[0]["Count"] is pd.NA
@@ -283,7 +359,7 @@ def test_empty_fields_become_typed_missing_values(
         f"{empty_cell},{empty_cell},{empty_cell},{empty_cell}\n",
         encoding="utf-8",
     )
-    frame = geocsv.read(source)
+    frame = read_one(source)
     assert frame.shape == (1, 4)
     assert frame.index.tolist() == [0]
     assert frame.index.name == "source_record_index"
@@ -315,7 +391,7 @@ def test_specification_datetime_forms_preserve_timezone(
         + "".join(f"{value}\n" for value in values),
         encoding="utf-8",
     )
-    frame = geocsv.read(source)
+    frame = read_one(source)
     assert [value.isoformat() for value in frame["Time"]] == expected
     if expected_timezone is None:
         assert frame["Time"].dt.tz is None
@@ -331,7 +407,7 @@ def test_mixed_naive_and_zoned_datetimes_keep_each_source_timezone(tmp_path: Pat
         "2011-08-18T00:00:00-05:00\n",
         encoding="utf-8",
     )
-    frame = geocsv.read(source)
+    frame = read_one(source)
     assert frame["Time"].dtype == object
     assert frame["Time"].iloc[0] == pd.Timestamp("2011-08-18T00:00:00")
     assert frame["Time"].iloc[0].tzinfo is None
@@ -356,17 +432,22 @@ def test_whitespace_only_fields_raise_located_error(
         geocsv.GeoCSVError,
         match=r"line 5, field 'Measurement': invalid .*whitespace-only values are not missing",
     ) as exc_info:
-        geocsv.read(source)
+        read_one(source)
     assert str(source.resolve()) in str(exc_info.value)
 
 
-@pytest.mark.parametrize(
-    "filename, message",
-    [("multiple_datasets.geocsv", "multiple datasets"), ("bad_width.geocsv", "line 5.*3 fields")],
-)
-def test_invalid_file_fixtures(filename: str, message: str) -> None:
-    with pytest.raises(geocsv.GeoCSVError, match=message):
-        geocsv.read(FIXTURES / filename)
+def test_wrong_width_fixture_is_rejected() -> None:
+    with pytest.raises(geocsv.GeoCSVError, match="line 5.*3 fields"):
+        read_one(FIXTURES / "bad_width.geocsv")
+
+
+def test_multiple_dataset_fixture_returns_separate_frames() -> None:
+    frames = geocsv.read(FIXTURES / "multiple_datasets.geocsv")
+    assert len(frames) == 2
+    assert frames[0]["Station"].tolist() == ["P0006"]
+    assert frames[1]["Station"].tolist() == ["P0007"]
+    assert list(frames[0].index) == [0]
+    assert list(frames[1].index) == [1]
 
 
 @pytest.mark.parametrize(
@@ -378,8 +459,8 @@ def test_invalid_file_fixtures(filename: str, message: str) -> None:
         ("#dataset: GeoCSV\n#field_type: string\n#field_unit: unitless,meters\nA\nx\n", "field_unit has 2 fields"),
         ("#dataset: GeoCSV\n#delimiter: '::'\n#field_type: string\n#field_unit: unitless\nA\nx\n", "delimiter"),
         ("#dataset: GeoCSV\n#field_type: boolean\n#field_unit: unitless\nA\ntrue\n", "unsupported field type"),
-        ("#dataset: GeoCSV\n#field_type: string\n#field_unit: unitless\nA\nx\n#delimiter: |\n", "late schema"),
-        ("#dataset: GeoCSV\n#field_type: string\n#field_type: float\n#field_unit: unitless\nA\nx\n", "repeated"),
+        ("#dataset: GeoCSV\n#field_type: string\n#field_unit: unitless\nA\nx\n#delimiter: |\n", "new #dataset boundary"),
+        ("#dataset: GeoCSV\n#field_type: string\n#field_type: float\n#field_unit: unitless\nA\nx\n", "changed"),
         ("#dataset: GeoCSV\n#field_type: string\n#field_unit: unitless\nA\n\"unclosed\n", "invalid CSV"),
         ("", "no header"),
     ],
@@ -388,7 +469,7 @@ def test_malformed_declarations_fail_clearly(tmp_path: Path, text: str, message:
     source = tmp_path / "invalid.geocsv"
     source.write_text(text, encoding="utf-8")
     with pytest.raises(geocsv.GeoCSVError, match=message):
-        geocsv.read(source)
+        read_one(source)
 
 
 @pytest.mark.parametrize(
@@ -407,7 +488,7 @@ def test_invalid_values_name_the_source_field_and_line(
         f"CustomField\n{value}\n", encoding="utf-8"
     )
     with pytest.raises(geocsv.GeoCSVError, match="line 5, field 'CustomField'"):
-        geocsv.read(source)
+        read_one(source)
 
 
 def test_header_only_dataset_is_typed(tmp_path: Path) -> None:
@@ -417,7 +498,7 @@ def test_header_only_dataset_is_typed(tmp_path: Path) -> None:
         "#field_unit: iso8601,meters,unitless,unitless\nTime,Height,Count,Label\n",
         encoding="utf-8",
     )
-    frame = geocsv.read(source)
+    frame = read_one(source)
     assert frame.empty
     assert str(frame["Time"].dt.tz) == "UTC"
     assert frame["Height"].dtype == "Float64"
@@ -426,7 +507,7 @@ def test_header_only_dataset_is_typed(tmp_path: Path) -> None:
 
 def test_canonical_p0006_content_metadata_and_source_integrity() -> None:
     original_hash = sha256(CANONICAL.read_bytes()).digest()
-    frame = geocsv.read(str(CANONICAL))
+    frame = read_one(str(CANONICAL))
     assert frame.shape == (20345, 16)
     assert list(frame.columns) == [
         "MethodIdentifier", "StartTime", "Network", "Station", "Location", "Channel",
