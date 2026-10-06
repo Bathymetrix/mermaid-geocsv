@@ -1,12 +1,12 @@
 #dataset: GeoCSV
 #created: 2026-08-12T20:53:14.396Z
-"#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org"
-#attribution: automaid v4.5.9 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])
+#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org
+#attribution: automaid v4.5.9 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096]) ! WITH MANUL EDIT TO REMOVE QUOTES (") IN PREAMBLE !
 #matlab_reader: https://github.com/joelsimon/GeoCSV/blob/master/readGeoCSV.m
 #waterpressure2depth: 100 mbar is approximately equal to the pressure of 1 meter of water
 #frequency_response: http://ds.iris.edu/data/reports/MH/MH.Mermaids.Response.V3.pdf
 #lineterminator: '\n'
-"#delimiter: ','"
+#delimiter: ','
 #field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
 #field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
 MethodIdentifier,StartTime,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,TimeDelay,TimeCorrection

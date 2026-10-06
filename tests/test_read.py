@@ -55,7 +55,7 @@ def test_metadata_preserves_comments_declarations_and_immutability() -> None:
     assert [comment.value for comment in notes] == [
         "first: keeps the colon", "second, keeps the comma"
     ]
-    assert notes[1].raw == '"#note: second, keeps the comma"'
+    assert notes[1].raw == '#note: second, keeps the comma'
     assert notes[1].line_number == 6
     assert metadata.comments[-2].key is None
     assert metadata.comments[-1].value == "final comment"
@@ -94,8 +94,8 @@ def test_single_column_quoted_hash_values_are_data(
 ) -> None:
     source = tmp_path / "quoted_hash.geocsv"
     source.write_text(
-        '"#dataset: GeoCSV"\n"#field_type: string"\n'
-        '"#field_unit: unitless"\nLabel\nbefore\n'
+        '#dataset: GeoCSV\n#field_type: string\n'
+        '#field_unit: unitless\nLabel\nbefore\n'
         f'"{quoted_value}"\n#note: between records\nafter\n',
         encoding="utf-8",
     )
@@ -111,9 +111,47 @@ def test_single_column_quoted_hash_values_are_data(
     assert [comment.key for comment in metadata.comments] == [
         "dataset", "field_type", "field_unit", "note"
     ]
-    assert metadata.comments[0].raw == '"#dataset: GeoCSV"'
+    assert metadata.comments[0].raw == '#dataset: GeoCSV'
     assert metadata.comments[-1].raw == "#note: between records"
     assert metadata.comments[-1].line_number == 7
+
+
+@pytest.mark.parametrize("column_name", ["#Label", "#dataset: hello"])
+def test_quoted_hash_header_and_literal_comment_boundaries(
+    tmp_path: Path, column_name: str
+) -> None:
+    source = tmp_path / "hash_header.geocsv"
+    source.write_text(
+        '# dataset : GeoCSV\n# field_type : string\n# field_unit : unitless\n'
+        '# free text\n# custom : before, with "quotes"\n'
+        f'"{column_name}"\nhello\n# custom : after\n #literal data\nworld\n',
+        encoding="utf-8",
+    )
+    frame = geocsv.read(source)
+    assert frame.columns.tolist() == [column_name]
+    assert frame[column_name].tolist() == ["hello", " #literal data", "world"]
+    assert isinstance(frame[column_name].dtype, pd.StringDtype)
+    assert frame.index.equals(pd.RangeIndex(3, name="source_record_index"))
+    metadata = frame.attrs["geocsv"]
+    assert metadata.field_types == {column_name: "string"}
+    assert metadata.field_units == {column_name: "unitless"}
+    assert [(comment.key, comment.value, comment.line_number)
+            for comment in metadata.comments] == [
+        ("dataset", "GeoCSV", 1), ("field_type", "string", 2),
+        ("field_unit", "unitless", 3), (None, None, 4),
+        ("custom", 'before, with "quotes"', 5), ("custom", "after", 8),
+    ]
+    assert metadata.comments[4].raw == '# custom : before, with "quotes"'
+
+
+def test_legacy_quoted_dataset_is_not_a_declaration(tmp_path: Path) -> None:
+    source = tmp_path / "legacy.geocsv"
+    source.write_text(
+        '"#dataset: GeoCSV"\n#field_type: string\n#field_unit: unitless\nLabel\nhello\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(geocsv.GeoCSVError, match="line 1: missing required #dataset"):
+        geocsv.read(source)
 
 
 def test_declared_missing_values_and_alternative_delimiter() -> None:
@@ -236,6 +274,10 @@ def test_canonical_p0006_content_metadata_and_source_integrity() -> None:
     metadata = frame.attrs["geocsv"]
     assert metadata.source_path == CANONICAL.resolve()
     assert len(metadata.comments) == 11
+    assert all(comment.raw.startswith("#") for comment in metadata.comments)
+    assert metadata.delimiter == ","
+    description = next(comment for comment in metadata.comments if comment.key == "description")
+    assert description.value.endswith("hydrophones, www.EarthScopeOceans.org")
     assert metadata.field_units["WaterPressure"] == "mbar"
     assert metadata.field_types["SampleCount"] == "integer"
     assert any(comment.value == "2026-08-12T20:53:14.396Z" for comment in metadata.comments)

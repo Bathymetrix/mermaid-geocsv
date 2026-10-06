@@ -4,4 +4,4 @@ from mermaid import geocsv
 
 
 def test_import_exposes_package_version() -> None:
-    assert geocsv.__version__ == "0.2.1"
+    assert geocsv.__version__ == "0.3.0"

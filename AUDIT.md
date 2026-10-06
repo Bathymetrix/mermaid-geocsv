@@ -44,17 +44,25 @@ treats a single quoted cell beginning with `#` as a comment.
 
 **Reconciliation:**
 
-- [x] Restrict legacy quoted-comment recognition to the preamble.
-- [x] After the header, recognize comments only by their literal leading `#`.
+- [x] Remove legacy quoted-comment recognition, including in the preamble.
+- [x] At record boundaries, recognize comments and keyword declarations only
+  by their literal leading `#`.
 - [x] Add regression examples for both quoted values and verify that the records
   and their `source_record_index` values are retained.
-- [x] Verify that the canonical MERMAID file's legacy quoted preamble and the
+- [x] Verify that the canonical MERMAID file's corrected unquoted preamble and the
   existing multiline/two-column quoted-data examples still parse correctly.
+- [x] Verify quoted hash-prefixed headers, padded keyword declarations, unknown
+  comments, and rejection of a legacy quoted dataset declaration.
 
-**Resolution:** Fixed in 0.2.1. Both quoted values are retained as string data
-with consecutive source-record indices, and are excluded from comment metadata.
-The focused checks passed (5 tests), including the canonical P0006 data,
-metadata, and source-integrity checks; the full suite passed (31 tests).
+**Resolution:** The initial 0.2.1 fix retained legacy quoted preamble support.
+Version 0.3.0 removes that exception: quoted hash-prefixed cells are header or
+data values, never comments. Raw leading-`#` comments and their keyword/value
+pairs remain in metadata. P0006's user-edited preamble removes the outer quotes
+from the description and delimiter and adds an edit note to the attribution;
+the dataset identifier, header, and data bytes are unchanged. Full known-keyword handling stays
+tracked in issue 6; blank-record handling stays tracked in issue 2.
+Verification: 8 focused tests passed, including canonical P0006 content,
+metadata, and source integrity; the full suite passed with 34 tests.
 
 ## 2. Whitespace-only data records disappear
 
