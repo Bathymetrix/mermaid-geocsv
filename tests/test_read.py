@@ -24,7 +24,11 @@ def test_declared_types_exact_headers_and_same_time_records() -> None:
     assert isinstance(frame.index, pd.RangeIndex)
     assert frame.index.name == "source_record_index"
     assert list(frame.index) == [0, 1]
-    assert str(frame["StartTime"].dt.tz) == "UTC"
+    assert frame["StartTime"].dtype == object
+    assert frame["StartTime"].iloc[0] == pd.Timestamp("2025-01-01T00:00:00.123456789Z")
+    assert frame["StartTime"].iloc[1] == pd.Timestamp("2024-12-31T19:00:00.123456789-05:00")
+    assert frame["StartTime"].iloc[0].tzinfo is not None
+    assert frame["StartTime"].iloc[1].utcoffset() != frame["StartTime"].iloc[0].utcoffset()
     assert frame["Latitude"].dtype == "Float64"
     assert frame["SampleCount"].dtype == "Int64"
     assert isinstance(frame["MethodIdentifier"].dtype, pd.StringDtype)
@@ -218,6 +222,51 @@ def test_empty_fields_become_typed_missing_values(
     assert frame.attrs["geocsv"].source_path == source.resolve()
 
 
+@pytest.mark.parametrize(
+    "values, expected, expected_timezone",
+    [
+        (["2011-08-18T00:00:00", "2011-08-18"], ["2011-08-18T00:00:00", "2011-08-18T00:00:00"], None),
+        (["2011-08-18T00:00:00Z"], ["2011-08-18T00:00:00+00:00"], "UTC"),
+        (["2011-08-18T00:00:00-05:00"], ["2011-08-18T00:00:00-05:00"], "UTC-05:00"),
+    ],
+)
+def test_specification_datetime_forms_preserve_timezone(
+    tmp_path: Path,
+    values: list[str],
+    expected: list[str],
+    expected_timezone: str | None,
+) -> None:
+    source = tmp_path / "datetime_forms.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#field_type: datetime\n#field_unit: iso8601\nTime\n"
+        + "".join(f"{value}\n" for value in values),
+        encoding="utf-8",
+    )
+    frame = geocsv.read(source)
+    assert [value.isoformat() for value in frame["Time"]] == expected
+    if expected_timezone is None:
+        assert frame["Time"].dt.tz is None
+    else:
+        assert str(frame["Time"].dt.tz) == expected_timezone
+
+
+def test_mixed_naive_and_zoned_datetimes_keep_each_source_timezone(tmp_path: Path) -> None:
+    source = tmp_path / "mixed_datetimes.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#field_type: datetime\n#field_unit: iso8601\nTime\n"
+        "2011-08-18T00:00:00\n2011-08-18T00:00:00Z\n"
+        "2011-08-18T00:00:00-05:00\n",
+        encoding="utf-8",
+    )
+    frame = geocsv.read(source)
+    assert frame["Time"].dtype == object
+    assert frame["Time"].iloc[0] == pd.Timestamp("2011-08-18T00:00:00")
+    assert frame["Time"].iloc[0].tzinfo is None
+    assert frame["Time"].iloc[1] == pd.Timestamp("2011-08-18T00:00:00Z")
+    assert frame["Time"].iloc[1].tzinfo is not None
+    assert frame["Time"].iloc[2] == pd.Timestamp("2011-08-18T00:00:00-05:00")
+
+
 @pytest.mark.parametrize("field_type", ["string", "integer", "float", "datetime"])
 @pytest.mark.parametrize("value", [" ", "   ", '" "'])
 def test_whitespace_only_fields_raise_located_error(
@@ -275,8 +324,7 @@ def test_malformed_declarations_fail_clearly(tmp_path: Path, text: str, message:
     "field_type, value",
     [
         ("integer", "1.5"), ("integer", "9223372036854775808"),
-        ("float", "bad"), ("datetime", "2025-01-01T00:00:00"),
-        ("datetime", "2025-02-30T00:00:00Z"),
+        ("float", "bad"), ("datetime", "2025-02-30T00:00:00Z"),
     ],
 )
 def test_invalid_values_name_the_source_field_and_line(

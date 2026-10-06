@@ -110,23 +110,30 @@ not match the header:
 optional timezone designations. The specification's UNAVCO and IRIS examples
 include timezone-free timestamps.
 
-**Code:** [Timezone check](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:229)
-requires a timezone and a time portion.
+**Code at audit time:** the datetime converter required a timezone and a time
+portion, then converted accepted values with `utc=True`.
 
-**Reproduced:** Both `2011-08-18T00:00:00` and `2011-08-18` fail.
+**Reproduced at audit time:** Both `2011-08-18T00:00:00` and `2011-08-18` failed.
 
 **Reconciliation:**
 
-- [ ] Decide explicitly how unspecified timezones are represented: preserve naive
-  datetimes unless source metadata establishes UTC, or choose another faithful,
-  documented representation.
-- [ ] Accept timezone-free timestamps and date-only values.
-- [ ] Review the subsequent `utc=True` conversion. Merely deleting the timezone
-  check would silently assume UTC for values whose timezone is unspecified.
-- [ ] Revise the current "all datetimes are UTC" public contract and explain the
-  behavior for columns containing different source representations.
-- [ ] Test timezone-free timestamps, date-only values, explicit UTC, and numeric
-  offsets, including examples from the specification.
+- [x] Preserve timezone-free timestamps as naive datetimes; do not assume UTC.
+- [x] Accept timezone-free timestamps and date-only values.
+- [x] Preserve explicit timezone offsets rather than converting source values
+  to UTC. Mixed naive/aware or differently offset columns use object dtype so
+  each timestamp retains its original timezone.
+- [x] Revise the public API documentation for homogeneous and mixed datetime
+  columns.
+- [x] Test timezone-free timestamps, date-only values, explicit UTC, numeric
+  offsets, and mixed representations.
+
+**Resolution:** Implemented in 0.4.0. A date-only value is represented at
+midnight with no timezone. Homogeneous timezone columns retain pandas datetime
+dtypes; mixed representations retain individual `Timestamp` values in an
+object column rather than converting timestamps or discarding timezone data.
+Tests cover the timezone-free UNAVCO example form, a date-only value, explicit
+UTC, a numeric offset, mixed naive/aware values, invalid calendar dates, and
+the canonical P0006 timestamps. The full suite passes with 52 tests.
 
 ## 4. Optional or unknown field attributes are treated as mandatory
 

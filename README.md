@@ -29,8 +29,11 @@ For a hands-on introduction using the included P0006 file, see the
 `records` is the only return value: a typed pandas `DataFrame`. Its columns use
 the exact field names from the GeoCSV header. The zero-based
 `source_record_index` counts data records in file order, excluding headers and
-comments; it is not a physical line number. `StartTime` is a timezone-aware
-UTC column.
+comments; it is not a physical line number. Datetime values preserve their
+source timezone: timezone-free values remain naive, and values with explicit
+offsets retain those offsets. A column with one consistent timezone has a
+pandas datetime dtype; if it mixes naive and timezone-aware values or different
+offsets, its values are preserved as `Timestamp` objects in an `object` column.
 
 ```python
 # Select position-bearing records for a trajectory map.
@@ -96,15 +99,16 @@ header, an empty record fails the row-width check, and whitespace-only fields
 raise a field-conversion error.
 
 Declared `string`, `float`, `integer`, and `datetime` fields become nullable
-pandas `string`, `Float64`, `Int64`, and UTC datetime columns, respectively.
+pandas `string`, `Float64`, `Int64`, and datetime columns, respectively.
 Empty CSV fields, including quoted empty fields, `nan` (case-insensitive), and
 nonempty per-column `field_missing` sentinels become `pd.NA` or `pd.NaT`
 according to the declared type. A record must contain exactly as many cells as
 the header; a blank line is not expanded into an all-missing record. A
 nonempty whitespace-only cell is an error for every declared type, including
 `string`; use an empty field to encode missing data. Errors include the source
-path, line number, and field name. Nonmissing datetimes require an explicit
-timezone. Other strings, including `NA`, remain literal.
+path, line number, and field name. Datetimes must use ISO 8601; date-only forms
+are interpreted as midnight without a timezone. Other strings, including
+`NA`, remain literal.
 
 Malformed records or declarations, invalid typed values, and additional
 datasets raise `geocsv.GeoCSVError` (a `ValueError`). The reader preserves row

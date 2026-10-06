@@ -20,7 +20,6 @@ class GeoCSVError(ValueError):
 
 _SCHEMA_KEYS = {"delimiter", "field_type", "field_unit", "field_missing"}
 _FIELD_TYPES = {"string", "datetime", "float", "integer"}
-_TIMEZONE = re.compile(r"[Tt ].*(?:Z|[+-][0-9]{2}:?[0-9]{2})$")
 _INTEGER = re.compile(r"[+-]?[0-9]+$")
 
 
@@ -29,10 +28,11 @@ def read(path: str | PathLike[str]) -> pd.DataFrame:
 
     Requires ``dataset``, ``field_type``, and ``field_unit`` before the header.
     The delimiter defaults to comma. Source field names and data order are
-    unchanged. Declared datetimes must include a timezone and are converted to
-    UTC; duplicate times are retained. ``nan`` (case-insensitive) becomes the
-    native pandas missing value for every declared type. Other strings remain
-    literal unless a per-column ``field_missing`` is declared.
+    unchanged. Datetimes follow ISO 8601; timezone-free values remain naive,
+    and explicit timezone offsets are preserved. Duplicate times are retained.
+    ``nan`` (case-insensitive) becomes the native pandas missing value for
+    every declared type. Other strings remain literal unless a per-column
+    ``field_missing`` is declared.
     Comments and keyword declarations begin with a literal ``#`` at record
     boundaries. Quoted cells beginning with ``#`` are header or data values;
     lines inside multiline quoted cells remain cell content.
@@ -174,18 +174,29 @@ def _read_dataset(lines: Iterator[tuple[int, str]], source_path: Path) -> pd.Dat
     for name, field_type in zip(header, field_types):
         values = columns.pop(name)
         if field_type.lower() == "datetime":
-            try:
+            if not any(not pd.isna(value) for value in values):
+                # Keep the established UTC dtype for empty/all-missing columns;
+                # there are no source timestamps whose timezone could be assumed.
                 array = pd.to_datetime(values, format="ISO8601", utc=True, errors="raise")
-            except (ValueError, OverflowError) as exc:
-                # Diagnose only on failure; normal datetime parsing is column-wise.
-                for value, line_number in zip(values, data_lines):
-                    try:
-                        pd.to_datetime(value, format="ISO8601", utc=True, errors="raise")
-                    except (ValueError, OverflowError) as row_exc:
-                        raise GeoCSVError(
-                            f"line {line_number}, field {name!r}: invalid datetime value {value!r}"
-                        ) from row_exc
-                raise GeoCSVError(f"field {name!r}: invalid datetime column") from exc
+            else:
+                try:
+                    array = pd.to_datetime(values, format="ISO8601", utc=False, errors="raise")
+                except (ValueError, OverflowError):
+                    # Different explicit offsets, or a mix of aware and naive
+                    # values, cannot share pandas' native datetime dtype. Keep
+                    # individually parsed Timestamps in an object array so no
+                    # source timezone is silently changed.
+                    parsed_values = []
+                    for value, line_number in zip(values, data_lines):
+                        try:
+                            parsed_values.append(
+                                pd.to_datetime(value, format="ISO8601", utc=False, errors="raise")
+                            )
+                        except (ValueError, OverflowError) as row_exc:
+                            raise GeoCSVError(
+                                f"line {line_number}, field {name!r}: invalid datetime value {value!r}"
+                            ) from row_exc
+                    array = pd.array(parsed_values, dtype=object)
         else:
             dtype = {"string": "string", "integer": "Int64", "float": "Float64"}[field_type.lower()]
             array = pd.array(values, dtype=dtype)
@@ -222,6 +233,4 @@ def _convert_value(value: str, field_type: str, missing: str) -> object:
         if not -(2**63) <= integer < 2**63:
             raise ValueError("outside the nullable Int64 range")
         return integer
-    if not _TIMEZONE.search(value):
-        raise ValueError("expected an ISO-8601 datetime with an explicit timezone")
     return value
