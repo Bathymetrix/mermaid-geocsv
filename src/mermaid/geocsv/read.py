@@ -52,7 +52,8 @@ def read(path: str | PathLike[str]) -> list[pd.DataFrame]:
     are optional; undeclared field types are read as strings, and undeclared
     units remain empty. The delimiter defaults to comma. Source field names and
     data order are unchanged. Datetimes follow ISO 8601 with at most nine
-    fractional digits; timezone-free values remain naive, and explicit
+    fractional digits; ``T`` is strongly recommended between date and time,
+    though a space is accepted. Timezone-free values remain naive, and explicit
     timezone offsets are preserved. Duplicate times are retained.
     ``nan`` (case-insensitive) becomes the native pandas missing value for
     every declared type. Numeric and datetime cells are trimmed; string cells

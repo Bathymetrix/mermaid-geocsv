@@ -447,8 +447,9 @@ and [datetime conversion](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geo
 raise located errors; explicit infinity remains representable. Integers use
 nullable signed Int64. Timestamps support at most nine fractional digits.
 Broader numeric ranges and timestamp precision remain outside scope.
-Pandas also accepts a space between date and time; the precision check covers
-that spelling, but whether to accept it as GeoCSV ISO 8601 remains open.
+Section 14 strongly recommends `T` between date and time. The reader continues
+to accept a space, while recommending `T` for new GeoCSV files. A focused test
+preserves acceptance of the space-separated form.
 
 ## 14. Empty fields do not become typed missing values
 
@@ -514,7 +515,6 @@ establish full specification compliance.
 - [x] Keep version 1.0.0, tags, commits, pushes, and publication subject to the
   user's explicit instructions.
 
-Current verification: version 0.7.2, 88 tests passed, including the canonical
+Current verification: version 0.7.2, 89 tests passed, including the canonical
 P0006 checks. Finding 5's version and first-line placement decisions remain
-explicitly open by prior agreement. The space-separated datetime question
-remains recorded above.
+explicitly open by prior agreement.
