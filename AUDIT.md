@@ -165,8 +165,10 @@ the marker.
 
 **Classification:** Direct specification mismatch.
 
-**Specification:** Section 8 requires a new dataset marker when keyword values
-change.
+**Specification:** Section 3a distinguishes ordinary comments from recognized
+GeoWS keyword declarations; section 5 defines declaration syntax, and section 7
+lists the known keywords. Section 8 requires a new dataset marker when keyword
+values change.
 
 **Code:** [Schema tracking](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:21)
 covers only four keys. Other known declarations become passive comments.
@@ -176,12 +178,29 @@ covers only four keys. Other known declarations become passive comments.
 
 **Reconciliation:**
 
+- [ ] Include an explicit lookup of known keywords in the pre-CSV comment and
+  declaration parser, using section 7 of the pinned
+  [GeoCSV v2.0.4 specification](docs/references/GeoCSV_v2.0.4.pdf) as the
+  authority: `dataset`, `field_unit`, `field_type`, `field_long_name`,
+  `field_standard_name`, `field_missing`, `delimiter`, `attribution`,
+  `standard_name_cv`, `title`, `history`, `institution`, `source`, `comment`,
+  and `references`. Keep this lookup local and versioned; a live URL lookup
+  must not determine parsing behavior.
+- [ ] At record boundaries, classify literal leading-`#` lines as recognized
+  declarations or ordinary comments before CSV parsing. Accept section 5's
+  optional whitespace in forms such as `# known_keyword : value`; preserve
+  unknown keyword/value comments and free-text comments without inferring
+  scientific semantics. Lines inside multiline quoted CSV cells remain cell
+  content.
 - [ ] Track the known declarations from section 7 and detect conflicting values.
 - [ ] Until multiple datasets are supported, reject such changes with an
   explanation that a dataset boundary is required.
 - [ ] Preserve raw comments for diagnostics and traceability.
 - [ ] Verify conflicting descriptive and field-attribute declarations, separately
   from identical repetitions and ordinary free-text comments.
+- [ ] Test padded known-keyword declarations, unknown keyword/value comments,
+  and free-text comments before the header and between data records; verify
+  raw metadata preservation and exclusion from source-record numbering.
 
 ## 7. Identical repeated declarations are rejected unnecessarily
 

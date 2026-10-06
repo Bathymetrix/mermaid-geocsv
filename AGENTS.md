@@ -81,6 +81,10 @@ changes rather than preserving a weak design solely for compatibility.
 
 ## Versioning and Release
 
+Start suggested commit summaries with lowercase after the colon: use
+`docs: specify known-keyword recognition in audit`, not
+`docs: Specify known-keyword recognition in audit`.
+
 Bump the package version when a change affects public behavior, the Python
 API, supported GeoCSV semantics, or dependencies. Choose a pre-1.0.0 version
 that reflects the scope of the change; documentation-only edits do not need a
