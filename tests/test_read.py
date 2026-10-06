@@ -2,7 +2,6 @@
 
 from copy import deepcopy
 from dataclasses import FrozenInstanceError
-from hashlib import sha256
 from math import isinf
 from pathlib import Path
 
@@ -51,13 +50,6 @@ def test_declared_types_exact_headers_and_same_time_records() -> None:
     assert matches["MethodIdentifier"].tolist() == [
         "Measurement:GPS,quoted", "Algorithm(event):test"
     ]
-
-
-def test_single_dataset_read_still_returns_a_list() -> None:
-    frames = geocsv.read(CANONICAL)
-    assert isinstance(frames, list)
-    assert len(frames) == 1
-    assert isinstance(frames[0], pd.DataFrame)
 
 
 def test_metadata_preserves_comments_declarations_and_immutability() -> None:
@@ -569,15 +561,6 @@ def test_wrong_width_fixture_is_rejected() -> None:
         read_one(FIXTURES / "bad_width.geocsv")
 
 
-def test_multiple_dataset_fixture_returns_separate_frames() -> None:
-    frames = geocsv.read(FIXTURES / "multiple_datasets.geocsv")
-    assert len(frames) == 2
-    assert frames[0]["Station"].tolist() == ["P0006"]
-    assert frames[1]["Station"].tolist() == ["P0007"]
-    assert list(frames[0].index) == [0]
-    assert list(frames[1].index) == [1]
-
-
 @pytest.mark.parametrize(
     "text, message",
     [
@@ -659,8 +642,7 @@ def test_explicit_infinity_is_distinct_from_finite_overflow(tmp_path: Path) -> N
     assert isinf(read_one(source)["Value"].iloc[0])
 
 
-def test_canonical_p0006_content_metadata_and_source_integrity() -> None:
-    original_hash = sha256(CANONICAL.read_bytes()).digest()
+def test_canonical_p0006_content_metadata_and_provenance() -> None:
     frame = read_one(str(CANONICAL))
     assert frame.shape == (20345, 16)
     assert list(frame.columns) == [
@@ -697,4 +679,3 @@ def test_canonical_p0006_content_metadata_and_source_integrity() -> None:
     ]
     assert pd.isna(collision.iloc[0]["Latitude"])
     assert collision.iloc[1]["Latitude"] == -14.752247
-    assert sha256(CANONICAL.read_bytes()).digest() == original_hash

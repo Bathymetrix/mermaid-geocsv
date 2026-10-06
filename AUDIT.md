@@ -508,7 +508,7 @@ establish full specification compliance.
 - [x] Keep version 1.0.0, tags, commits, pushes, and publication subject to the
   user's explicit instructions.
 
-Current verification: version 0.7.0, 82 tests passed, including the canonical
+Current verification: version 0.7.0, 79 tests passed, including the canonical
 P0006 checks. Finding 5's version and first-line placement decisions remain
 explicitly open by prior agreement. The newly identified final-line and
 space-separated datetime questions are recorded above.
