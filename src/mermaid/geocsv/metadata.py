@@ -32,7 +32,10 @@ class GeoCSVMetadata:
 
     Comments retain source order and repeated or unknown keys. Field mappings
     use the exact header names; values are the stripped source declarations.
-    The mappings are read-only. ``delimiter`` is the decoded CSV character.
+    An empty ``field_types`` value means the type was undeclared and the reader
+    represented that column as a string. Empty ``field_units`` values mean the
+    unit was undeclared. The mappings are read-only. ``delimiter`` is the
+    decoded CSV character.
     """
 
     source_path: Path

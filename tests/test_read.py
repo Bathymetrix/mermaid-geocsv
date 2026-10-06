@@ -158,6 +158,53 @@ def test_legacy_quoted_dataset_is_not_a_declaration(tmp_path: Path) -> None:
         geocsv.read(source)
 
 
+@pytest.mark.parametrize(
+    "declarations, header, row, expected_types, expected_units",
+    [
+        (
+            "", "Name,Value", "alpha,10",
+            {"Name": "", "Value": ""}, {"Name": "", "Value": ""},
+        ),
+        (
+            "#field_type: datetime,,float\n#field_unit: iso8601,,degrees_north\n",
+            "Time,Station,Latitude", "2011-08-18T00:00:00,AB01,-14.2",
+            {"Time": "datetime", "Station": "", "Latitude": "float"},
+            {"Time": "iso8601", "Station": "", "Latitude": "degrees_north"},
+        ),
+        (
+            "#field_type: \n#field_unit: \n", "Station", "AB01",
+            {"Station": ""},
+            {"Station": ""},
+        ),
+    ],
+)
+def test_optional_field_type_and_unit_declarations(
+    tmp_path: Path,
+    declarations: str,
+    header: str,
+    row: str,
+    expected_types: dict[str, str],
+    expected_units: dict[str, str],
+) -> None:
+    source = tmp_path / "optional_attributes.geocsv"
+    source.write_text(
+        f"#dataset: GeoCSV 2.0\n{declarations}{header}\n{row}\n",
+        encoding="utf-8",
+    )
+    frame = geocsv.read(source)
+    metadata = frame.attrs["geocsv"]
+    assert metadata.field_types == expected_types
+    assert metadata.field_units == expected_units
+    if "Time" in expected_types:
+        assert frame["Time"].dtype == "datetime64[us]"
+        assert frame["Time"].iloc[0] == pd.Timestamp("2011-08-18T00:00:00")
+        assert frame["Station"].dtype == "string"
+        assert frame["Latitude"].dtype == "Float64"
+    else:
+        for name in expected_types:
+            assert frame[name].dtype == "string"
+
+
 def test_blank_record_is_rejected_for_width_instead_of_skipped(tmp_path: Path) -> None:
     source = tmp_path / "blank_record.geocsv"
     source.write_text(
@@ -300,8 +347,6 @@ def test_invalid_file_fixtures(filename: str, message: str) -> None:
     "text, message",
     [
         ("#field_type: string\n#field_unit: unitless\nA\nx\n", "required #dataset"),
-        ("#dataset: GeoCSV\n#field_unit: unitless\nA\nx\n", "required #field_type"),
-        ("#dataset: GeoCSV\n#field_type: string\nA\nx\n", "required #field_unit"),
         ("#dataset: GeoCSV\n#field_type: string\n#field_unit: unitless\nA,A\nx,y\n", "unique"),
         ("#dataset: GeoCSV\n#field_type: string\n#field_unit: unitless\nA,B\nx,y\n", "field_type has 1 fields"),
         ("#dataset: GeoCSV\n#field_type: string\n#field_unit: unitless,meters\nA\nx\n", "field_unit has 2 fields"),

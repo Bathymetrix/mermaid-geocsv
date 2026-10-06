@@ -137,8 +137,7 @@ the canonical P0006 timestamps. The full suite passes with 52 tests.
 
 ## 4. Optional or unknown field attributes are treated as mandatory
 
-**Classification:** Direct specification mismatch, or an intentional narrower
-profile if retained and identified as such.
+**Classification:** Direct specification mismatch.
 
 **Specification:** Section 11 permits empty field-attribute values. The minimal
 IRIS example also omits `field_type` and `field_unit` entirely.
@@ -153,17 +152,22 @@ blank unit for a one-column dataset all fail.
 
 **Reconciliation:**
 
-- [ ] Decide whether to support these permitted forms or retain mandatory
-  declarations as a documented MERMAID profile requirement.
-- [ ] If supporting them, preserve undeclared types as strings rather than
-  guessing scientific types.
-- [ ] Accept absent or empty units without inventing units.
-- [ ] Distinguish unknown declarations from malformed declarations, including
-  empty entries within otherwise populated lists.
-- [ ] Test omitted declarations, empty single-column declarations, and partially
-  unknown attribute lists.
-- [ ] Ensure the documentation attributes any retained requirement to the
-  MERMAID profile, not to GeoCSV itself.
+- [x] Accept absent or empty `field_type` and `field_unit` declarations and
+  entries.
+- [x] Represent undeclared/empty field types as strings without guessing; keep
+  empty source declarations in metadata so their absence remains visible.
+- [x] Keep absent/empty units empty; do not invent units.
+- [x] Reject unknown nonempty type names as unsupported while accepting empty
+  entries within otherwise populated lists.
+- [x] Test omitted declarations, empty one-column declarations, and partially
+  undeclared field attributes.
+- [x] Document the supported behavior and distinguish it from unknown type
+  names.
+
+**Resolution:** Implemented in 0.5.0. Only `dataset` is required before the
+header. Missing or empty field types are represented as strings and recorded
+as empty in `metadata.field_types`; missing or empty units remain empty in
+`metadata.field_units`. Unknown nonempty type names still raise an error.
 
 ## 5. Dataset identity and placement are not checked
 

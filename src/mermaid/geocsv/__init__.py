@@ -12,7 +12,7 @@ from .read import GeoCSVError, read
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "__version__",

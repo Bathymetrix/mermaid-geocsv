@@ -81,9 +81,9 @@ survive a longer workflow, keep the input path separately.
 
 ## Scope
 
-The reader loads one UTF-8 GeoCSV dataset into memory. It requires `dataset`,
-`field_type`, and `field_unit` declarations before the header; the delimiter
-defaults to comma. Comments may also appear between data records.
+The reader loads one UTF-8 GeoCSV dataset into memory. It requires a `dataset`
+declaration before the header; `field_type` and `field_unit` are optional, and
+the delimiter defaults to comma. Comments may also appear between data records.
 Comments and keyword declarations begin with a literal `#` at a record
 boundary, with no preceding whitespace. Declaration syntax permits whitespace
 after `#` and around `:`, as in `# field_type : string`. Raw comments and parsed
@@ -99,7 +99,12 @@ header, an empty record fails the row-width check, and whitespace-only fields
 raise a field-conversion error.
 
 Declared `string`, `float`, `integer`, and `datetime` fields become nullable
-pandas `string`, `Float64`, `Int64`, and datetime columns, respectively.
+pandas `string`, `Float64`, `Int64`, and datetime columns, respectively. An
+omitted or empty `field_type` entry is represented as a string column; its
+`metadata.field_types` value remains empty to show that the source did not
+declare the type. An omitted or empty `field_unit` entry remains empty in
+`metadata.field_units`; the reader never invents a unit. Unknown nonempty type
+names raise an error.
 Empty CSV fields, including quoted empty fields, `nan` (case-insensitive), and
 nonempty per-column `field_missing` sentinels become `pd.NA` or `pd.NaT`
 according to the declared type. A record must contain exactly as many cells as

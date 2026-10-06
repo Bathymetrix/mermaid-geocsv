@@ -26,9 +26,10 @@ _INTEGER = re.compile(r"[+-]?[0-9]+$")
 def read(path: str | PathLike[str]) -> pd.DataFrame:
     """Read a UTF-8 file containing one GeoCSV dataset.
 
-    Requires ``dataset``, ``field_type``, and ``field_unit`` before the header.
-    The delimiter defaults to comma. Source field names and data order are
-    unchanged. Datetimes follow ISO 8601; timezone-free values remain naive,
+    Requires ``dataset`` before the header. ``field_type`` and ``field_unit``
+    are optional; undeclared field types are read as strings, and undeclared
+    units remain empty. The delimiter defaults to comma. Source field names and
+    data order are unchanged. Datetimes follow ISO 8601; timezone-free values remain naive,
     and explicit timezone offsets are preserved. Duplicate times are retained.
     ``nan`` (case-insensitive) becomes the native pandas missing value for
     every declared type. Other strings remain literal unless a per-column
@@ -93,12 +94,15 @@ def _decode_delimiter(value: str) -> str:
 def _field_values(
     declaration: GeoCSVComment, delimiter: str, width: int
 ) -> list[str]:
-    try:
-        values = next(csv.reader([declaration.value], delimiter=delimiter, strict=True))
-    except csv.Error as exc:
-        raise GeoCSVError(
-            f"line {declaration.line_number}: invalid {declaration.key} CSV: {exc}"
-        ) from exc
+    if declaration.value == "":
+        values = [""]
+    else:
+        try:
+            values = next(csv.reader([declaration.value], delimiter=delimiter, strict=True))
+        except csv.Error as exc:
+            raise GeoCSVError(
+                f"line {declaration.line_number}: invalid {declaration.key} CSV: {exc}"
+            ) from exc
     if len(values) != width:
         raise GeoCSVError(
             f"line {declaration.line_number}: {declaration.key} has {len(values)} "
@@ -133,22 +137,27 @@ def _read_dataset(lines: Iterator[tuple[int, str]], source_path: Path) -> pd.Dat
             continue
 
         if header is None:
-            for key in ("dataset", "field_type", "field_unit"):
-                if key not in declarations or not declarations[key].value:
-                    raise GeoCSVError(f"line {line_number}: missing required #{key} declaration")
+            if "dataset" not in declarations or not declarations["dataset"].value:
+                raise GeoCSVError(f"line {line_number}: missing required #dataset declaration")
             if "delimiter" in declarations:
                 delimiter = _decode_delimiter(declarations["delimiter"].value)
             header = _csv_record(line, lines, delimiter, line_number)
             if any(not name.strip() for name in header) or len(set(header)) != len(header):
                 raise GeoCSVError(f"line {line_number}: header names must be nonempty and unique")
-            field_types = _field_values(declarations["field_type"], delimiter, len(header))
-            field_units = _field_values(declarations["field_unit"], delimiter, len(header))
+            field_types = (
+                _field_values(declarations["field_type"], delimiter, len(header))
+                if "field_type" in declarations else [""] * len(header)
+            )
+            field_units = (
+                _field_values(declarations["field_unit"], delimiter, len(header))
+                if "field_unit" in declarations else [""] * len(header)
+            )
             field_missing = (
                 _field_values(declarations["field_missing"], delimiter, len(header))
                 if "field_missing" in declarations else [""] * len(header)
             )
             for name, field_type in zip(header, field_types):
-                if field_type.lower() not in _FIELD_TYPES:
+                if field_type and field_type.lower() not in _FIELD_TYPES:
                     raise GeoCSVError(f"field {name!r}: unsupported field type {field_type!r}")
             columns = {name: [] for name in header}
             continue
@@ -159,11 +168,13 @@ def _read_dataset(lines: Iterator[tuple[int, str]], source_path: Path) -> pd.Dat
                 f"line {line_number}: data row has {len(row)} fields; header has {len(header)}"
             )
         for name, value, field_type, missing in zip(header, row, field_types, field_missing):
+            effective_type = field_type.lower() or "string"
             try:
-                columns[name].append(_convert_value(value, field_type.lower(), missing))
+                columns[name].append(_convert_value(value, effective_type, missing))
             except (ValueError, OverflowError) as exc:
                 raise GeoCSVError(
-                    f"line {line_number}, field {name!r}: invalid {field_type} value {value!r}: {exc}"
+                    f"line {line_number}, field {name!r}: invalid {effective_type} "
+                    f"value {value!r}: {exc}"
                 ) from exc
         data_lines.append(line_number)
 
@@ -172,8 +183,9 @@ def _read_dataset(lines: Iterator[tuple[int, str]], source_path: Path) -> pd.Dat
 
     typed_columns = {}
     for name, field_type in zip(header, field_types):
+        effective_type = field_type.lower() or "string"
         values = columns.pop(name)
-        if field_type.lower() == "datetime":
+        if effective_type == "datetime":
             if not any(not pd.isna(value) for value in values):
                 # Keep the established UTC dtype for empty/all-missing columns;
                 # there are no source timestamps whose timezone could be assumed.
@@ -198,7 +210,7 @@ def _read_dataset(lines: Iterator[tuple[int, str]], source_path: Path) -> pd.Dat
                             ) from row_exc
                     array = pd.array(parsed_values, dtype=object)
         else:
-            dtype = {"string": "string", "integer": "Int64", "float": "Float64"}[field_type.lower()]
+            dtype = {"string": "string", "integer": "Int64", "float": "Float64"}[effective_type]
             array = pd.array(values, dtype=dtype)
         typed_columns[name] = array
 
