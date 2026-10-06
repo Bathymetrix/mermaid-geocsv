@@ -154,6 +154,17 @@ def test_legacy_quoted_dataset_is_not_a_declaration(tmp_path: Path) -> None:
         geocsv.read(source)
 
 
+def test_blank_record_is_rejected_for_width_instead_of_skipped(tmp_path: Path) -> None:
+    source = tmp_path / "blank_record.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#field_type: string\n#field_unit: unitless\n"
+        "Label\n\nvalue\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(geocsv.GeoCSVError, match=r"line 5: data row has 0 fields; header has 1"):
+        geocsv.read(source)
+
+
 def test_declared_missing_values_and_alternative_delimiter() -> None:
     frame = geocsv.read(FIXTURES / "missing.geocsv")
     assert frame.iloc[1].isna().all()
@@ -181,6 +192,50 @@ def test_native_pandas_missing_values_for_every_declared_type() -> None:
     assert frame["Count"].dtype == "Int64"
     assert isinstance(frame["Label"].dtype, pd.StringDtype)
     assert str(frame["Time"].dt.tz) == "UTC"
+
+
+@pytest.mark.parametrize("empty_cell", ["", '""'])
+def test_empty_fields_become_typed_missing_values(
+    tmp_path: Path, empty_cell: str
+) -> None:
+    source = tmp_path / "empty_fields.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#field_type: string,integer,float,datetime\n"
+        "#field_unit: unitless,unitless,unitless,iso8601\n"
+        "Label,Count,Height,Time\n"
+        f"{empty_cell},{empty_cell},{empty_cell},{empty_cell}\n",
+        encoding="utf-8",
+    )
+    frame = geocsv.read(source)
+    assert frame.shape == (1, 4)
+    assert frame.index.tolist() == [0]
+    assert frame.index.name == "source_record_index"
+    assert frame["Label"].dtype == "string"
+    assert frame["Count"].dtype == "Int64"
+    assert frame["Height"].dtype == "Float64"
+    assert str(frame["Time"].dt.tz) == "UTC"
+    assert frame.iloc[0].isna().all()
+    assert frame.attrs["geocsv"].source_path == source.resolve()
+
+
+@pytest.mark.parametrize("field_type", ["string", "integer", "float", "datetime"])
+@pytest.mark.parametrize("value", [" ", "   ", '" "'])
+def test_whitespace_only_fields_raise_located_error(
+    tmp_path: Path, field_type: str, value: str
+) -> None:
+    source = tmp_path / "whitespace_field.geocsv"
+    source.write_text(
+        f"#dataset: GeoCSV\n#field_type: {field_type}\n"
+        "#field_unit: unitless\nMeasurement\n"
+        f"{value}\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(
+        geocsv.GeoCSVError,
+        match=r"line 5, field 'Measurement': invalid .*whitespace-only values are not missing",
+    ) as exc_info:
+        geocsv.read(source)
+    assert str(source.resolve()) in str(exc_info.value)
 
 
 @pytest.mark.parametrize(

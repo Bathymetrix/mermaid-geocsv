@@ -116,7 +116,7 @@ def _read_dataset(lines: Iterator[tuple[int, str]], source_path: Path) -> pd.Dat
     delimiter = ","
 
     for line_number, line in lines:
-        if not line.strip():
+        if header is None and not line.strip():
             continue
         comment = _comment(line, line_number)
         if comment is not None:
@@ -205,7 +205,11 @@ def _read_dataset(lines: Iterator[tuple[int, str]], source_path: Path) -> pd.Dat
 
 
 def _convert_value(value: str, field_type: str, missing: str) -> object:
-    if value.strip().lower() == "nan" or (missing and value == missing):
+    if value and not value.strip():
+        raise ValueError(
+            "whitespace-only values are not missing; use an empty field or nan"
+        )
+    if value == "" or value.strip().lower() == "nan" or (missing and value == missing):
         return pd.NaT if field_type == "datetime" else pd.NA
     if field_type == "string":
         return value

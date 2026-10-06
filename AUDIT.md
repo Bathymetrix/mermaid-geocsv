@@ -72,23 +72,35 @@ metadata, and source integrity; the full suite passed with 34 tests.
 data.
 
 **Code:** [Blank-line handling](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:127)
-skips every whitespace-only line.
+skipped every whitespace-only line at audit time. After implementing issue 14,
+empty/whitespace-only lines after the header now reach record-width or field
+conversion checks; empty lines before the header are still skipped.
 
-**Reproduced:** A one-column string record containing three spaces disappears,
-changing both the number of records and subsequent `source_record_index`
-values. Entirely empty lines are also skipped.
+**Reproduced at audit time:** A one-column string record containing three
+spaces disappeared, changing both the number of records and subsequent
+`source_record_index` values. Entirely empty lines were also skipped.
 
 **Reconciliation:**
 
-- [ ] Parse whitespace-only records instead of discarding them.
-- [ ] Define how an entirely empty line represents an empty one-column cell.
-- [ ] Reject incompatible record widths explicitly rather than silently skipping
-  the record.
-- [ ] Verify record counts and source-record indices for whitespace-only and
-  empty records.
+- [x] Send post-header whitespace-only records through field conversion and
+  reject them with a located error, as agreed in finding 14.
+- [x] Treat an entirely empty post-header line as a zero-cell record and reject
+  it against any nonempty header width; do not infer/pad empty cells.
+- [x] Reject incompatible record widths explicitly rather than silently
+  skipping the record.
+- [x] Verify a blank record fails width validation and a whitespace-only field
+  fails conversion without shifting subsequent records.
 
-CSVW's parsing guidance also defaults to retaining blank rows:
-[CSVW parsing guidance](https://www.w3.org/TR/2015/CR-tabular-data-model-20150716/#parsing).
+**Resolution:** Implemented alongside finding 14. An empty line after the
+header has zero cells and fails width validation; it is never expanded to the
+header width. Whitespace-only values in a correctly sized row fail conversion.
+Explicitly empty cells in correctly sized records map to typed missing values.
+
+CSVW's non-normative parsing algorithm defaults `skip blank rows` to false and
+parses a zero-character row as one empty cell. This reader applies GeoCSV's
+fixed-width record policy and rejects that one-cell row when its width does
+not match the header:
+[CSVW parsing guidance](https://www.w3.org/TR/tabular-data-model/#parsing).
 
 ## 3. Valid timezone-free datetimes and dates are rejected
 
@@ -409,26 +421,30 @@ raises `GeoCSVError` in integer, float, and datetime columns. Case-insensitive
 empty field and `nan` represent missing data in every declared type. A blank
 line must not be expanded to match the header: a 16-column missing-data record
 requires 16 cells (for example, 15 commas). Whitespace-only values such as
-`" "` are not automatically missing; preserve them in string columns and reject
-them as invalid numeric or datetime values unless explicitly declared as a
-`field_missing` sentinel. This is distinct from the blank-record issue in
-finding 2 and padded numeric conversion in finding 13.
+`" "` are errors for every declared type, including `string`; an empty field
+encodes missing data. Whitespace-only `field_missing` sentinels are not
+supported. This is distinct from the blank-record issue in finding 2 and padded
+numeric conversion in finding 13.
 
 **Reconciliation:**
 
-- [ ] Convert empty CSV fields, including quoted empty cells, to `pd.NA` for
+- [x] Convert empty CSV fields, including quoted empty cells, to `pd.NA` for
   nullable string, integer, and float columns and `pd.NaT` for datetime columns.
-- [ ] Retain universal case-insensitive `nan` handling and explicit
+- [x] Retain universal case-insensitive `nan` handling and explicit
   `field_missing` sentinel handling.
-- [ ] Enforce width before missing-value conversion; do not pad blank or short
+- [x] Enforce width before missing-value conversion; do not pad blank or short
   records with inferred cells.
-- [ ] Preserve whitespace-only strings and verify that whitespace-only numeric
-  and datetime fields raise errors identifying the source field and line.
-- [ ] Test empty, quoted-empty, whitespace-only, `nan`, and declared-sentinel
-  fields, including a correctly sized all-empty record; verify dtypes, row
-  counts, and source-record indices.
-- [ ] Document the empty-field policy and its distinction from whitespace-only
-  content, and bump the version when implemented.
+- [x] Reject whitespace-only values in every type with errors identifying
+  source field, line, and path.
+- [x] Verify empty and quoted-empty fields across all four declared types,
+  including a correctly sized all-empty record. Existing tests cover `nan` and
+  declared sentinels; verify row count, dtypes, and source-record indices.
+- [x] Document the empty-field policy and distinguish it from whitespace-only
+  content; bump the package version.
+
+**Resolution:** Implemented in 0.3.1. Empty and quoted-empty fields produce
+`pd.NA` in nullable string, integer, and float columns and `pd.NaT` in datetime
+columns. Nonempty whitespace-only fields raise a located error for every type.
 
 ## Verification and completion
 

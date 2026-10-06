@@ -91,15 +91,20 @@ Quoted cells such as `"#Label"` and `"#dataset: hello"` are header or data value
 including in one-column datasets. A line starting with `#` inside a multiline
 quoted cell remains part of that cell. Since 0.3.0, legacy preambles with entire
 comments wrapped in CSV quotes are unsupported; those comments must be written
-with literal leading `#`. Blank and whitespace-only lines are still skipped
-(audit issue 2).
+with literal leading `#`. Blank lines before the header are skipped. After the
+header, an empty record fails the row-width check, and whitespace-only fields
+raise a field-conversion error.
 
 Declared `string`, `float`, `integer`, and `datetime` fields become nullable
 pandas `string`, `Float64`, `Int64`, and UTC datetime columns, respectively.
-Nonmissing datetimes require an explicit timezone. Input `nan` (case-insensitive)
-becomes `pd.NA` in strings, floats, and integers, and `pd.NaT` in datetimes.
-A nonempty per-column `field_missing` declaration also identifies a missing
-value. Other strings, including `NA`, remain literal.
+Empty CSV fields, including quoted empty fields, `nan` (case-insensitive), and
+nonempty per-column `field_missing` sentinels become `pd.NA` or `pd.NaT`
+according to the declared type. A record must contain exactly as many cells as
+the header; a blank line is not expanded into an all-missing record. A
+nonempty whitespace-only cell is an error for every declared type, including
+`string`; use an empty field to encode missing data. Errors include the source
+path, line number, and field name. Nonmissing datetimes require an explicit
+timezone. Other strings, including `NA`, remain literal.
 
 Malformed records or declarations, invalid typed values, and additional
 datasets raise `geocsv.GeoCSVError` (a `ValueError`). The reader preserves row
