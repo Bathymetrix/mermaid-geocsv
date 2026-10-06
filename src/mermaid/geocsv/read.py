@@ -34,15 +34,16 @@ def read(path: str | PathLike[str]) -> pd.DataFrame:
     native pandas missing value for every declared type. Other strings remain
     literal unless a per-column ``field_missing`` is declared.
 
-    Returns a pandas DataFrame indexed by source data position (``row_index``)
-    with immutable GeoCSV metadata at ``frame.attrs["geocsv"]``. The entire
-    dataset is loaded into memory. Raises ``GeoCSVError`` for malformed or
-    unsupported content; filesystem and decoding errors propagate normally.
+    Returns a pandas DataFrame indexed by the file-wide, zero-based data-record
+    position (``source_record_index``), with immutable GeoCSV metadata and the
+    resolved source path at ``frame.attrs["geocsv"]``. The entire dataset is
+    loaded into memory. Raises ``GeoCSVError`` for malformed or unsupported
+    content; filesystem and decoding errors propagate normally.
     """
-    source = Path(path)
+    source = Path(path).resolve()
     with source.open(encoding="utf-8-sig", newline="") as stream:
         try:
-            return _read_dataset(iter(enumerate(stream, start=1)))
+            return _read_dataset(iter(enumerate(stream, start=1)), source)
         except GeoCSVError as exc:
             raise GeoCSVError(f"{source}: {exc}") from exc
 
@@ -114,7 +115,7 @@ def _field_values(
     return [value.strip() for value in values]
 
 
-def _read_dataset(lines: Iterator[tuple[int, str]]) -> pd.DataFrame:
+def _read_dataset(lines: Iterator[tuple[int, str]], source_path: Path) -> pd.DataFrame:
     comments: list[GeoCSVComment] = []
     declarations: dict[str, GeoCSVComment] = {}
     header: list[str] | None = None
@@ -199,8 +200,9 @@ def _read_dataset(lines: Iterator[tuple[int, str]]) -> pd.DataFrame:
         typed_columns[name] = array
 
     frame = pd.DataFrame(typed_columns)
-    frame.index.name = "row_index"
+    frame.index.name = "source_record_index"
     frame.attrs["geocsv"] = GeoCSVMetadata(
+        source_path=source_path,
         comments=tuple(comments),
         field_types=dict(zip(header, field_types)),
         field_units=dict(zip(header, field_units)),

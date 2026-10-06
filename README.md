@@ -20,37 +20,43 @@ python -m pip install .
 from mermaid import geocsv
 import pandas as pd
 
-frame = geocsv.read("P0006.geocsv")
+records = geocsv.read("P0006.geocsv")
 ```
 
-`frame` is the only return value: a typed pandas `DataFrame`. Its columns use
-the exact field names from the GeoCSV header. Its zero-based `row_index`
-preserves source data order, and `StartTime` is a timezone-aware UTC column.
+For a hands-on introduction using the included P0006 file, see the
+[pandas tutorial](TUTORIAL.md).
+
+`records` is the only return value: a typed pandas `DataFrame`. Its columns use
+the exact field names from the GeoCSV header. The zero-based
+`source_record_index` counts data records in file order, excluding headers and
+comments; it is not a physical line number. `StartTime` is a timezone-aware
+UTC column.
 
 ```python
 # Select position-bearing records for a trajectory map.
-trajectory = frame.loc[
-    frame["Latitude"].notna() & frame["Longitude"].notna()
+trajectory = records.loc[
+    records["Latitude"].notna() & records["Longitude"].notna()
 ].sort_values("StartTime")
 
 # Find every record at an exact timestamp. Timestamps need not be unique.
 time = pd.Timestamp("2019-04-23T19:31:14Z")
-matches = frame.loc[
-    frame["StartTime"].eq(time),
+matches = records.loc[
+    records["StartTime"].eq(time),
     ["MethodIdentifier", "DataQuality", "Latitude"],
 ]
 ```
 
 ## GeoCSV metadata
 
-GeoCSV metadata is available on the returned frame:
+GeoCSV metadata is available on the returned DataFrame:
 
 ```python
-metadata = frame.attrs["geocsv"]
+metadata = records.attrs["geocsv"]
 
 metadata.field_types["SampleCount"]
 metadata.field_units["Latitude"]
 metadata.comments
+metadata.source_path
 ```
 
 `metadata` is an immutable `GeoCSVMetadata` value. Its `comments` tuple retains
@@ -58,12 +64,17 @@ each comment's original text (`raw`), physical `line_number`, and parsed
 `key`/`value`, including repeated and unknown keywords. Declaration mappings
 use the exact source header names; `metadata.delimiter` is the decoded CSV
 character. Optional `field_missing` declarations are preserved as well.
+`metadata.source_path` is the resolved absolute path opened by the reader;
+it is reader provenance, not a GeoCSV header declaration.
 
 As of writing, pandas documents [`DataFrame.attrs`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.attrs.html)
 as experimental. We use it
 deliberately because GeoCSV is self-describing: its format metadata belongs
-with its parsed table. Metadata is guaranteed on the freshly parsed frame, but
-may not survive arbitrary pandas transformations or file exports.
+with its parsed table. Metadata, including the source path, is guaranteed on
+the freshly parsed DataFrame, but may not survive arbitrary pandas
+transformations or file exports. For example, concatenating DataFrames from
+different files does not retain their differing `attrs`. If provenance must
+survive a longer workflow, keep the input path separately.
 
 ## Scope
 

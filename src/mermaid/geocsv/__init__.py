@@ -9,10 +9,10 @@
 from .metadata import GeoCSVComment, GeoCSVMetadata
 from .read import GeoCSVError, read
 
-__author__ = "Joel D. Simon"
+__author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "__version__",

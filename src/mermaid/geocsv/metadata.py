@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from types import MappingProxyType
 
 
@@ -24,13 +25,17 @@ class GeoCSVComment:
 
 @dataclass(frozen=True)
 class GeoCSVMetadata:
-    """GeoCSV declarations preserved at ``frame.attrs["geocsv"]``.
+    """Source provenance and GeoCSV declarations at ``frame.attrs["geocsv"]``.
+
+    ``source_path`` is the resolved absolute path opened by the reader, not a
+    declaration found in the file.
 
     Comments retain source order and repeated or unknown keys. Field mappings
     use the exact header names; values are the stripped source declarations.
     The mappings are read-only. ``delimiter`` is the decoded CSV character.
     """
 
+    source_path: Path
     comments: tuple[GeoCSVComment, ...]
     field_types: Mapping[str, str]
     field_units: Mapping[str, str]

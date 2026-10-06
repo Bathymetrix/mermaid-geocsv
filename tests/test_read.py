@@ -22,7 +22,7 @@ def test_declared_types_exact_headers_and_same_time_records() -> None:
         "StartTime", "Latitude", "SampleCount", "MethodIdentifier", "odd field-name"
     ]
     assert isinstance(frame.index, pd.RangeIndex)
-    assert frame.index.name == "row_index"
+    assert frame.index.name == "source_record_index"
     assert list(frame.index) == [0, 1]
     assert str(frame["StartTime"].dt.tz) == "UTC"
     assert frame["Latitude"].dtype == "Float64"
@@ -46,6 +46,7 @@ def test_metadata_preserves_comments_declarations_and_immutability() -> None:
     frame = geocsv.read(FIXTURES / "typed.geocsv")
     metadata = frame.attrs["geocsv"]
     assert isinstance(metadata, geocsv.GeoCSVMetadata)
+    assert metadata.source_path == (FIXTURES / "typed.geocsv").resolve()
     assert metadata.delimiter == ","
     assert metadata.field_types["SampleCount"] == "integer"
     assert metadata.field_units["Latitude"] == "degrees_north"
@@ -66,6 +67,13 @@ def test_metadata_preserves_comments_declarations_and_immutability() -> None:
     # pandas selects/copies attrs during ordinary workflows; read-only metadata
     # must not make these documented README examples fail.
     assert frame.copy().attrs["geocsv"] == metadata
+    assert frame.iloc[:1].attrs["geocsv"].source_path == metadata.source_path
+
+
+def test_source_path_resolves_relative_input(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(FIXTURES)
+    frame = geocsv.read("typed.geocsv")
+    assert frame.attrs["geocsv"].source_path == (FIXTURES / "typed.geocsv").resolve()
 
 
 def test_multiline_csv_and_comments_at_record_boundaries() -> None:
@@ -186,7 +194,7 @@ def test_canonical_p0006_content_metadata_and_source_integrity() -> None:
         "InstrumentDescription", "SampleRate", "SampleCount", "TimeDelay", "TimeCorrection",
     ]
     assert isinstance(frame.index, pd.RangeIndex)
-    assert frame.index.name == "row_index"
+    assert frame.index.name == "source_record_index"
     assert frame["Station"].eq("P0006").all()
     assert str(frame["StartTime"].dt.tz) == "UTC"
     assert frame.iloc[0]["StartTime"] == pd.Timestamp("2018-06-27T19:16:42Z")
@@ -198,6 +206,7 @@ def test_canonical_p0006_content_metadata_and_source_integrity() -> None:
     assert frame.iloc[0]["Location"] is pd.NA
     assert frame["Latitude"].dtype == "Float64"
     metadata = frame.attrs["geocsv"]
+    assert metadata.source_path == CANONICAL.resolve()
     assert len(metadata.comments) == 11
     assert metadata.field_units["WaterPressure"] == "mbar"
     assert metadata.field_types["SampleCount"] == "integer"

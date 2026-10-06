@@ -102,9 +102,10 @@ but do not guarantee that arbitrary pandas transformations or file exports
 retain it.
 
 Store metadata in one immutable, documented `GeoCSVMetadata` value rather than
-scattering package keys through `DataFrame.attrs`. It must preserve ordered raw
-comments (including repeated or unknown keys), field types, field units, the
-delimiter, and any other parsing-relevant source declarations.
+scattering package keys through `DataFrame.attrs`. It preserves the resolved
+absolute source path as reader provenance, ordered raw comments (including
+repeated or unknown keys), field types, field units, the delimiter, and any
+other parsing-relevant source declarations.
 
 The intended experience is:
 
@@ -117,6 +118,7 @@ frame.iloc[17]
 frame.loc[frame["StartTime"].eq(date)]
 frame.loc[frame["StartTime"].eq(date), "Latitude"]
 metadata = frame.attrs["geocsv"]
+metadata.source_path
 metadata.field_types["SampleCount"]
 metadata.field_units["Latitude"]
 ```
@@ -126,11 +128,12 @@ make normalized attribute aliases such as `.latitude` part of the public API.
 They would be fragile for arbitrary GeoCSV headers and duplicate pandas'
 existing access mechanisms.
 
-Use a zero-based, source-data-order `RangeIndex` named `row_index`; it excludes
-comments and the header. Keep `StartTime` as a timezone-aware datetime column,
-not as the index. Start times need not be unique: the canonical file has both a
-pressure and thermocline record at `2019-04-23T19:31:14.000Z`. Keeping time as
-a column preserves every source row and makes time selections return all
+Use a zero-based, file-wide data-record-order `RangeIndex` named
+`source_record_index`; it excludes comments and headers. Keep `StartTime` as a
+timezone-aware datetime column, not as the index. Start times need not be
+unique: the canonical file has both a pressure and thermocline record at
+`2019-04-23T19:31:14.000Z`. Keeping time as a column preserves every source
+row and makes time selections return all
 matching, provenance-bearing rows.
 
 Use pandas' nullable `Int64`, `Float64`, and `string` dtypes for declared
