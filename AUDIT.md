@@ -176,7 +176,7 @@ as empty in `metadata.field_types`; missing or empty units remain empty in
 **Specification:** Section 8 says the dataset marker should be first and
 identify `GeoCSV 2.0`.
 
-**Code:** [Dataset handling](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:139)
+**Code at audit time:** [Dataset handling](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:139)
 accepts any nonempty value, anywhere before the header.
 
 **Reproduced:** `#dataset: NOT_GEOCSV 93.7` is accepted, as is metadata preceding
@@ -273,7 +273,7 @@ rejects repeated schema declarations regardless of whether their values agree.
 **Specification:** Section 6 requires trimming each individual keyword value,
 including list elements.
 
-**Code:** [Comment parsing](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:71)
+**Code at audit time:** [Comment parsing](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:71)
 trims the entire value; only the three explicitly parsed field declarations
 receive per-element trimming.
 
@@ -282,15 +282,19 @@ receive per-element trimming.
 
 **Reconciliation:**
 
-- [ ] Keep `raw` unchanged.
-- [ ] Parse and trim individual values for recognized list-valued attributes
+- [x] Keep `raw` unchanged.
+- [x] Parse and trim individual values for recognized list-valued attributes
   such as `field_long_name` and `field_standard_name`.
-- [ ] Define how those parsed values are exposed without conflating the raw
+- [x] Define how those parsed values are exposed without conflating the raw
   declaration with its list semantics.
-- [ ] Verify equivalent padded declarations produce equivalent parsed values
+- [x] Verify equivalent padded declarations produce equivalent parsed values
   while preserving their different raw source text.
 
-Raw preservation alone does not implement list-value semantics.
+**Resolution:** Immutable `metadata.field_long_names` and
+`metadata.field_standard_names` map source column names to individually trimmed
+values. `metadata.comments` still contains each raw declaration. Repeated
+declarations compare their parsed values, so padding differences do not create
+a false metadata change.
 
 ## 9. `nan` is reserved universally without that rule existing in this specification
 
@@ -307,16 +311,19 @@ value is `ABSENT`.
 
 **Reconciliation:**
 
-- [ ] Record the choice between general GeoCSV sentinel behavior and the already
-  approved universal MERMAID policy.
-- [ ] For general GeoCSV behavior, honor declared sentinels and preserve other
-  strings; the writer can explicitly declare `nan` as a missing value.
-- [ ] If retaining the universal policy, document it as a MERMAID convention and
-  explain its precedence over `field_missing`.
-- [ ] Identify the proposed specification amendment in `TODO.md` as a proposal,
+- [x] Retain the universal MERMAID policy: case-insensitive `nan` is missing in
+  every type, including strings, whether or not another sentinel is declared.
+- [x] Honor each explicitly declared `field_missing` sentinel for its column.
+- [x] Document this policy and its precedence over `field_missing` in the README.
+- [x] Identify the proposed specification amendment in `TODO.md` as a proposal,
   not part of the existing standard.
-- [ ] Verify literal-string and explicit-sentinel behavior under the chosen
+- [x] Verify literal-string and explicit-sentinel behavior under the chosen
   policy, including case variants of `nan`.
+
+**Resolution:** An empty cell, case-insensitive `nan`, or that column's
+declared `field_missing` value is missing. Numeric and datetime cells are
+trimmed before this check; string cells retain whitespace, so `" nan "` is
+literal text. A nonempty whitespace-only cell remains an error in every type.
 
 ## 10. Empty and duplicate column names are rejected without a specification requirement
 
@@ -332,15 +339,14 @@ imposes both requirements.
 
 **Reconciliation:**
 
-- [ ] Decide whether to document nonempty, unique names as restrictions of this
-  reader or support those columns positionally.
-- [ ] If supporting duplicate names, replace name-keyed column storage and
-  resolve metadata alignment by position before removing the guard.
-- [ ] Preserve source header spellings rather than inventing renamed columns.
-- [ ] Test empty and duplicate names under the chosen contract.
+- [x] Retain and document nonempty, unique names as restrictions of this reader.
+- [x] Preserve accepted source header spellings rather than inventing renamed
+  columns.
+- [x] Test empty and duplicate names under the chosen contract.
 
-Removing the check alone would collapse duplicate columns in the current
-dictionaries and make metadata mappings ambiguous.
+**Resolution:** Nonempty, unique names keep column data and field metadata
+unambiguous under the documented name-keyed API. The specification does not
+require this restriction.
 
 ## 11. "Strict" CSV parsing still accepts nonconforming quoting
 
@@ -350,7 +356,7 @@ failing to read valid input.
 **Specification:** Section 16 requires quoting values containing double quotes
 and doubling quotes within quoted cells.
 
-**Code:** [CSV parsing](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:80)
+**Code at audit time:** [CSV parsing](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:80)
 relies on `csv.reader(strict=True)`.
 
 **Reproduced:** `he"llo` is accepted unquoted. A space before `"hello"` is
@@ -359,15 +365,20 @@ section 3 specifies LF or CRLF.
 
 **Reconciliation:**
 
-- [ ] Decide whether the reader promises strict validation or intentionally
-  accepts additional syntax.
-- [ ] If strict validation is intended, validate unquoted quotes and padding
+- [x] Reject malformed CSV rather than repairing it.
+- [x] Validate unquoted quotes and padding
   outside quoted cells while preserving multiline quoted cells.
-- [ ] Explicitly enforce or document acceptance of lone-CR record endings.
-- [ ] If permissive parsing is retained, document the accepted syntax and narrow
-  the claim that malformed input raises an error.
-- [ ] Verify malformed quotations alongside valid doubled quotes, embedded
+- [x] Reject lone-CR line endings; accept LF and CRLF.
+- [x] Verify malformed quotations alongside valid doubled quotes, embedded
   delimiters, and embedded LF/CRLF within quoted cells.
+
+**Resolution:** A streaming quote check rejects malformed header/data cells
+with a source line number. The parser also rejects lone-CR line endings on
+comments, headers, and data. It does not alter the source to repair errors.
+
+**Open edge case:** A final record without a line ending is still accepted.
+Section 3 describes lines ending in LF or CRLF; decide whether an EOF-terminated
+final record should also be rejected.
 
 The quotation rule also appears in
 [CSVW section 7.4](https://www.w3.org/TR/2015/CR-tabular-data-model-20150716/#lines).
@@ -390,19 +401,19 @@ There is no coordinate-name recognition.
   preserving file-wide data-record numbering.
 - [x] Document that `geocsv.read` always returns a list, including for a
   single-dataset file.
-- [ ] Document latitude/longitude recognition as an unimplemented recommendation
-  if it remains downstream.
-- [ ] If recognition is implemented later, preserve column spellings and avoid
-  coordinate transformations or inferred scientific units.
+- [x] Document latitude/longitude recognition as intentionally unimplemented.
+- [x] Preserve source column spellings, coordinate values, and declared units
+  without adding inferred coordinate roles or conversions.
 
-Neither issue requires renaming columns or transforming coordinates.
+**Resolution:** The reader leaves coordinate interpretation to code using the
+DataFrame. This does not affect faithful parsing of source columns or metadata.
 
 ## 13. Typed conversion introduces additional scientific limitations
 
 **Classification:** Data-integrity risks and representation limits beyond
 explicit format rules.
 
-**Code:** [Numeric conversion](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:220)
+**Code at audit time:** [Numeric conversion](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:220)
 and [datetime conversion](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geocsv/read.py:186).
 
 **Reproduced:**
@@ -415,18 +426,23 @@ and [datetime conversion](/Users/jdsimon/programs/mermaid-geocsv/src/mermaid/geo
 
 **Reconciliation:**
 
-- [ ] Reject finite-value overflow explicitly instead of silently returning
+- [x] Reject finite-value overflow explicitly instead of silently returning
   infinity.
-- [ ] Reject unsupported timestamp precision explicitly instead of silently
-  truncating it, or adopt a representation that faithfully retains it.
-- [ ] Document numeric ranges and timestamp precision supported by the chosen
+- [x] Reject timestamp fractions longer than nine digits rather than silently
+  truncating them.
+- [x] Document numeric ranges and timestamp precision supported by the chosen
   pandas types.
-- [ ] Apply a deliberate, consistent whitespace policy before numeric conversion.
-- [ ] Verify overflow, supported/unsupported timestamp precision, integer range
+- [x] Trim numeric and datetime cells before conversion; preserve whitespace
+  in string cells, and reject whitespace-only cells in every type.
+- [x] Verify overflow, supported/unsupported timestamp precision, integer range
   boundaries, and padded numeric values.
 
-Full support for broader ranges can remain outside scope, provided errors and
-limits are clear.
+**Resolution:** Finite float overflow and nonzero values that underflow to zero
+raise located errors; explicit infinity remains representable. Integers use
+nullable signed Int64. Timestamps support at most nine fractional digits.
+Broader numeric ranges and timestamp precision remain outside scope.
+Pandas also accepts a space between date and time; the precision check covers
+that spelling, but whether to accept it as GeoCSV ISO 8601 remains open.
 
 ## 14. Empty fields do not become typed missing values
 
@@ -475,19 +491,24 @@ above. The existing tests establish current behavior; several explicitly
 assert restrictions identified in this audit, so passing them does not
 establish full specification compliance.
 
-- [ ] Record an explicit resolution for every finding: fix, accepted documented
+- [x] Record an explicit resolution for every finding: fix, accepted documented
   limitation, retained MERMAID policy, or deferred feature.
-- [ ] Replace existing test expectations where the chosen resolution changes the
+- [x] Replace existing test expectations where the chosen resolution changes the
   intended behavior.
-- [ ] Add focused specification examples and regression tests, prioritizing the
+- [x] Add focused specification examples and regression tests, prioritizing the
   two record-loss cases.
-- [ ] Run the relevant focused tests, then the full suite for implemented
+- [x] Run the relevant focused tests, then the full suite for implemented
   behavioral changes.
-- [ ] Verify the canonical P0006 data, dtypes, row alignment, source-record
+- [x] Verify the canonical P0006 data, dtypes, row alignment, source-record
   indices, and provenance after applicable changes.
-- [ ] Update README, tutorial, docstrings, and project instructions wherever
+- [x] Update README, tutorial, docstrings, and project instructions wherever
   public contracts or supported semantics change.
-- [ ] Bump the package to an appropriate pre-1.0 version for public behavior
+- [x] Bump the package to an appropriate pre-1.0 version for public behavior
   changes. This audit document alone does not require a version bump.
-- [ ] Keep version 1.0.0, tags, commits, pushes, and publication subject to the
+- [x] Keep version 1.0.0, tags, commits, pushes, and publication subject to the
   user's explicit instructions.
+
+Current verification: version 0.7.0, 82 tests passed, including the canonical
+P0006 checks. Finding 5's version and first-line placement decisions remain
+explicitly open by prior agreement. The newly identified final-line and
+space-separated datetime questions are recorded above.

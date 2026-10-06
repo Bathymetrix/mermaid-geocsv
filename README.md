@@ -60,6 +60,8 @@ metadata = records.attrs["geocsv"]
 
 metadata.field_types["SampleCount"]
 metadata.field_units["Latitude"]
+metadata.field_long_names["Latitude"]
+metadata.field_standard_names["Latitude"]
 metadata.comments
 metadata.source_path
 ```
@@ -68,7 +70,9 @@ metadata.source_path
 each comment's original text (`raw`), physical `line_number`, and parsed
 `key`/`value`, including repeated and unknown keywords. Declaration mappings
 use the exact source header names; `metadata.delimiter` is the decoded CSV
-character. Optional `field_missing` declarations are preserved as well.
+character. `field_long_names` and `field_standard_names` contain individually
+trimmed values aligned with the source columns; absent attributes have empty
+values. Optional `field_missing` declarations are preserved as well.
 `metadata.source_path` is the resolved absolute path opened by the reader;
 it is reader provenance, not a GeoCSV header declaration.
 
@@ -88,6 +92,10 @@ per dataset. It requires each `dataset` declaration's value to contain `GeoCSV`
 (case-insensitively); versions and marker placement are not currently
 validated. `field_type` and `field_unit` are optional, and the delimiter
 defaults to comma. Comments may also appear between data records.
+Header names must be nonempty and unique so source columns and their metadata
+remain unambiguous. This is a restriction of this reader, not a v2.0.4
+requirement. The reader preserves column spellings and does not assign
+latitude/longitude roles from column names.
 Comments and keyword declarations begin with a literal `#` at a record
 boundary, with no preceding whitespace. Declaration syntax permits whitespace
 after `#` and around `:`, as in `# field_type : string`. Raw comments and parsed
@@ -98,9 +106,11 @@ Quoted cells such as `"#Label"` and `"#dataset: hello"` are header or data value
 including in one-column datasets. A line starting with `#` inside a multiline
 quoted cell remains part of that cell. Since 0.3.0, legacy preambles with entire
 comments wrapped in CSV quotes are unsupported; those comments must be written
-with literal leading `#`. Blank lines before the header are skipped. After the
-header, an empty record fails the row-width check, and whitespace-only fields
-raise a field-conversion error.
+with literal leading `#`. Unquoted double quotes, whitespace immediately
+outside quotation marks, and lone-CR line endings raise errors. Valid doubled
+quotes, embedded delimiters, and quoted multiline cells remain supported. Blank lines before
+the header are skipped. After the header, an empty record fails the row-width
+check, and whitespace-only fields raise a field-conversion error.
 
 Declared `string`, `float`, `integer`, and `datetime` fields become nullable
 pandas `string`, `Float64`, `Int64`, and datetime columns, respectively. An
@@ -109,17 +119,30 @@ omitted or empty `field_type` entry is represented as a string column; its
 declare the type. An omitted or empty `field_unit` entry remains empty in
 `metadata.field_units`; the reader never invents a unit. Unknown nonempty type
 names raise an error.
-Empty CSV fields, including quoted empty fields, `nan` (case-insensitive), and
+Empty CSV fields, including quoted empty fields, case-insensitive `nan`, and
 nonempty per-column `field_missing` sentinels become `pd.NA` or `pd.NaT`
-according to the declared type. A record must contain exactly as many cells as
+according to the declared type. This universal `nan` rule is a MERMAID policy,
+not a requirement of GeoCSV v2.0.4; it applies even to string columns with a
+different declared sentinel. A record must contain exactly as many cells as
 the header; a blank line is not expanded into an all-missing record. A
-nonempty whitespace-only cell is an error for every declared type, including
-`string`; use an empty field to encode missing data. Errors include the source
-path, line number, and field name. Datetimes must use ISO 8601; date-only forms
-are interpreted as midnight without a timezone. Other strings, including
-`NA`, remain literal.
+nonempty whitespace-only cell is an error for every type. Leading and trailing
+whitespace is trimmed from numeric and datetime cells before checking missing
+markers and converting values. String cells retain their whitespace, so
+`" nan "` remains literal text while `"nan"` is missing. Declared sentinels
+match the resulting cell value exactly. Other strings, including `NA`, remain
+literal.
 
-Malformed records or declarations, invalid typed values, and additional
-datasets raise `geocsv.GeoCSVError` (a `ValueError`). The reader preserves row
-order and duplicate timestamps. It does not derive scientific quantities,
-interpolate locations, or choose between same-time records.
+Integers use pandas' nullable signed 64-bit dtype and must fall between
+−2⁶³ and 2⁶³−1. Finite float values that overflow to infinity or underflow to
+zero are rejected; an explicit infinity token is retained. Datetimes must use
+ISO 8601 and at most nine fractional digits, pandas' nanosecond precision;
+date-only forms become midnight without a timezone. Values that cannot be
+represented within these limits raise errors rather than being silently
+changed. Other finite decimal values have the usual binary floating-point
+rounding of pandas `Float64`. Typed-field errors include the source path, line
+number, and field name; CSV syntax errors include the path and line number.
+
+Malformed records or declarations and invalid typed values raise
+`geocsv.GeoCSVError` (a `ValueError`). The reader preserves row order and
+duplicate timestamps. It does not derive scientific quantities, interpolate
+locations, or choose between same-time records.

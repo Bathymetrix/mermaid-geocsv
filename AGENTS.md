@@ -53,18 +53,19 @@ immediate public interface, not premature shared cross-repository namespace
 infrastructure.
 
 The intended public Python API is deliberately small and must be documented.
-`geocsv.read(...)` returns a typed pandas `DataFrame` directly. Preserve
-GeoCSV-specific metadata under the single key `frame.attrs["geocsv"]` as one
+`geocsv.read(...)` returns a list of typed pandas `DataFrame` objects, one per
+dataset, including for a single-dataset file. Preserve GeoCSV-specific
+metadata under the single key `frame.attrs["geocsv"]` on each table as one
 immutable, documented metadata value, including the resolved absolute path
 opened by the reader as source provenance. This deliberately uses pandas'
-experimental `attrs` facility: guarantee this metadata on the freshly parsed
-frame, but not after arbitrary pandas transformations or file exports.
+experimental `attrs` facility: guarantee this metadata on freshly parsed
+frames, but not after arbitrary pandas transformations or file exports.
 
 Keep original GeoCSV header spellings as the DataFrame column labels. Preserve
 file-wide data-record order with a zero-based `RangeIndex` named
 `source_record_index`, excluding headers and comments, and keep
-timestamps as a timezone-aware `StartTime` column rather than an index because
-source timestamps need not be unique.
+timestamps as a `StartTime` column rather than an index because source
+timestamps need not be unique. Preserve their source timezone when present.
 
 Do not expose parser internals, implementation modules, or convenience
 wrappers as stable interfaces merely because tests use them. Do not create

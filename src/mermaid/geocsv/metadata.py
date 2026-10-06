@@ -33,21 +33,29 @@ class GeoCSVMetadata:
     Comments retain source order and repeated or unknown keys. Field mappings
     use the exact header names; values are the stripped source declarations.
     An empty ``field_types`` value means the type was undeclared and the reader
-    represented that column as a string. Empty ``field_units`` values mean the
-    unit was undeclared. The mappings are read-only. ``delimiter`` is the
-    decoded CSV character.
+    represented that column as a string. Empty values in the other field
+    mappings mean those attributes were undeclared or empty. The mappings are
+    read-only. ``delimiter`` is the decoded CSV character.
     """
 
     source_path: Path
     comments: tuple[GeoCSVComment, ...]
     field_types: Mapping[str, str]
     field_units: Mapping[str, str]
+    field_long_names: Mapping[str, str]
+    field_standard_names: Mapping[str, str]
     field_missing: Mapping[str, str]
     delimiter: str
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "comments", tuple(self.comments))
-        for name in ("field_types", "field_units", "field_missing"):
+        for name in (
+            "field_types",
+            "field_units",
+            "field_long_names",
+            "field_standard_names",
+            "field_missing",
+        ):
             object.__setattr__(self, name, MappingProxyType(dict(getattr(self, name))))
 
     def __deepcopy__(self, memo: dict) -> GeoCSVMetadata:

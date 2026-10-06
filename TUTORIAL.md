@@ -124,6 +124,10 @@ metadata.source_path
 
 `source_path` is the full, resolved path of the file opened by the reader. It
 records where the data came from; it is not a field declared in the GeoCSV.
+Optional `metadata.field_long_names` and `metadata.field_standard_names` map
+source column names to individually trimmed descriptions; P0006 does not
+declare them, so their values are empty. The reader preserves coordinate
+columns as written and does not infer latitude or longitude roles.
 The fresh parsed DataFrame has this metadata. If you need it later, keep
 `metadata` separately: pandas does not guarantee `attrs` through arbitrary
 transformations or exports. In particular, concatenating tables from
