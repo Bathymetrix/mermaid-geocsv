@@ -146,6 +146,104 @@ def test_explicit_empty_field_attribute_entries_match_header_width(tmp_path: Pat
     assert metadata.field_long_names == {"A": "", "B": ""}
 
 
+@pytest.mark.parametrize(
+    "delimiter, separator, empty_position",
+    [
+        (r"\t", "\t", "first"),
+        (r"\t", "\t", "last"),
+        (r"\s", " ", "first"),
+        (r"\s", " ", "last"),
+    ],
+)
+def test_quoted_empty_edge_metadata_entries_with_whitespace_delimiters(
+    tmp_path: Path, delimiter: str, separator: str, empty_position: str,
+) -> None:
+    empty = '""'
+    if empty_position == "first":
+        field_type = f"{empty}{separator}integer"
+        field_unit = f"{empty}{separator}counts"
+        long_name = f'{empty}{separator}"Sample count"'
+        standard_name = f"{empty}{separator}sample_count"
+        field_missing = f"{empty}{separator}missing"
+        row = f"station{separator}missing"
+    else:
+        field_type = f"integer{separator}{empty}"
+        field_unit = f"counts{separator}{empty}"
+        long_name = f'"Sample count"{separator}{empty}'
+        standard_name = f"sample_count{separator}{empty}"
+        field_missing = f"-1{separator}{empty}"
+        row = f"-1{separator}station"
+
+    source = tmp_path / "quoted_empty_metadata.geocsv"
+    source.write_text(
+        f"#dataset: GeoCSV\n#delimiter: {delimiter}\n"
+        f"#field_type:{field_type}\n#field_unit:{field_unit}\n"
+        f"#field_long_name:{long_name}\n"
+        f"#field_standard_name:{standard_name}\n"
+        f"#field_missing:{field_missing}\nA{separator}B\n{row}\n",
+        encoding="utf-8",
+    )
+    frame = read_one(source)
+    metadata = frame.attrs["geocsv"]
+    if empty_position == "first":
+        assert frame["A"].dtype == "string"
+        assert frame["A"].iloc[0] == "station"
+        assert frame["B"].dtype == "Int64"
+        assert frame["B"].iloc[0] is pd.NA
+        expected_types = {"A": "", "B": "integer"}
+        expected_units = {"A": "", "B": "counts"}
+        expected_missing = {"A": "", "B": "missing"}
+        expected_long_names = {"A": "", "B": "Sample count"}
+        expected_standard_names = {"A": "", "B": "sample_count"}
+    else:
+        assert frame["A"].dtype == "Int64"
+        assert frame["A"].iloc[0] is pd.NA
+        assert frame["B"].dtype == "string"
+        assert frame["B"].iloc[0] == "station"
+        expected_types = {"A": "integer", "B": ""}
+        expected_units = {"A": "counts", "B": ""}
+        expected_missing = {"A": "-1", "B": ""}
+        expected_long_names = {"A": "Sample count", "B": ""}
+        expected_standard_names = {"A": "sample_count", "B": ""}
+
+    assert metadata.field_types == expected_types
+    assert metadata.field_units == expected_units
+    assert metadata.field_missing == expected_missing
+    assert metadata.field_long_names == expected_long_names
+    assert metadata.field_standard_names == expected_standard_names
+    assert frame.index.equals(pd.RangeIndex(1, name="source_record_index"))
+    assert metadata.source_path == source.resolve()
+
+
+@pytest.mark.parametrize("delimiter, separator", [(r"\t", "\t"), (r"\s", " ")])
+@pytest.mark.parametrize("entry", ["", "integer", "integer "])
+def test_unquoted_empty_edge_entries_are_trimmed_as_padding(
+    tmp_path: Path, delimiter: str, separator: str, entry: str,
+) -> None:
+    source = tmp_path / "unquoted_empty_edge.geocsv"
+    source.write_text(
+        f"#dataset: GeoCSV\n#delimiter: {delimiter}\n"
+        f"#field_type: {entry}\nA{separator}B\nx{separator}1\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(geocsv.GeoCSVError, match="field_type has 1 fields; header has 2"):
+        geocsv.read(source)
+
+
+@pytest.mark.parametrize("quote", ["'", "`"])
+def test_single_quotes_and_backticks_do_not_quote_empty_metadata_entries(
+    tmp_path: Path, quote: str,
+) -> None:
+    source = tmp_path / "non_double_quote_metadata.geocsv"
+    source.write_text(
+        f"#dataset: GeoCSV\n#delimiter: \\t\n"
+        f"#field_type:{quote}{quote}\tinteger\nA\tB\nx\t1\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(geocsv.GeoCSVError, match="unsupported field type"):
+        geocsv.read(source)
+
+
 def test_source_path_resolves_relative_input(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(FIXTURES)
     frame = read_one("typed.geocsv")
@@ -687,8 +785,8 @@ def test_nat_tokens_are_case_insensitive_datetime_missing_values(
     assert frame["Time"].iloc[0] is pd.NaT
     assert frame.index.equals(pd.RangeIndex(1, name="source_record_index"))
     assert frame.attrs["geocsv"].source_path == source.resolve()
-    expected_sentinel = "ABSENT" if declaration else ""
-    assert frame.attrs["geocsv"].field_missing == {"Time": expected_sentinel}
+    expected_sentinels = {"Time": "ABSENT"} if declaration else {}
+    assert frame.attrs["geocsv"].field_missing == expected_sentinels
 
 
 def test_explicit_nat_sentinel_preserves_typed_missing_and_string_values(

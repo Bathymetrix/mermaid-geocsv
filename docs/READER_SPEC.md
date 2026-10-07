@@ -100,6 +100,13 @@ Every present `field_*` declaration must have exactly one entry per header
 column. For `A,B`, `#field_type: ,` declares two empty type entries, while bare
 `#field_type:` has only one and raises an error. The declaration may be omitted
 entirely when no type is specified.
+For space- or tab-delimited metadata lists, outer whitespace around a
+declaration is trimmed. Quote an empty first or last list entry with ASCII
+double quotes (`""`) so it is not mistaken for padding; for example,
+`#field_type:"" integer` with a space delimiter places an undeclared type in
+the first column and `integer` in the second. With a tab delimiter, put an
+actual tab between `""` and `integer`. Single quotes and backticks do not quote
+metadata values.
 
 Quoted cells such as `"#Label"` and `"#dataset: hello"` are header or data values,
 including in one-column datasets. A line starting with `#` inside a multiline

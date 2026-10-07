@@ -156,6 +156,9 @@ def _decode_delimiter(value: str) -> str:
 def _field_values(
     declaration: GeoCSVComment, delimiter: str, width: int
 ) -> list[str]:
+    # _comment strips outer whitespace. With space or tab delimiters, quote an
+    # empty edge entry as "" so its separator cannot be mistaken for padding.
+    # Double quotes are the only quoting syntax in these metadata lists.
     values = []
     cell: list[str] = []
     state = "start"
