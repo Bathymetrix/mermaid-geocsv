@@ -674,21 +674,21 @@ def test_nonpadded_times_cannot_bypass_fraction_precision_check(
 
 @pytest.mark.parametrize("value", ["NaT", "nat", "NAT"])
 @pytest.mark.parametrize("declaration", ["", "#field_missing: ABSENT\n"])
-def test_undeclared_nat_tokens_are_rejected(
+def test_nat_tokens_are_case_insensitive_datetime_missing_values(
     tmp_path: Path, value: str, declaration: str,
 ) -> None:
-    source = tmp_path / "undeclared_nat.geocsv"
+    source = tmp_path / "datetime_nat.geocsv"
     source.write_text(
         f"#dataset: GeoCSV\n#field_type: datetime\n{declaration}Time\n{value}\n",
         encoding="utf-8",
     )
-    line_number = 5 if declaration else 4
-    with pytest.raises(
-        geocsv.GeoCSVError,
-        match=rf"line {line_number}, field 'Time': .*NaT must match field_missing",
-    ) as error:
-        geocsv.read(source)
-    assert str(source.resolve()) in str(error.value)
+    frame = read_one(source)
+    assert frame.shape == (1, 1)
+    assert frame["Time"].iloc[0] is pd.NaT
+    assert frame.index.equals(pd.RangeIndex(1, name="source_record_index"))
+    assert frame.attrs["geocsv"].source_path == source.resolve()
+    expected_sentinel = "ABSENT" if declaration else ""
+    assert frame.attrs["geocsv"].field_missing == {"Time": expected_sentinel}
 
 
 def test_explicit_nat_sentinel_preserves_typed_missing_and_string_values(

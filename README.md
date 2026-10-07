@@ -9,6 +9,8 @@ from mermaid import geocsv
 
 It preserves source column names, record order, timestamps and their timezones,
 and GeoCSV metadata, including units, comments, and the source file path.
+Empty fields and type-appropriate missing markers are represented as pandas
+missing values.
 
 ## Install
 

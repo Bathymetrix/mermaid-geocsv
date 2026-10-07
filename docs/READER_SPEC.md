@@ -130,8 +130,10 @@ whitespace is trimmed from numeric and datetime cells before checking missing
 markers and converting values. String cells retain their whitespace, so
 `" nan "` remains literal text while `"nan"` is missing. Declared sentinels
 match the resulting cell value exactly. Other strings, including `NA`, remain
-literal. Datetime `NaT` tokens are rejected unless they match that column's
-explicit `field_missing` sentinel.
+literal. In datetime columns, case-insensitive `NaT` is also a default missing
+marker. In string columns, `NaT` remains literal text unless it matches an
+explicit `field_missing` sentinel. Numeric columns reject it as an invalid
+value unless it matches their declared sentinel.
 
 Integers use pandas' nullable signed 64-bit dtype and must fall between
 −2⁶³ and 2⁶³−1. Finite float values that overflow to infinity or underflow to

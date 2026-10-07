@@ -60,8 +60,8 @@ def read(path: str | PathLike[str]) -> list[pd.DataFrame]:
     ``nan`` (case-insensitive) becomes the native pandas missing value for
     every declared type. Numeric and datetime cells are trimmed; string cells
     retain their whitespace. A per-column ``field_missing`` sentinel also
-    denotes missing data. ``NaT`` tokens are invalid unless they match that
-    column's declared sentinel.
+    denotes missing data. In datetime columns, ``NaT`` (case-insensitive) also
+    denotes missing data by default.
     Comments and keyword declarations begin with a literal ``#`` at record
     boundaries. Quoted cells beginning with ``#`` are header or data values;
     lines inside multiline quoted cells remain cell content.
@@ -420,6 +420,8 @@ def _convert_value(value: str, field_type: str, missing: str) -> object:
         value = value.strip()
     if value == "" or value.lower() == "nan" or (missing and value == missing):
         return pd.NaT if field_type == "datetime" else pd.NA
+    if field_type == "datetime" and value.lower() == "nat":
+        return pd.NaT
     if field_type == "string":
         return value
     if field_type == "float":
@@ -440,8 +442,6 @@ def _convert_value(value: str, field_type: str, missing: str) -> object:
         if not -(2**63) <= integer < 2**63:
             raise ValueError("outside the nullable Int64 range")
         return integer
-    if value.lower() == "nat":
-        raise ValueError("NaT must match field_missing to denote missing data")
     match = _TIME_FRACTION.search(value)
     if match and len(match.group(1)) > 9:
         raise ValueError("datetime has more than nine fractional digits")
