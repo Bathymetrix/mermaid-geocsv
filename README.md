@@ -19,6 +19,11 @@ Pass `datetime_timezone="UTC"` (or another timezone accepted by pandas) to
 convert timezone-aware datetime columns. In that mode every non-missing value
 must include a timezone; naive timestamps raise an error.
 
+Datetime values use extended ISO calendar dates (`YYYY-MM-DD`), optionally
+with a time, up to nine fractional-second digits, and `Z` or a numeric UTC
+offset. The reader rejects other spellings instead of relying on pandas to
+normalize them.
+
 ## Install
 
 Requires Python 3.12 or newer. From the repository root:

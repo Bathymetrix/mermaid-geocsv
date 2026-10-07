@@ -159,14 +159,16 @@ value unless it matches their declared sentinel.
 
 Integers use pandas' nullable signed 64-bit dtype and must fall between
 −2⁶³ and 2⁶³−1. Finite float values that overflow to infinity or underflow to
-zero are rejected; an explicit infinity token is retained. Datetimes must use
-ISO 8601 and at most nine fractional digits, pandas' nanosecond precision.
+zero are rejected; an explicit infinity token is retained. Datetime spellings
+use an extended calendar date (`YYYY-MM-DD`), optionally followed by `HH:MM`,
+optional seconds, a period fraction of one to nine digits, and an optional
+timezone: `Z`, `±HH`, `±HHMM`, or `±HH:MM`. Other ISO 8601 forms, including
+alternate date separators and unpadded components, are rejected rather than
+normalized by pandas. `T` is strongly recommended between date and time; a
+space is also accepted. Date-only forms become midnight without a timezone.
 Datetime storage resolution depends on the pandas version and parsed values;
-it does not establish measurement accuracy.
-Use `T` between date and time when writing GeoCSV; it is strongly recommended
-by the specification, though this reader also accepts a space. Date-only forms
-become midnight without a timezone. Values that cannot be represented within
-these limits raise errors rather than being silently
+it does not establish measurement accuracy. Values that cannot be represented
+within these limits raise errors rather than being silently
 changed. Other finite decimal values have the usual binary floating-point
 rounding of pandas `Float64`. Typed-field errors include the source path, line
 number, and field name; CSV syntax errors include the path and line number.

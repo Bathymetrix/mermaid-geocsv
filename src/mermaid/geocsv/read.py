@@ -43,6 +43,14 @@ _KNOWN_KEYWORDS = {
 _FIELD_TYPES = {"string", "datetime", "float", "integer"}
 _FIELD_ATTRIBUTE_KEYS = {key for key in _KNOWN_KEYWORDS if key.startswith("field_")}
 _INTEGER = re.compile(r"[+-]?[0-9]+$")
+# Supported datetime spelling: extended calendar date, optionally followed by
+# time, fractional seconds, and an ISO timezone designator.
+_ISO_DATETIME = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}"
+    r"(?:[Tt ][0-9]{2}:[0-9]{2}"
+    r"(?::[0-9]{2}(?:\.[0-9]{1,9})?)?"
+    r"(?:[Zz]|[+-][0-9]{2}(?::?[0-9]{2})?)?)?\Z"
+)
 # Include nonpadded time components accepted by pandas so they cannot bypass
 # the precision check. This does not define the supported datetime syntax.
 _TIME_FRACTION = re.compile(r"[Tt ][0-9]+(?::[0-9]+){0,2}[.,]([0-9]+)")
@@ -56,9 +64,11 @@ def read(
     Requires ``dataset`` before the header. ``field_type`` and ``field_unit``
     are optional; undeclared field types are read as strings, and undeclared
     units remain empty. The delimiter defaults to comma. Source field names and
-    data order are unchanged. Datetimes follow ISO 8601 with at most nine
-    fractional digits; ``T`` is strongly recommended between date and time,
-    though a space is accepted. By default, explicit timezones are preserved
+    data order are unchanged. Datetimes use extended calendar dates
+    (``YYYY-MM-DD``), optionally with ``HH:MM``, seconds, a period fraction of
+    at most nine digits, and ``Z`` or a numeric offset (``±HH``, ``±HHMM``, or
+    ``±HH:MM``). ``T`` is strongly recommended between date and time, though a
+    space is accepted. By default, explicit timezones are preserved
     and timezone-free values remain naive. Mixed timezone entries are retained
     as objects and may produce a pandas warning or become unsupported in a
     future pandas version. Set ``datetime_timezone`` to a timezone accepted by
@@ -481,4 +491,6 @@ def _convert_value(value: str, field_type: str, missing: str) -> object:
     match = _TIME_FRACTION.search(value)
     if match and len(match.group(1)) > 9:
         raise ValueError("datetime has more than nine fractional digits")
+    if not _ISO_DATETIME.fullmatch(value):
+        raise ValueError("expected a supported ISO 8601 datetime spelling")
     return value

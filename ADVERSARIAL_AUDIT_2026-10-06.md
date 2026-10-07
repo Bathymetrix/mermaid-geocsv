@@ -333,6 +333,14 @@ The existing tested UTC dtype for empty/all-missing datetime columns was
 treated as a representation policy, not evidence that nonmissing source times
 were reinterpreted.
 
-No fixes were made. Address F1 first; F2 and F4 require deliberate datetime
-validation, F3 requires an explicit whitespace-list policy, and F5 is a
-focused verification/documentation correction.
+No fixes were made during the read-only audit. Follow-up implementation status
+is recorded below.
+
+## Follow-up — 2026-10-07
+
+F1, F2, F3, and F5 have since been addressed. F4 is closed in package 0.9.0:
+the reader now validates the documented extended-calendar datetime subset
+before calling pandas, and tests reject all five reproduced nonconforming
+spellings. The README and reader specification document the supported forms.
+Timezone parsing and conversion remain delegated to pandas. Verification after
+the F4 change: `.venv/bin/pytest -q` reports **125 passed** on pandas 3.0.6.
