@@ -1,0 +1,5 @@
+# dataset: GeoCSV 2.0
+# delimiter: |
+EventID|Time|Latitude|Longitude|Depth/km|Author|Catalog|Contributor|ContributorID|MagType|Magnitude|MagAuthor|EventLocationName
+3954686|2010-03-01T06:27:32|38.251|69.4919|12.0|ISC|ISC|ISC|00301439|mb|4.3| NNC| TAJIKISTAN
+3954685|2010-03-01T06:25:56|37.26|138.91|9.0|JMA|ISC|ISC|15237974|mb|0.5|JMA| NEAR WEST COAST OF HONSHU, JAPAN
