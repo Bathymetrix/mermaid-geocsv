@@ -42,7 +42,9 @@ _KNOWN_KEYWORDS = {
 _FIELD_TYPES = {"string", "datetime", "float", "integer"}
 _FIELD_ATTRIBUTE_KEYS = {key for key in _KNOWN_KEYWORDS if key.startswith("field_")}
 _INTEGER = re.compile(r"[+-]?[0-9]+$")
-_TIME_FRACTION = re.compile(r"[Tt ]\d{2}(?::?\d{2}){0,2}[.,](\d+)")
+# Include nonpadded time components accepted by pandas so they cannot bypass
+# the precision check. This does not define the supported datetime syntax.
+_TIME_FRACTION = re.compile(r"[Tt ][0-9]+(?::[0-9]+){0,2}[.,]([0-9]+)")
 
 
 def read(path: str | PathLike[str]) -> list[pd.DataFrame]:
@@ -58,7 +60,8 @@ def read(path: str | PathLike[str]) -> list[pd.DataFrame]:
     ``nan`` (case-insensitive) becomes the native pandas missing value for
     every declared type. Numeric and datetime cells are trimmed; string cells
     retain their whitespace. A per-column ``field_missing`` sentinel also
-    denotes missing data.
+    denotes missing data. ``NaT`` tokens are invalid unless they match that
+    column's declared sentinel.
     Comments and keyword declarations begin with a literal ``#`` at record
     boundaries. Quoted cells beginning with ``#`` are header or data values;
     lines inside multiline quoted cells remain cell content.
@@ -437,6 +440,8 @@ def _convert_value(value: str, field_type: str, missing: str) -> object:
         if not -(2**63) <= integer < 2**63:
             raise ValueError("outside the nullable Int64 range")
         return integer
+    if value.lower() == "nat":
+        raise ValueError("NaT must match field_missing to denote missing data")
     match = _TIME_FRACTION.search(value)
     if match and len(match.group(1)) > 9:
         raise ValueError("datetime has more than nine fractional digits")

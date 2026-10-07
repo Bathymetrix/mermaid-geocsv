@@ -419,7 +419,8 @@ def test_optional_field_type_and_unit_declarations(
     assert metadata.field_types == expected_types
     assert metadata.field_units == expected_units
     if "Time" in expected_types:
-        assert frame["Time"].dtype == "datetime64[us]"
+        assert pd.api.types.is_datetime64_dtype(frame["Time"].dtype)
+        assert frame["Time"].dt.tz is None
         assert frame["Time"].iloc[0] == pd.Timestamp("2011-08-18T00:00:00")
         assert frame["Station"].dtype == "string"
         assert frame["Latitude"].dtype == "Float64"
@@ -644,6 +645,71 @@ def test_invalid_values_name_the_source_field_and_line(
     )
     with pytest.raises(geocsv.GeoCSVError, match="line 5, field 'CustomField'"):
         read_one(source)
+
+
+@pytest.mark.parametrize(
+    "timestamp",
+    [
+        "2025-01-01T1:00:00.123456789012",
+        "2025-01-01T12:1:00.123456789012",
+        "2025-01-01T12:00:1.123456789012",
+        "2025-01-01 1:00:00.123456789012",
+    ],
+)
+def test_nonpadded_times_cannot_bypass_fraction_precision_check(
+    tmp_path: Path, timestamp: str,
+) -> None:
+    source = tmp_path / "excess_precision.geocsv"
+    source.write_text(
+        f"#dataset: GeoCSV\n#field_type: datetime\nTime\n{timestamp}\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(
+        geocsv.GeoCSVError,
+        match=r"line 4, field 'Time': .*more than nine fractional digits",
+    ) as error:
+        geocsv.read(source)
+    assert str(source.resolve()) in str(error.value)
+
+
+@pytest.mark.parametrize("value", ["NaT", "nat", "NAT"])
+@pytest.mark.parametrize("declaration", ["", "#field_missing: ABSENT\n"])
+def test_undeclared_nat_tokens_are_rejected(
+    tmp_path: Path, value: str, declaration: str,
+) -> None:
+    source = tmp_path / "undeclared_nat.geocsv"
+    source.write_text(
+        f"#dataset: GeoCSV\n#field_type: datetime\n{declaration}Time\n{value}\n",
+        encoding="utf-8",
+    )
+    line_number = 5 if declaration else 4
+    with pytest.raises(
+        geocsv.GeoCSVError,
+        match=rf"line {line_number}, field 'Time': .*NaT must match field_missing",
+    ) as error:
+        geocsv.read(source)
+    assert str(source.resolve()) in str(error.value)
+
+
+def test_explicit_nat_sentinel_preserves_typed_missing_and_string_values(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "declared_nat.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#field_type: datetime,string\n#field_missing: NaT,\n"
+        "Time,Label\nNaT,NaT\n2025-01-01T00:00:00Z,nat\n",
+        encoding="utf-8",
+    )
+    frame = read_one(source)
+    assert isinstance(frame["Time"].dtype, pd.DatetimeTZDtype)
+    assert str(frame["Time"].dt.tz) == "UTC"
+    assert frame["Time"].iloc[0] is pd.NaT
+    assert frame["Time"].iloc[1] == pd.Timestamp("2025-01-01T00:00:00Z")
+    assert frame["Label"].dtype == "string"
+    assert frame["Label"].tolist() == ["NaT", "nat"]
+    assert frame.index.equals(pd.RangeIndex(2, name="source_record_index"))
+    assert frame.attrs["geocsv"].field_missing == {"Time": "NaT", "Label": ""}
+    assert frame.attrs["geocsv"].source_path == source.resolve()
 
 
 def test_header_only_dataset_is_typed(tmp_path: Path) -> None:

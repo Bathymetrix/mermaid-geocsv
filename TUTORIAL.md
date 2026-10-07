@@ -67,9 +67,10 @@ uses a row's current position in the table.
 `StartTime` is a data column, rather than the index. Multiple records can
 have the same timestamp and still have distinct `source_record_index` labels.
 In this P0006 file, every timestamp has an explicit UTC timezone, so the column
-has dtype `datetime64[us, UTC]`. Microsecond storage resolution does not
-establish microsecond measurement accuracy. In other GeoCSV files, timezone-free
-values remain naive; mixed naive and zoned values are preserved as `Timestamp`
+has a timezone-aware datetime dtype. Its storage resolution depends on the
+pandas version and parsed values; it does not establish measurement accuracy.
+In other GeoCSV files, timezone-free values remain naive; mixed naive and zoned
+values are preserved as `Timestamp`
 objects in an `object` column.
 
 One column name gives a one-dimensional pandas `Series`; a list of names gives
