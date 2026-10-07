@@ -17,7 +17,7 @@ records = tables[0]  # P0006 contains one dataset
 ```
 
 For a hands-on introduction using the included P0006 file, see the
-[pandas tutorial](../TUTORIAL.md).
+[pandas tutorial](TUTORIAL.md).
 Possible future workflows for writing, fetching, and associating GeoCSV
 metadata with ObsPy traces are outlined in [Future workflows](FUTURE.md).
 

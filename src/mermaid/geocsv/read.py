@@ -234,6 +234,15 @@ def _declaration_value(
     return declaration.value
 
 
+def _parse_datetime_value(value: str, line_number: int, field_name: str) -> pd.Timestamp:
+    try:
+        return pd.to_datetime(value, format="ISO8601", utc=False, errors="raise")
+    except (ValueError, OverflowError) as exc:
+        raise GeoCSVError(
+            f"line {line_number}, field {field_name!r}: invalid datetime value {value!r}"
+        ) from exc
+
+
 def _read_datasets(
     lines: Iterator[tuple[int, str]],
     source_path: Path,
@@ -265,14 +274,7 @@ def _read_datasets(
                         if pd.isna(value):
                             parsed_values.append(pd.NaT)
                             continue
-                        try:
-                            parsed = pd.to_datetime(
-                                value, format="ISO8601", utc=False, errors="raise"
-                            )
-                        except (ValueError, OverflowError) as row_exc:
-                            raise GeoCSVError(
-                                f"line {line_number}, field {name!r}: invalid datetime value {value!r}"
-                            ) from row_exc
+                        parsed = _parse_datetime_value(value, line_number, name)
                         if parsed.tzinfo is None:
                             raise GeoCSVError(
                                 f"line {line_number}, field {name!r}: datetime_timezone requires "
@@ -291,14 +293,12 @@ def _read_datasets(
                         # Mixed zones cannot share pandas' native datetime dtype.
                         parsed_values = []
                         for value, line_number in zip(values, data_lines):
-                            try:
+                            if pd.isna(value):
+                                parsed_values.append(pd.NaT)
+                            else:
                                 parsed_values.append(
-                                    pd.to_datetime(value, format="ISO8601", utc=False, errors="raise")
+                                    _parse_datetime_value(value, line_number, name)
                                 )
-                            except (ValueError, OverflowError) as row_exc:
-                                raise GeoCSVError(
-                                    f"line {line_number}, field {name!r}: invalid datetime value {value!r}"
-                                ) from row_exc
                         array = pd.array(parsed_values, dtype=object)
             else:
                 dtype = {"string": "string", "integer": "Int64", "float": "Float64"}[effective_type]

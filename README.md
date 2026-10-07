@@ -35,6 +35,6 @@ python -m pip install .
 The installation includes pandas 2.2 or newer.
 
 See the [reader specification](docs/READER_SPEC.md) for API and format details,
-and the [pandas tutorial](TUTORIAL.md) for examples.
+and the [pandas tutorial](docs/TUTORIAL.md) for examples.
 
 Developed and maintained by [Bathymetrix®](https://bathymetrix.com).
