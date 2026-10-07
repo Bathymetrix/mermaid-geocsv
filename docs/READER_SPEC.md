@@ -26,10 +26,25 @@ order. Select a table from that list before using pandas. Each table's columns
 use the exact field names from its GeoCSV header. The zero-based
 `source_record_index` counts data records in file order, excluding headers and
 comments; it is not a physical line number. Datetime values preserve their
-source timezone: timezone-free values remain naive, and values with explicit
-offsets retain those offsets. A column with one consistent timezone has a
-pandas datetime dtype; if it mixes naive and timezone-aware values or different
-offsets, its values are preserved as `Timestamp` objects in an `object` column.
+source timezone by default: timezone-free values remain naive, and values with
+explicit offsets retain those offsets. A column with one consistent timezone
+has a pandas datetime dtype; if it mixes naive and timezone-aware values or
+different offsets, its values are preserved as `Timestamp` objects in an
+`object` column. Depending on pandas version, parsing mixed timezone entries
+may issue a warning or become unsupported; the reader does not normalize them
+by default.
+
+Pass `datetime_timezone` to convert datetime values to a common timezone:
+
+```python
+tables = geocsv.read("P0006.geocsv", datetime_timezone="UTC")
+```
+
+The value may be any timezone accepted by pandas' `DatetimeIndex.tz_convert`,
+such as `"UTC"` or `"America/Los_Angeles"`. This conversion is performed by
+pandas. When requested, each non-missing source datetime must include an
+explicit timezone; naive values raise `GeoCSVError` rather than being assumed
+to be UTC. Missing values remain missing.
 
 ```python
 # Select position-bearing records for a trajectory map.

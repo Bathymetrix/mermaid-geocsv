@@ -85,6 +85,8 @@ changes rather than preserving a weak design solely for compatibility.
 Start suggested commit summaries with lowercase after the colon: use
 `docs: specify known-keyword recognition in audit`, not
 `docs: Specify known-keyword recognition in audit`.
+When suggesting a commit message, put it in a fenced `text` block so it can be
+copied with one click.
 
 Bump the package version when a change affects public behavior, the Python
 API, supported GeoCSV semantics, or dependencies. Choose a pre-1.0.0 version

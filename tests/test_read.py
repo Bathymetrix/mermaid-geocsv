@@ -674,6 +674,37 @@ def test_mixed_naive_and_zoned_datetimes_keep_each_source_timezone(tmp_path: Pat
     assert frame["Time"].iloc[2] == pd.Timestamp("2011-08-18T00:00:00-05:00")
 
 
+def test_datetime_timezone_converts_aware_values_with_pandas(tmp_path: Path) -> None:
+    source = tmp_path / "mixed_offsets.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#field_type: datetime\nTime\n"
+        "2021-02-12T12:15:46+02:30\n2021-02-12T12:15:46Z\n",
+        encoding="utf-8",
+    )
+
+    frames = geocsv.read(source, datetime_timezone="America/Los_Angeles")
+    assert len(frames) == 1
+    frame = frames[0]
+
+    assert str(frame["Time"].dt.tz) == "America/Los_Angeles"
+    assert frame["Time"].tolist() == [
+        pd.Timestamp("2021-02-12T01:45:46-08:00"),
+        pd.Timestamp("2021-02-12T04:15:46-08:00"),
+    ]
+
+
+def test_datetime_timezone_rejects_naive_values(tmp_path: Path) -> None:
+    source = tmp_path / "naive_datetime.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#field_type: datetime\nTime\n"
+        "2021-02-12T12:15:46\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(geocsv.GeoCSVError, match="datetime_timezone requires a timezone"):
+        geocsv.read(source, datetime_timezone="UTC")
+
+
 @pytest.mark.parametrize("field_type", ["string", "integer", "float", "datetime"])
 @pytest.mark.parametrize("value", [" ", "   ", '" "'])
 def test_whitespace_only_fields_raise_located_error(

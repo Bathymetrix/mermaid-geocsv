@@ -14,6 +14,11 @@ missing values.
 For whitespace-delimited metadata lists, quote empty edge entries with ASCII
 double quotes (`""`).
 
+By default, timestamps retain their source timezones, including mixed offsets.
+Pass `datetime_timezone="UTC"` (or another timezone accepted by pandas) to
+convert timezone-aware datetime columns. In that mode every non-missing value
+must include a timezone; naive timestamps raise an error.
+
 ## Install
 
 Requires Python 3.12 or newer. From the repository root:

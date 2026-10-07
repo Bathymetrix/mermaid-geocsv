@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+from datetime import tzinfo
 import math
 import re
 from collections.abc import Iterator
@@ -47,7 +48,9 @@ _INTEGER = re.compile(r"[+-]?[0-9]+$")
 _TIME_FRACTION = re.compile(r"[Tt ][0-9]+(?::[0-9]+){0,2}[.,]([0-9]+)")
 
 
-def read(path: str | PathLike[str]) -> list[pd.DataFrame]:
+def read(
+    path: str | PathLike[str], *, datetime_timezone: str | tzinfo | None = None
+) -> list[pd.DataFrame]:
     """Read UTF-8 GeoCSV datasets into one DataFrame per dataset.
 
     Requires ``dataset`` before the header. ``field_type`` and ``field_unit``
@@ -55,8 +58,14 @@ def read(path: str | PathLike[str]) -> list[pd.DataFrame]:
     units remain empty. The delimiter defaults to comma. Source field names and
     data order are unchanged. Datetimes follow ISO 8601 with at most nine
     fractional digits; ``T`` is strongly recommended between date and time,
-    though a space is accepted. Timezone-free values remain naive, and explicit
-    timezone offsets are preserved. Duplicate times are retained.
+    though a space is accepted. By default, explicit timezones are preserved
+    and timezone-free values remain naive. Mixed timezone entries are retained
+    as objects and may produce a pandas warning or become unsupported in a
+    future pandas version. Set ``datetime_timezone`` to a timezone accepted by
+    pandas' ``DatetimeIndex.tz_convert`` to convert aware values. When set,
+    every non-missing datetime must include a timezone; naive values raise
+    ``GeoCSVError``. Conversion is performed by pandas. Duplicate times are
+    retained.
     ``nan`` (case-insensitive) becomes the native pandas missing value for
     every declared type. Numeric and datetime cells are trimmed; string cells
     retain their whitespace. A per-column ``field_missing`` sentinel also
@@ -76,7 +85,7 @@ def read(path: str | PathLike[str]) -> list[pd.DataFrame]:
     source = Path(path).resolve()
     with source.open(encoding="utf-8-sig", newline="") as stream:
         try:
-            return _read_datasets(_source_lines(stream), source)
+            return _read_datasets(_source_lines(stream), source, datetime_timezone)
         except GeoCSVError as exc:
             raise GeoCSVError(f"{source}: {exc}") from exc
 
@@ -216,7 +225,9 @@ def _declaration_value(
 
 
 def _read_datasets(
-    lines: Iterator[tuple[int, str]], source_path: Path
+    lines: Iterator[tuple[int, str]],
+    source_path: Path,
+    datetime_timezone: str | tzinfo | None,
 ) -> list[pd.DataFrame]:
     frames: list[pd.DataFrame] = []
     comments: list[GeoCSVComment] = []
@@ -238,7 +249,29 @@ def _read_datasets(
             effective_type = field_type.lower() or "string"
             values = columns[name]
             if effective_type == "datetime":
-                if not any(not pd.isna(value) for value in values):
+                if datetime_timezone is not None:
+                    parsed_values = []
+                    for value, line_number in zip(values, data_lines):
+                        if pd.isna(value):
+                            parsed_values.append(pd.NaT)
+                            continue
+                        try:
+                            parsed = pd.to_datetime(
+                                value, format="ISO8601", utc=False, errors="raise"
+                            )
+                        except (ValueError, OverflowError) as row_exc:
+                            raise GeoCSVError(
+                                f"line {line_number}, field {name!r}: invalid datetime value {value!r}"
+                            ) from row_exc
+                        if parsed.tzinfo is None:
+                            raise GeoCSVError(
+                                f"line {line_number}, field {name!r}: datetime_timezone requires "
+                                "a timezone on every non-missing datetime value"
+                            )
+                        parsed_values.append(parsed)
+                    array = pd.to_datetime(parsed_values, utc=True, errors="raise")
+                    array = array.tz_convert(datetime_timezone)
+                elif not any(not pd.isna(value) for value in values):
                     # No source timestamps exist from which to infer a timezone.
                     array = pd.to_datetime(values, format="ISO8601", utc=True, errors="raise")
                 else:
