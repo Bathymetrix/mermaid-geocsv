@@ -177,3 +177,6 @@ Malformed records or declarations and invalid typed values raise
 `geocsv.GeoCSVError` (a `ValueError`). The reader preserves row order and
 duplicate timestamps. It does not derive scientific quantities, interpolate
 locations, or choose between same-time records.
+
+The [open questions](OPEN_QUESTIONS.md) document format details that GeoCSV
+v2.0.4 does not settle and the reader's current choices for those cases.
