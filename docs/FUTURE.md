@@ -28,6 +28,10 @@ decide whether fetching and parsing can be combined with `geocsv.read`.
 
 ## Associate GeoCSV metadata with ObsPy traces
 
+See the [ObsPy association discussion](OBSPY_ASSOCIATION.md) for the initial
+architecture proposal, ObsPy conventions, MERMAID matching evidence, and open
+decisions. Its first target is original downloaded traces.
+
 Support users who have downloaded MERMAID waveform data as in-memory ObsPy
 `Trace` or `Stream` objects, but whose traces lack station locations. They
 could fetch the instrument's GeoCSV metadata, parse it with `geocsv.read`, and
