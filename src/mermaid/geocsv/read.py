@@ -324,7 +324,10 @@ def _read_datasets(
             effective_type = field_type.lower() or "string"
             values = columns[name]
             if effective_type == "datetime":
-                if datetime_timezone is not None:
+                if not any(not pd.isna(value) for value in values):
+                    # No source timestamp exists to establish or convert a timezone.
+                    array = pd.to_datetime(values, format="ISO8601", errors="raise")
+                elif datetime_timezone is not None:
                     parsed_values = []
                     for value, line_number in zip(values, data_lines):
                         if pd.isna(value):
@@ -339,9 +342,6 @@ def _read_datasets(
                         parsed_values.append(parsed)
                     array = pd.to_datetime(parsed_values, utc=True, errors="raise")
                     array = array.tz_convert(datetime_timezone)
-                elif not any(not pd.isna(value) for value in values):
-                    # No source timestamps exist from which to infer a timezone.
-                    array = pd.to_datetime(values, format="ISO8601", utc=True, errors="raise")
                 else:
                     try:
                         array = pd.to_datetime(values, format="ISO8601", utc=False, errors="raise")

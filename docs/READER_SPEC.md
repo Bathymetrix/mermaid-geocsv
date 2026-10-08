@@ -45,6 +45,9 @@ such as `"UTC"` or `"America/Los_Angeles"`. This conversion is performed by
 pandas. When requested, each non-missing source datetime must include an
 explicit timezone; naive values raise `GeoCSVError` rather than being assumed
 to be UTC. Missing values remain missing.
+If a declared datetime column has no non-missing source timestamps, it has a
+timezone-naive datetime dtype even when `datetime_timezone` is requested:
+there is no timestamp to convert. This includes header-only datasets.
 
 ```python
 # Select position-bearing records for a trajectory map.

@@ -1,6 +1,6 @@
 # Open GeoCSV questions
 
-Reviewed 2026-10-07 with reader version 0.10.0. All questions below are open.
+Reviewed 2026-10-07 with reader version 0.10.1. All questions below are open.
 
 This document collects format questions raised while implementing the reader.
 The [reader specification](READER_SPEC.md) describes what this package does
@@ -138,10 +138,6 @@ unversioned MERMAID files.
 These are open implementation or public API questions. A GeoCSV clarification
 may inform them, but it cannot prescribe pandas dtypes or Python exceptions.
 
-- **Datetime columns with no source values:** The reader currently gives an
-  all-missing or header-only datetime column a UTC dtype. Decide whether that
-  implies an unsupported timezone, and how an explicit `datetime_timezone`
-  argument should affect the result. See [Audit 04, finding 2](../audits/04.md#2-missing-only-datetime-columns-acquire-a-utc-dtype).
 - **Invalid UTF-8 exception:** Invalid encoded input currently raises
   `UnicodeDecodeError`, while `read` broadly documents `GeoCSVError` for
   malformed content. Decide the Python exception contract. See

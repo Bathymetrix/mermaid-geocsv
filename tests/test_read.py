@@ -687,7 +687,7 @@ def test_empty_fields_become_typed_missing_values(
     assert frame["Label"].dtype == "string"
     assert frame["Count"].dtype == "Int64"
     assert frame["Height"].dtype == "Float64"
-    assert str(frame["Time"].dt.tz) == "UTC"
+    assert frame["Time"].dt.tz is None
     assert frame.iloc[0].isna().all()
     assert frame.attrs["geocsv"].source_path == source.resolve()
 
@@ -920,9 +920,26 @@ def test_header_only_dataset_is_typed(tmp_path: Path) -> None:
     )
     frame = read_one(source)
     assert frame.empty
-    assert str(frame["Time"].dt.tz) == "UTC"
+    assert frame["Time"].dt.tz is None
     assert frame["Height"].dtype == "Float64"
     assert frame["Count"].dtype == "Int64"
+
+
+@pytest.mark.parametrize("rows", ["", "nan\nNaT\n"])
+@pytest.mark.parametrize("datetime_timezone", [None, "UTC"])
+def test_datetime_without_source_timestamps_has_no_timezone(
+    tmp_path: Path, rows: str, datetime_timezone: str | None
+) -> None:
+    source = tmp_path / "missing_datetimes.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#field_type: datetime\nTime\n" + rows,
+        encoding="utf-8",
+    )
+    frame = geocsv.read(source, datetime_timezone=datetime_timezone)[0]
+    assert pd.api.types.is_datetime64_any_dtype(frame["Time"])
+    assert frame["Time"].dt.tz is None
+    assert len(frame) == len(rows.splitlines())
+    assert frame["Time"].isna().all()
 
 
 def test_signed_int64_boundaries_are_preserved(tmp_path: Path) -> None:
