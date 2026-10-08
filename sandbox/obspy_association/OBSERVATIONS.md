@@ -36,10 +36,34 @@ The fixture also has record 101 at `2018-07-06T01:49:28.613Z`, quality Q,
 record 100's count. This is an ambiguity to investigate, not a demonstrated
 association to either source row.
 
-Exact sample-rate and quality equality are therefore not valid general
-matching requirements for these downloaded examples. The 23.021 ms start
+Exact sample-rate and quality equality do not hold for these downloaded
+examples. This does not establish that rate mismatches should be accepted in
+the eventual association API. The 23.021 ms start
 difference cannot be explained by simple truncation to milliseconds alone.
 Do not infer a cause or select a matching tolerance from these two examples.
+
+### Sampling-rate clarification from the user
+
+MERMAID currently has a finite set of nominal acquisition rates. The supplied
+table lists 20, 40, 10, 5, 2.5, and 1.25 Hz, with channel/location/quality
+distinctions. It also lists nominal 40 Hz raw-buffer data separately and
+reports a measured 40.01406 Hz for P0023. The P0006 raw-buffer rate is shown
+as an unresolved `XX` in the screenshot, not an established value.
+
+The user states that integer-valued GeoCSV rates in place of intended measured
+rates require an upstream writer fix, outside this project's scope. The fixture
+literally contains `20.0`: it is an integer-valued floating-point rate, not
+evidence that the parser cast or rounded a more precise source value.
+The finite nominal set is context, not authorization to round waveform
+headers, rewrite GeoCSV, or introduce nearest-nominal matching. Preserve both
+reported rates and revisit comparison using corrected source data.
+
+The user further establishes downloaded waveform attributes as the operational
+authority and clarifies that the current waveform clock does not have
+millisecond timing precision. The sub-millisecond digits above record header
+representations, not demonstrated clock accuracy. This does not make precise
+waveform sample intervals meaningless, and it does not authorize overwriting
+downloaded timing from GeoCSV. No hardware-precision verification was performed.
 
 ### Month request
 

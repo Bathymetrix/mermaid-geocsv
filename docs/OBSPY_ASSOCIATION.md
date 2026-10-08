@@ -20,9 +20,13 @@ consumer has not yet been selected.
 The [retrieval sandbox](../sandbox/obspy_association/README.md) now contains
 live examples and a running TBD list. Its
 [observations](../sandbox/obspy_association/OBSERVATIONS.md) show that service
-downloads need not preserve one trace per source acquisition, exact nominal
-sampling rates, or source quality flags. The matching proposal below remains
-provisional and must account for this evidence before implementation.
+downloaded traces and GeoCSV rows can differ in segmentation, reported
+sampling rates, and quality flags. This does not establish which layer caused
+each difference. The user identifies integer-valued GeoCSV rates in place of
+intended measured rates as an upstream writer issue, outside this project.
+Preserve both representations; do not round or snap rates to hide discrepancies.
+The matching proposal below remains provisional pending corrected source data
+and investigation of the other differences.
 
 The current workflow is in memory: the waveforms are not SAC files and SAC
 reading/writing is not a requirement. Existing SAC headers were examined as
@@ -106,9 +110,8 @@ and drops the later displayed fractional digits. The local
 
 - Match against the corrected waveform time; do not apply `TimeCorrection`
   again during association.
-- An original MiniSEED trace can retain finer precision than the GeoCSV row.
-  Exact equality of the stored nanoseconds is not necessarily a valid match
-  requirement.
+- Timestamp representations can differ without establishing a difference in
+  physical clock accuracy. Extra digits are not evidence of clock resolution.
 - Treat the writer's millisecond rendering as producer-specific evidence,
   rather than imposing millisecond resolution on every GeoCSV producer.
 
@@ -116,12 +119,30 @@ The local automaid note `notes/geocsv_event_deduplication.md` also documents
 events sharing a time but differing in sample count. A timestamp alone cannot
 identify a waveform record.
 
-ObsPy stores UTC time as integer nanoseconds but defaults to six fractional
-digits for comparisons and display. Matching should use an explicit source
-precision rule, not an incidental `UTCDateTime` comparison or a floating-point
-POSIX timestamp. Require timezone-aware GeoCSV values for this workflow;
-compare UTC instants without changing the preserved source timestamps. See
-[UTCDateTime](https://docs.obspy.org/packages/autogen/obspy.core.utcdatetime.UTCDateTime.html).
+### Authority and timing meaning
+
+For this association workflow, presume the downloaded waveform attributes
+are correct and use them as the operational authority. GeoCSV can have passed
+through multiple formatting/conversion steps before this reader receives it.
+The reader supplies typed values faithfully; it cannot restore information
+lost upstream. GeoCSV discrepancies are matching evidence, not instructions
+to repair the waveform's identity, start time, sampling rate, or sample count.
+
+The user clarifies that the current MERMAID waveform clock does not have
+millisecond timing precision. Do not make sub-millisecond GeoCSV timestamp
+fidelity a scientific requirement or mistake ObsPy's nanosecond storage for
+hardware accuracy. Preserve the values as received and keep the time-matching
+rule explicit and separate from physical clock accuracy. Require timezone-aware
+GeoCSV timestamps and compare UTC instants without changing source values.
+
+Precise `delta` and `sampling_rate` remain meaningful for waveform timing even
+when absolute clock accuracy is coarser. A rate can be estimated from count
+and independently established duration only with the endpoint convention
+specified: for first-to-last sample duration, rate is `(npts - 1) / duration`;
+for a duration covering `npts` full sampling intervals, rate is `npts / duration`.
+ObsPy's `stats.endtime` is derived from its rate, count, and start time, so
+calculating the rate back from `stats.endtime - stats.starttime` is circular,
+not an independent check. This association does not recalculate sampling rates.
 
 ## Agreed boundary: initial association
 
@@ -153,7 +174,7 @@ or other format/analysis headers.
 | Attribute | Initial association responsibility |
 | --- | --- |
 | `network`, `station`, `location`, `channel` | Validate against the matched complete SNCL. Existing waveform codes are authoritative; do not silently relabel an input to make it match. |
-| `starttime` | Validate the acquisition time under the matching rule still to be chosen; retain the waveform's `UTCDateTime` and finer precision. Do not reapply `TimeCorrection`. |
+| `starttime` | Validate the acquisition time under the matching rule still to be chosen; retain the waveform's `UTCDateTime` as received, without claiming hardware precision from its displayed digits. Do not reapply `TimeCorrection`. |
 | `sampling_rate` | Validate against `SampleRate`; preserve the original waveform rate. |
 | `npts` | Validate `SampleCount` against the waveform count and data length; do not use a header assignment to repair a mismatched array. |
 | `delta`, `endtime` | Leave calculation to ObsPy from the current core fields; do not assign independently. |
@@ -423,8 +444,8 @@ Proposed first matching policy:
    tolerance are deferred, as requested; retain the producer evidence above
    for that later discussion.
 4. Inspect rate, count, and quality as evidence rather than require exact
-   equality yet. The sandbox returns approximately 20.007 Hz for nominal
-   20 Hz rows, quality M for source Q/D, and combined or split coverage near
+   equality yet. The sandbox returns approximately 20.007 Hz for rows reporting
+   20 Hz, quality M for source Q/D, and combined or split coverage near
    overlapping acquisitions. Establish an explicit rule for these differences
    before association; do not silently overwrite waveform headers to force a
    match. ObsPy reads the returned MiniSEED quality flag into
