@@ -99,6 +99,8 @@ survive a longer workflow, keep the input path separately.
 
 ## Supported GeoCSV semantics
 
+### Dataset structure
+
 The reader loads UTF-8 GeoCSV datasets in one pass and returns one DataFrame
 per dataset. It requires each `dataset` declaration's value to contain `GeoCSV`
 (case-insensitively); versions are not validated. The specification recommends
@@ -109,6 +111,9 @@ Header names must be nonempty and unique so source columns and their metadata
 remain unambiguous. This is a restriction of this reader, not a v2.0.4
 requirement. The reader preserves column spellings and does not assign
 latitude/longitude roles from column names.
+
+### Comments and metadata declarations
+
 Comments and keyword declarations begin with a literal `#` at a record
 boundary, with no preceding whitespace. Declaration syntax permits whitespace
 after `#` and around `:`, as in `# field_type : string`. Raw comments and parsed
@@ -136,6 +141,8 @@ the first column and `integer` in the second. With a tab delimiter, put an
 actual tab between `""` and `integer`. Single quotes and backticks do not quote
 metadata values.
 
+### CSV quoting, whitespace, and line endings
+
 Quoted cells such as `"#Label"` and `"#dataset: hello"` are header or data values,
 including in one-column datasets. A line starting with `#` inside a multiline
 quoted cell remains part of that cell. Since 0.3.0, legacy preambles with entire
@@ -146,6 +153,8 @@ including a final line terminated only by EOF. Valid doubled quotes, embedded
 delimiters, and quoted multiline cells remain supported. Blank lines before
 the header are skipped. After the header, an empty record fails the row-width
 check, and whitespace-only fields raise a field-conversion error.
+
+### Field types and missing values
 
 Declared `string`, `float`, `integer`, and `datetime` fields become nullable
 pandas `string`, `Float64`, `Int64`, and datetime columns, respectively. An
@@ -172,6 +181,8 @@ marker. In string columns, `NaT` remains literal text unless it matches an
 explicit `field_missing` sentinel. Numeric columns reject it as an invalid
 value unless it matches their declared sentinel.
 
+### Numeric limits and datetime syntax
+
 Integers use pandas' nullable signed 64-bit dtype and must fall between
 −2⁶³ and 2⁶³−1. Finite float values that overflow to infinity or underflow to
 zero are rejected; an explicit infinity token is retained. Datetime spellings
@@ -187,6 +198,8 @@ within these limits raise errors rather than being silently
 changed. Other finite decimal values have the usual binary floating-point
 rounding of pandas `Float64`. Typed-field errors include the source path, line
 number, and field name; CSV syntax errors include the path and line number.
+
+### Errors and scientific scope
 
 Malformed records or declarations, invalid UTF-8 input, and invalid typed
 values raise `geocsv.GeoCSVError` (a `ValueError`). The reader preserves row
