@@ -100,6 +100,15 @@ do not authorize commits, tags, pushes, or publication.
 
 ## Development and Verification
 
+Keep `docs/TUTORIAL.md` and `docs/TUTORIAL.ipynb` synchronized. Any change to
+explanations, examples, scientific assumptions, or setup instructions in either
+file must be reflected in the other in the same change. Markdown Python blocks
+become executable notebook cells; shell commands remain Markdown instructions.
+Cell boundaries may differ for readable interactive output, but preserve the
+same prose and Python source in the same order. Keep the committed notebook's
+outputs empty and execution counts unset. Verify content parity and run the
+Python examples in order after changing them.
+
 When present, use this repository's `.venv` for Python commands, tests, and
 the installed console command.
 

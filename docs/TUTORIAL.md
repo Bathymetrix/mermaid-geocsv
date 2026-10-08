@@ -1,7 +1,11 @@
 # Explore GeoCSV with pandas
 
 This tutorial uses the real P0006 fixture to introduce pandas while exploring
-MERMAID positions and pressure measurements. From the repository root, activate
+MERMAID positions and pressure measurements. It is available as both
+[`TUTORIAL.md`](TUTORIAL.md) and [`TUTORIAL.ipynb`](TUTORIAL.ipynb); keep their
+explanations and examples in sync when editing either version.
+
+From the repository root, activate
 the local environment at the shell prompt:
 
 ```bash
@@ -15,26 +19,37 @@ the shell while `.venv` is activated:
 python -m pip install numpy matplotlib
 ```
 
-Then start Python:
+For a shell session, start Python:
 
 ```bash
 python
 ```
 
 Run the Python blocks below in order at the `>>>` prompt, without typing the
-prompt characters. The parser needs Python 3.12 or newer and pandas. Interactive
+prompt characters. Alternatively, open `docs/TUTORIAL.ipynb` in a notebook
+editor, select a Python kernel using this repository's `.venv`, and run its
+cells from top to bottom. If your editor needs a kernel package, install
+`ipykernel` in the activated environment. Start with the working directory set
+to either the repository root or `docs/`.
+
+The parser needs Python 3.12 or newer and pandas. Interactive
 Matplotlib windows depend on the local display backend; use `plt.savefig` as
 shown below if a window does not appear.
 
 ## 1. Read the file and inspect the table
 
 ```python
+from pathlib import Path
 from mermaid import geocsv
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-tables = geocsv.read("data/fixtures/P0006/P0006.geocsv")
+repository_root = Path.cwd()
+if repository_root.name == "docs":
+    repository_root = repository_root.parent
+fixture_path = repository_root / "data/fixtures/P0006/P0006.geocsv"
+tables = geocsv.read(fixture_path)
 records = tables[0]  # The P0006 file contains one dataset.
 type(records)
 records.shape
