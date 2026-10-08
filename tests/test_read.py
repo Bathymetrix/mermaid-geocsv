@@ -361,7 +361,7 @@ def test_quoted_hash_header_and_literal_comment_boundaries(
     source.write_text(
         '# dataset : GeoCSV\n# field_type : string\n# field_unit : unitless\n'
         '# free text\n# custom : before, with "quotes"\n'
-        f'"{column_name}"\nhello\n# custom : after\n #literal data\nworld\n',
+        f'"{column_name}"\nhello\n# custom : before, with "quotes"\n #literal data\nworld\n',
         encoding="utf-8",
     )
     frame = read_one(source)
@@ -376,7 +376,8 @@ def test_quoted_hash_header_and_literal_comment_boundaries(
             for comment in metadata.comments] == [
         ("dataset", "GeoCSV", 1), ("field_type", "string", 2),
         ("field_unit", "unitless", 3), (None, None, 4),
-        ("custom", 'before, with "quotes"', 5), ("custom", "after", 8),
+        ("custom", 'before, with "quotes"', 5),
+        ("custom", 'before, with "quotes"', 8),
     ]
     assert metadata.comments[4].raw == '# custom : before, with "quotes"'
 
@@ -477,6 +478,69 @@ def test_changed_or_new_known_declaration_requires_dataset_boundary(
     )
     with pytest.raises(geocsv.GeoCSVError, match="new #dataset boundary"):
         geocsv.read(source)
+
+
+@pytest.mark.parametrize("keyword", ["GeodeticDatum", "Ellipsoid", "note"])
+def test_changed_unknown_keyword_requires_dataset_boundary(
+    tmp_path: Path, keyword: str
+) -> None:
+    source = tmp_path / "changed_unknown_keyword.geocsv"
+    source.write_text(
+        f"#dataset: GeoCSV\n#{keyword}: first\n#field_type: float\n"
+        f"Latitude\n1\n#{keyword}: second\n2\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(
+        geocsv.GeoCSVError,
+        match=rf"line 6: #{keyword.lower()} changed; a new #dataset boundary is required",
+    ) as error:
+        geocsv.read(source)
+    assert str(source.resolve()) in str(error.value)
+
+
+def test_unknown_keyword_introduced_after_header_then_changed(tmp_path: Path) -> None:
+    source = tmp_path / "late_unknown_keyword.geocsv"
+    source.write_text(
+        "#dataset: GeoCSV\n#field_type: string\nLabel\nfirst\n"
+        "#note: stable\nsecond\n#note: changed\nthird\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(
+        geocsv.GeoCSVError,
+        match="line 7: #note changed; a new #dataset boundary is required",
+    ):
+        geocsv.read(source)
+
+
+@pytest.mark.parametrize("keyword", ["GeodeticDatum", "Ellipsoid"])
+def test_unknown_keyword_can_change_at_dataset_boundary(
+    tmp_path: Path, keyword: str
+) -> None:
+    source = tmp_path / "two_unknown_keywords.geocsv"
+    source.write_text(
+        f"#dataset: GeoCSV\n#{keyword}: first\n#field_type: float\n"
+        f"Latitude\n1\n#{keyword}: first\n"
+        f"#dataset: GeoCSV\n#{keyword}: second\n#field_type: float\n"
+        "Latitude\n2\n",
+        encoding="utf-8",
+    )
+    first, second = geocsv.read(source)
+    assert first["Latitude"].tolist() == [1.0]
+    assert second["Latitude"].tolist() == [2.0]
+    assert first["Latitude"].dtype == second["Latitude"].dtype == "Float64"
+    assert first.index.equals(pd.RangeIndex(0, 1, name="source_record_index"))
+    assert second.index.equals(pd.RangeIndex(1, 2, name="source_record_index"))
+    first_metadata = first.attrs["geocsv"]
+    second_metadata = second.attrs["geocsv"]
+    assert first_metadata.source_path == second_metadata.source_path == source.resolve()
+    assert [
+        comment.value for comment in first_metadata.comments
+        if comment.key == keyword.lower()
+    ] == ["first", "first"]
+    assert [
+        comment.value for comment in second_metadata.comments
+        if comment.key == keyword.lower()
+    ] == ["second"]
 
 
 @pytest.mark.parametrize(

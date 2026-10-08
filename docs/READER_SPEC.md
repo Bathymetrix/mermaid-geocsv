@@ -111,6 +111,16 @@ boundary, with no preceding whitespace. Declaration syntax permits whitespace
 after `#` and around `:`, as in `# field_type : string`. Raw comments and parsed
 keyword/value pairs are retained in the GeoCSV metadata, including unknown
 keywords; supported declarations also control parsing.
+Apart from the `dataset` marker, the specification's known keywords are
+treated as dataset-wide declarations: adding or changing one after the header
+requires a new `#dataset` marker and header. For any unknown `#key: value`
+line, the first occurrence may appear before or after the header. If the same
+key repeats with a changed value after the header, the reader requires a new
+`#dataset` marker and header. Identical repetitions are retained, as are
+different values before the header; the last pre-header value is the baseline
+for later comparisons. Free-text comments are not compared. This is a
+provisional reader policy; the scope of custom keys remains an
+[open format question](OPEN_QUESTIONS.md#1-do-custom-keyword-lines-define-dataset-wide-metadata).
 Every present `field_*` declaration must have exactly one entry per header
 column. For `A,B`, `#field_type: ,` declares two empty type entries, while bare
 `#field_type:` has only one and raises an error. The declaration may be omitted

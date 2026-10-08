@@ -1,6 +1,6 @@
 # Open GeoCSV questions
 
-Reviewed 2026-10-07 with reader version 0.9.0. All questions below are open.
+Reviewed 2026-10-07 with reader version 0.10.0. All questions below are open.
 
 This document collects format questions raised while implementing the reader.
 The [reader specification](READER_SPEC.md) describes what this package does
@@ -25,13 +25,17 @@ boundary rule also apply to custom `#key: value` lines such as
 distinguished from custom declarations?
 
 **Current reader behavior:** It preserves every leading-`#` comment with its
-line number, but checks changes only for the specification's known keywords.
-Two different `GeodeticDatum` values can therefore occur among the rows of one
-DataFrame without a row-to-datum association. See
+line number. Known declarations cannot be added or changed after the header.
+For any unknown `#key: value` line, the first occurrence may appear before or
+after the header, but a changed repetition after the header requires a new
+`#dataset` marker. Repetitions with different values before the header are
+retained; the last value becomes the comparison baseline. Free-text comments
+remain unrestricted. See
 [Audit 04, finding 1](../audits/04.md#1-changed-custom-scientific-metadata-can-span-one-table).
 
-**Clarification needed:** State whether custom declarations have dataset scope
-and, if so, how their names and changes are recognized.
+**Clarification needed:** State which custom declarations have dataset scope
+and how their names and changes are recognized. The changed-value rule is a
+provisional reader policy, not a general rule supplied by v2.0.4.
 
 ### 2. What is the exact grammar of `field_*` lists?
 

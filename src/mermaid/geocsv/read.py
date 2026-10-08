@@ -418,6 +418,18 @@ def _read_datasets(
 
             comments.append(comment)
             if key not in _KNOWN_KEYWORDS:
+                if key:
+                    previous = declarations.get(key)
+                    if (
+                        header is not None
+                        and previous is not None
+                        and previous.value != comment.value
+                    ):
+                        raise GeoCSVError(
+                            f"line {line_number}: #{key} changed; "
+                            "a new #dataset boundary is required"
+                        )
+                    declarations[key] = comment
                 continue
 
             previous = declarations.get(key)

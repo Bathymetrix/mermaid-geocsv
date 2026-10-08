@@ -9,6 +9,10 @@ from mermaid import geocsv
 
 It preserves source column names, record order, timestamps and their timezones,
 and GeoCSV metadata, including units, comments, and the source file path.
+If an unknown `#key: value` line repeats with a changed value after the
+header, the reader requires a new `#dataset` section and header. Free-text
+comments remain usable between records. The scope of custom keys is an
+[open format question](docs/OPEN_QUESTIONS.md#1-do-custom-keyword-lines-define-dataset-wide-metadata).
 Empty fields and type-appropriate missing markers are represented as pandas
 missing values.
 For whitespace-delimited metadata lists, quote empty edge entries with ASCII
