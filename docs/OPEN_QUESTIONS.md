@@ -1,6 +1,6 @@
 # Open GeoCSV questions
 
-Reviewed 2026-10-07 with reader version 0.10.1. All questions below are open.
+Reviewed 2026-10-07 with reader version 0.10.2. All questions below are open.
 
 This document collects format questions raised while implementing the reader.
 The [reader specification](READER_SPEC.md) describes what this package does
@@ -75,10 +75,13 @@ How can a string field represent a literal `nan` or empty string when those
 tokens also denote missing data?
 
 **Current reader behavior:** Empty fields, including `""`, and case-insensitive
-`nan` are missing for every field type; a declared `field_missing` value is
-also missing. Datetime fields additionally treat case-insensitive `NaT` as
-missing. Universal `nan` handling is an explicit MERMAID policy, not a
-v2.0.4 requirement. See [Audit 04, finding 3](../audits/04.md#3-universal-nan-handling-can-erase-literal-string-data)
+`nan` are **always missing**, including for string fields and even with a
+different declared `field_missing` value; a declared `field_missing` value is
+also missing. Literal `nan`, quoted `"nan"`, and quoted empty strings cannot be
+represented as string values. Datetime fields additionally treat
+case-insensitive `NaT` as missing. Universal `nan` handling is an explicit
+MERMAID policy, not a v2.0.4 requirement. See
+[Audit 04, finding 3](../audits/04.md#3-universal-nan-handling-can-erase-literal-string-data)
 and [the reader's missing-value rules](READER_SPEC.md#supported-geocsv-semantics).
 
 **Clarification needed:** Define default missing tokens, the precedence of
@@ -131,14 +134,5 @@ and [Audit 01, finding 5](../audits/01.md#5-dataset-identity-and-placement-are-n
 
 **Clarification needed:** Define version syntax and forward-compatibility
 rules. The reader still needs a separate compatibility decision for existing
-unversioned MERMAID files.
-
-## Reader decisions that the format specification cannot settle
-
-These are open implementation or public API questions. A GeoCSV clarification
-may inform them, but it cannot prescribe pandas dtypes or Python exceptions.
-
-- **Invalid UTF-8 exception:** Invalid encoded input currently raises
-  `UnicodeDecodeError`, while `read` broadly documents `GeoCSVError` for
-  malformed content. Decide the Python exception contract. See
-  [Audit 04, finding 4](../audits/04.md#4-invalid-utf-8-escapes-the-documented-parser-error-type).
+unversioned MERMAID files. Version validation remains open; the reader
+continues to accept unrecognized future-looking GeoCSV version strings.

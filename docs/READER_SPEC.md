@@ -156,9 +156,11 @@ declare the type. An omitted or empty `field_unit` entry remains empty in
 names raise an error.
 Empty CSV fields, including quoted empty fields, case-insensitive `nan`, and
 nonempty per-column `field_missing` sentinels become `pd.NA` or `pd.NaT`
-according to the declared type. This universal `nan` rule is a MERMAID policy,
-not a requirement of GeoCSV v2.0.4; it applies even to string columns with a
-different declared sentinel. A record must contain exactly as many cells as
+according to the declared type. **`nan` is always missing, including in string
+columns and when `field_missing` declares a different sentinel.** Literal
+`nan` and quoted `"nan"` cannot be represented as string values; quoted empty
+strings are missing too. This universal rule is a MERMAID policy, not a
+requirement of GeoCSV v2.0.4. A record must contain exactly as many cells as
 the header; a blank line is not expanded into an all-missing record. A
 nonempty whitespace-only cell is an error for every type. Leading and trailing
 whitespace is trimmed from numeric and datetime cells before checking missing
@@ -186,9 +188,9 @@ changed. Other finite decimal values have the usual binary floating-point
 rounding of pandas `Float64`. Typed-field errors include the source path, line
 number, and field name; CSV syntax errors include the path and line number.
 
-Malformed records or declarations and invalid typed values raise
-`geocsv.GeoCSVError` (a `ValueError`). The reader preserves row order and
-duplicate timestamps. It does not derive scientific quantities, interpolate
+Malformed records or declarations, invalid UTF-8 input, and invalid typed
+values raise `geocsv.GeoCSVError` (a `ValueError`). The reader preserves row
+order and duplicate timestamps. It does not derive scientific quantities, interpolate
 locations, or choose between same-time records.
 
 The [open questions](OPEN_QUESTIONS.md) document format details that GeoCSV

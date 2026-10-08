@@ -13,8 +13,11 @@ If an unknown `#key: value` line repeats with a changed value after the
 header, the reader requires a new `#dataset` section and header. Free-text
 comments remain usable between records. The scope of custom keys is an
 [open format question](docs/OPEN_QUESTIONS.md#1-do-custom-keyword-lines-define-dataset-wide-metadata).
-Empty fields and type-appropriate missing markers are represented as pandas
-missing values.
+**`nan` is always missing**, case-insensitively, for every field type,
+including strings, regardless of `#field_missing`. A string field cannot
+represent literal `nan`; quoted `"nan"` is missing too. Empty fields,
+including quoted empty strings, are also missing. String whitespace is
+preserved, so ` nan ` remains literal text.
 For whitespace-delimited metadata lists, quote empty edge entries with ASCII
 double quotes (`""`).
 

@@ -132,15 +132,17 @@ def read(
     every non-missing datetime must include a timezone; naive values raise
     ``GeoCSVError``. Conversion is performed by pandas. Duplicate times are
     retained.
-    ``nan`` (case-insensitive) becomes the native pandas missing value for
-    every declared type. Numeric and datetime cells are trimmed; string cells
+    ``nan`` (case-insensitive) is missing for every field type, including
+    strings; a literal string ``nan`` cannot be represented. Numeric and
+    datetime cells are trimmed; string cells
     retain their whitespace. A per-column ``field_missing`` sentinel also
     denotes missing data. In datetime columns, ``NaT`` (case-insensitive) also
     denotes missing data by default.
     Comments and keyword declarations begin with a literal ``#`` at record
     boundaries. Quoted cells beginning with ``#`` are header or data values;
     lines inside multiline quoted cells remain cell content.
-    Malformed CSV quotes and lines without LF or CRLF endings are rejected.
+    Malformed CSV quotes, invalid UTF-8, and lines without LF or CRLF endings
+    are rejected with ``GeoCSVError``.
 
     Returns a list of DataFrames, one per dataset. Each frame is indexed by the
     file-wide, zero-based data-record position (``source_record_index``) and
@@ -154,6 +156,8 @@ def read(
             return _read_datasets(_source_lines(stream), source, datetime_timezone)
         except GeoCSVError as exc:
             raise GeoCSVError(f"{source}: {exc}") from exc
+        except UnicodeDecodeError as exc:
+            raise GeoCSVError(f"{source}: invalid UTF-8 input: {exc}") from exc
 
 
 def _source_lines(stream: TextIO) -> Iterator[tuple[int, str]]:

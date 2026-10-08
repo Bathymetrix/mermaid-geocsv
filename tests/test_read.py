@@ -819,6 +819,15 @@ def test_malformed_declarations_fail_clearly(tmp_path: Path, text: str, message:
         read_one(source)
 
 
+def test_invalid_utf8_reports_source_as_geocsv_error(tmp_path: Path) -> None:
+    source = tmp_path / "invalid_encoding.geocsv"
+    source.write_bytes(b"#dataset: GeoCSV\nLabel\n\xff\n")
+    with pytest.raises(geocsv.GeoCSVError, match="invalid UTF-8 input") as error:
+        geocsv.read(source)
+    assert str(source.resolve()) in str(error.value)
+    assert isinstance(error.value.__cause__, UnicodeDecodeError)
+
+
 @pytest.mark.parametrize(
     "field_type, value",
     [
