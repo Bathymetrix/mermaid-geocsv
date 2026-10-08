@@ -24,6 +24,15 @@ boundary rule also apply to custom `#key: value` lines such as
 `#GeodeticDatum: WGS84`? How should ordinary free-text comments be
 distinguished from custom declarations?
 
+**Row-varying alternative:** Should GeoCSV allow a custom key's value to change
+between records within one dataset? If so, does each value apply to following
+records until the next change, and how are records before the first value
+interpreted? pandas [`DataFrame.attrs`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.attrs.html)
+holds metadata for the whole table, so the current reader cannot express that
+association there. A future reader could create an explicit per-record column,
+but that would change the public table schema and needs a specified rule for
+which custom keys have row-level meaning.
+
 **Current reader behavior:** It preserves every leading-`#` comment with its
 line number. Known declarations cannot be added or changed after the header.
 For any unknown `#key: value` line, the first occurrence may appear before or
@@ -34,8 +43,10 @@ remain unrestricted. See
 [Audit 04, finding 1](../audits/04.md#1-changed-custom-scientific-metadata-can-span-one-table).
 
 **Clarification needed:** State which custom declarations have dataset scope
-and how their names and changes are recognized. The changed-value rule is a
-provisional reader policy, not a general rule supplied by v2.0.4.
+and how their names and changes are recognized. Decide whether any custom
+declarations may instead vary by record, and define their inheritance rule if
+so. The changed-value rule is a provisional reader policy, not a general rule
+supplied by v2.0.4.
 
 ### 2. What is the exact grammar of `field_*` lists?
 
