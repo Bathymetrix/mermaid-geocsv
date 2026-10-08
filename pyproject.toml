@@ -26,6 +26,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+obspy = [
+  "obspy>=1.5.1",
+]
 dev = [
   "pytest>=8",
 ]

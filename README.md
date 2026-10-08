@@ -43,6 +43,15 @@ python -m pip install .
 
 The installation includes pandas 2.2 or newer.
 
+The optional ObsPy dependency supports the experimental
+[waveform-association sandbox](sandbox/obspy_association/README.md):
+
+```bash
+python -m pip install '.[obspy]'
+```
+
+This adds ObsPy 1.5.1 or newer; it does not introduce an association API.
+
 See the [reader specification](docs/READER_SPEC.md) for API and format details,
 the [pandas tutorial](docs/TUTORIAL.md) for examples, and
 [open GeoCSV questions](docs/OPEN_QUESTIONS.md) for unresolved format details.

@@ -17,6 +17,13 @@ The motivating workflow is to attach record-specific station location and
 other metadata to an existing ObsPy `Trace` or `Stream`. The first downstream
 consumer has not yet been selected.
 
+The [retrieval sandbox](../sandbox/obspy_association/README.md) now contains
+live examples and a running TBD list. Its
+[observations](../sandbox/obspy_association/OBSERVATIONS.md) show that service
+downloads need not preserve one trace per source acquisition, exact nominal
+sampling rates, or source quality flags. The matching proposal below remains
+provisional and must account for this evidence before implementation.
+
 The current workflow is in memory: the waveforms are not SAC files and SAC
 reading/writing is not a requirement. Existing SAC headers were examined as
 one possible attachment mechanism, not as a requirement to use SAC for the
@@ -415,11 +422,14 @@ Proposed first matching policy:
 3. Use start time to identify the acquisition. Precision and matching
    tolerance are deferred, as requested; retain the producer evidence above
    for that later discussion.
-4. Require matching sample rate and sample count for original traces. Use
-   `stats.mseed.dataquality` as an additional discriminator when present;
-   absence on a different input format must not be mistaken for a mismatch.
-   ObsPy reads the MiniSEED quality flag into that format-specific field;
-   see [MiniSEED source](https://docs.obspy.org/_modules/obspy/io/mseed/core.html).
+4. Inspect rate, count, and quality as evidence rather than require exact
+   equality yet. The sandbox returns approximately 20.007 Hz for nominal
+   20 Hz rows, quality M for source Q/D, and combined or split coverage near
+   overlapping acquisitions. Establish an explicit rule for these differences
+   before association; do not silently overwrite waveform headers to force a
+   match. ObsPy reads the returned MiniSEED quality flag into
+   `stats.mseed.dataquality`; see
+   [MiniSEED source](https://docs.obspy.org/_modules/obspy/io/mseed/core.html).
 5. Attach only when one candidate remains. Zero matches and multiple matches
    need distinct, informative outcomes, including candidate record indices.
    Do not silently choose the nearest, first, or last record.
@@ -504,7 +514,8 @@ deferred until the metadata representation is settled.
 Before implementation, validate the proposed rule on a real original trace,
 including its quality flag, full-precision start time, rate, and count. Then
 use focused examples for multiple candidates, missing pressure/elevation,
-equivalent timezones, and metadata copying through trimming. ObsPy is not
-installed in this repository's `.venv`; this draft is based on official
-documentation/source inspection and local GeoCSV/writer inspection, not an
-executed ObsPy prototype.
+equivalent timezones, and metadata copying through trimming. ObsPy is now
+available in this repository's `.venv` after the sandbox work. The initial
+design used documentation/source and local writer inspection; live retrieval
+evidence is now recorded in the sandbox. An association prototype has not
+been implemented.
