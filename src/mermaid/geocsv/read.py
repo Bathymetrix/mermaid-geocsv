@@ -6,16 +6,72 @@ import csv
 from datetime import tzinfo
 import math
 import re
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
+from dataclasses import dataclass
 from decimal import Decimal
 from itertools import chain
 from os import PathLike
 from pathlib import Path
+from types import MappingProxyType
 from typing import TextIO
 
 import pandas as pd
 
-from .metadata import GeoCSVComment, GeoCSVMetadata
+
+@dataclass(frozen=True)
+class GeoCSVComment:
+    """One source comment, with its physical line number and original text.
+
+    ``raw`` excludes the line ending but retains quoting and whitespace.
+    ``key`` is stripped and lowercased, and ``value`` is stripped. Both are
+    ``None`` for free-text comments without a keyword/value pair.
+    """
+
+    raw: str
+    line_number: int
+    key: str | None
+    value: str | None
+
+
+@dataclass(frozen=True)
+class GeoCSVMetadata:
+    """Source provenance and GeoCSV declarations at ``frame.attrs["geocsv"]``.
+
+    ``source_path`` is the resolved absolute path opened by the reader, not a
+    declaration found in the file.
+
+    Comments retain source order and repeated or unknown keys. Field mappings
+    use the exact header names; values are the stripped source declarations.
+    An empty ``field_types`` value means the type was undeclared and the reader
+    represented that column as a string. Empty values in the other field
+    mappings mean those attributes were undeclared or empty. The mappings are
+    read-only. ``delimiter`` is the decoded CSV character.
+    """
+
+    source_path: Path
+    comments: tuple[GeoCSVComment, ...]
+    field_types: Mapping[str, str]
+    field_units: Mapping[str, str]
+    field_long_names: Mapping[str, str]
+    field_standard_names: Mapping[str, str]
+    field_missing: Mapping[str, str]
+    delimiter: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "comments", tuple(self.comments))
+        for name in (
+            "field_types",
+            "field_units",
+            "field_long_names",
+            "field_standard_names",
+            "field_missing",
+        ):
+            object.__setattr__(self, name, MappingProxyType(dict(getattr(self, name))))
+
+    def __deepcopy__(self, memo: dict) -> GeoCSVMetadata:
+        # pandas copies attrs during normal selection. This value is immutable,
+        # so sharing it is safe and avoids copying read-only mapping proxies.
+        return self
 
 
 class GeoCSVError(ValueError):

@@ -6,8 +6,7 @@
 
 """Read MERMAID GeoCSV files into typed pandas DataFrames."""
 
-from .metadata import GeoCSVComment, GeoCSVMetadata
-from .read import GeoCSVError, read
+from .read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
