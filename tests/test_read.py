@@ -423,7 +423,7 @@ def test_read_returns_each_dataset_with_file_wide_record_indices(tmp_path: Path)
     source.write_text(
         "#dataset: GeoCSV\n#title: first table\n#field_type: string\n"
         "#field_unit: unitless\nName\na\nb\n"
-        "#dataset: geocsv future-version\n#title: second table\n"
+        "#dataset: GeoCSV 2.0\n#title: second table\n"
         "#field_type: integer\n#field_unit: counts\nCount\n7\n8\n",
         encoding="utf-8",
     )
