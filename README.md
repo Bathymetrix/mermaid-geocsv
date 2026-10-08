@@ -1,5 +1,7 @@
 # mermaid-geocsv
 
+[![Tests](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml/badge.svg?branch=main&event=push)](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml)
+
 `mermaid-geocsv` reads MERMAID GeoCSV files into typed pandas DataFrames,
 returning one table per dataset. It preserves source column names, record
 order, timestamps and their timezones, and GeoCSV metadata, including units,
