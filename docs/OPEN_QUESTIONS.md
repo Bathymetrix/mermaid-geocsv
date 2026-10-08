@@ -136,3 +136,32 @@ and [Audit 01, finding 5](../audits/01.md#5-dataset-identity-and-placement-are-n
 rules. The reader still needs a separate compatibility decision for existing
 unversioned MERMAID files. Version validation remains open; the reader
 continues to accept unrecognized future-looking GeoCSV version strings.
+
+## MERMAID sampling-rate follow-up
+
+Added 2026-10-08 during ObsPy association planning. This is a scientific-data
+follow-up, separate from the GeoCSV specification questions above.
+
+The user reports that raw MER files quote sampling timing at microsecond
+precision, but its trustworthiness is uncertain. The current GeoCSV writer
+emits single-decimal sampling rates. Establish the precise raw quantity,
+units, and encoding before treating that precision as reliable.
+
+Compare raw MER sampling information, the writer's input and serialized
+GeoCSV output, encoded MiniSEED rates, and ObsPy reader output. In particular,
+verify whether ObsPy changes the rate slightly or simply exposes an already
+different encoded rate. Separate upstream formatting loss from reader
+conversion and from nominal-versus-measured sampling.
+
+For now the association design requires
+`abs(obspy_sps - geocsv_sps) <= 0.01` Hz. This is a minimum consistency check,
+explicitly provisional and potentially grossly relaxed. Return to the
+threshold after the comparison; do not treat it as established instrument
+accuracy or proof of association. Single-decimal output can itself hide
+differences larger than this threshold.
+
+`geocsv.read` continues to parse the supplied value faithfully. Upstream
+writer corrections are outside this project; neither rounding downloaded
+rates nor silently normalizing parsed rates is authorized. See the
+[association discussion](OBSPY_ASSOCIATION.md#matching-original-traces) and
+[sandbox TBD list](../sandbox/obspy_association/OPEN_QUESTIONS.md).

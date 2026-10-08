@@ -31,13 +31,19 @@ traces; our guarantee ends at initial association.
    GeoCSV rates in place of intended measured rates as a writer issue, to be
    fixed outside this project. Preserve the parsed value and the downloaded
    rate; do not compensate by rounding or snapping either to a nominal rate.
-   Revisit rate comparisons with writer-corrected source data before selecting
-   any numerical tolerance.
+   The agreed provisional minimum check is
+   `abs(obspy_sps - geocsv_sps) <= 0.01` Hz, potentially grossly relaxed.
+   Revisit it: the user reports microsecond-precision sampling timing in raw
+   MER files (trustworthiness and exact encoding unverified) but writes
+   single-decimal rates to GeoCSV. Compare raw MER, writer input/output,
+   MiniSEED headers, and ObsPy reading to check whether ObsPy changes the value
+   slightly. Preserve all evidence and tighten the criterion when justified.
+   See the [reader follow-up](../../docs/OPEN_QUESTIONS.md#mermaid-sampling-rate-follow-up).
 
 The first probes already expose overlapping source rows, changed quality,
 rate differences, and a one-sample returned trace. See
-[OBSERVATIONS.md](OBSERVATIONS.md); strict rate/count/quality matching remains
-provisional rather than an implemented rule.
+[OBSERVATIONS.md](OBSERVATIONS.md). The 0.01 Hz rate check is a provisional
+design decision, not implemented code; count and quality matching remain open.
 
 Settled: preserve the source row/provenance in `stats.geocsv`; validate core
 waveform fields; populate coordinates with sea-level reference elevation 0;

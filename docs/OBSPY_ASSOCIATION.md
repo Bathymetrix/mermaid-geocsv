@@ -175,7 +175,7 @@ or other format/analysis headers.
 | --- | --- |
 | `network`, `station`, `location`, `channel` | Validate against the matched complete SNCL. Existing waveform codes are authoritative; do not silently relabel an input to make it match. |
 | `starttime` | Validate the acquisition time under the matching rule still to be chosen; retain the waveform's `UTCDateTime` as received, without claiming hardware precision from its displayed digits. Do not reapply `TimeCorrection`. |
-| `sampling_rate` | Validate against `SampleRate`; preserve the original waveform rate. |
+| `sampling_rate` | Require an absolute difference from GeoCSV `SampleRate` of at most 0.01 Hz under the provisional check below; preserve the downloaded waveform rate. |
 | `npts` | Validate `SampleCount` against the waveform count and data length; do not use a header assignment to repair a mismatched array. |
 | `delta`, `endtime` | Leave calculation to ObsPy from the current core fields; do not assign independently. |
 | `calib` | Preserve the existing value, including ObsPy's default of 1.0. Current GeoCSV rows supply no calibration factor. |
@@ -443,17 +443,30 @@ Proposed first matching policy:
 3. Use start time to identify the acquisition. Precision and matching
    tolerance are deferred, as requested; retain the producer evidence above
    for that later discussion.
-4. Inspect rate, count, and quality as evidence rather than require exact
-   equality yet. The sandbox returns approximately 20.007 Hz for rows reporting
-   20 Hz, quality M for source Q/D, and combined or split coverage near
-   overlapping acquisitions. Establish an explicit rule for these differences
-   before association; do not silently overwrite waveform headers to force a
-   match. ObsPy reads the returned MiniSEED quality flag into
+4. Require present, finite, positive rates satisfying the provisional minimum
+   check `abs(obspy_sps - geocsv_sps) <= 0.01`, in Hz (samples per second).
+   A difference greater than 0.01 Hz fails this check; do not round either
+   value or overwrite waveform headers to force agreement. This is a necessary
+   consistency check, not proof of a unique match. Count and quality still
+   require a rule for combined/split coverage and quality M versus source Q/D.
+   ObsPy reads the returned MiniSEED quality flag into
    `stats.mseed.dataquality`; see
    [MiniSEED source](https://docs.obspy.org/_modules/obspy/io/mseed/core.html).
 5. Attach only when one candidate remains. Zero matches and multiple matches
    need distinct, informative outcomes, including candidate record indices.
    Do not silently choose the nearest, first, or last record.
+
+**Revisit the sampling-rate threshold:** 0.01 Hz is explicitly provisional
+and potentially grossly relaxed. The user reports that raw MER files quote
+sampling timing at microsecond precision, with uncertain trustworthiness,
+whereas the current GeoCSV writer emits single-decimal sampling rates. Verify
+the raw quantity, its units/encoding, and its reliability; compare raw MER,
+writer input/output, MiniSEED rate representation, and ObsPy reader output.
+Determine whether ObsPy changes the value slightly rather than assuming it
+does. GeoCSV rounding alone can obscure differences; the present threshold
+is not a general guarantee that all single-decimal representations will pass.
+Track this in the [reader follow-up](OPEN_QUESTIONS.md#mermaid-sampling-rate-follow-up)
+and the sandbox TBD list. No reader or writer normalization is authorized.
 
 Inspect all supplied datasets without losing their provenance. Do not require
 a one-to-one relationship: repeated copies of the same waveform may each
