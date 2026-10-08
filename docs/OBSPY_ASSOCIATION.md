@@ -57,7 +57,7 @@ Geographic metadata has consumer-specific conventions:
 | `Inventory` channel coordinates | Standard station metadata, StationXML, response workflows | Coordinates belong to channel epochs; elevation and depth use metres. |
 | `stats.coordinates.latitude` and `.longitude` | Some waveform analysis and plotting functions | Record-section plotting can use these two fields alone. |
 | `stats.coordinates.elevation` | ObsPy array analysis | Array processing expects kilometres. |
-| `stats.sac.stla`, `.stlo`, `.stel`, `.stdp` | SAC geographic headers | Available alternative; unnecessary for the current in-memory workflow. |
+| `stats.sac.stla`, `.stlo`, `.stel`, `.stdp` | SAC geographic headers | Optional projection at association, using the conventions below. |
 | Proposed `stats.geocsv` | Source record and provenance | Preserve GeoCSV names, declared units, method, and source identity. |
 
 Sources: [Channel](https://docs.obspy.org/packages/autogen/obspy.core.inventory.channel.Channel.html),
@@ -139,8 +139,9 @@ remain to be designed; no scientific inference or conversion belongs in the
 source attachment.
 
 Initial association is limited to the following existing waveform attributes
-and coordinate convention. It does not fill SAC, response, rotation, or
-other format/analysis headers.
+and coordinate convention. An optional SAC projection may also populate
+the geographic headers specified below. It does not fill response, rotation,
+or other format/analysis headers.
 
 | Attribute | Initial association responsibility |
 | --- | --- |
@@ -150,7 +151,7 @@ other format/analysis headers.
 | `npts` | Validate `SampleCount` against the waveform count and data length; do not use a header assignment to repair a mismatched array. |
 | `delta`, `endtime` | Leave calculation to ObsPy from the current core fields; do not assign independently. |
 | `calib` | Preserve the existing value, including ObsPy's default of 1.0. Current GeoCSV rows supply no calibration factor. |
-| `coordinates` | Populate available valid geographic values from the matched row, subject to the units/missingness policy below. Report conflicts rather than silently overwrite. |
+| `coordinates` | Populate available valid latitude/longitude from the matched row and elevation 0.0 under the sea-level-reference convention below. Report conflicts rather than silently overwrite. |
 | `processing` | Preserve existing history. GeoCSV method/version is source provenance, not a reconstructed ObsPy processing history. Whether to record association itself remains open. |
 
 The ten default attributes of `Stats` are the four channel codes,
@@ -172,16 +173,68 @@ Latitude and longitude can be copied when present, finite, and expressed in
 compatible declared units. Preserve missing values in the source attachment;
 do not invent missing operational coordinates.
 
-Elevation still requires an explicit destination-unit policy. The source
-fixture declares metres, while ObsPy array processing expects
-`stats.coordinates.elevation` in kilometres. `coordinates` is a consumer
-convention, not a universally enforced schema. All 828 waveform rows in the
-fixture lack elevation, so this first fixture cannot supply that value.
-Water pressure is not elevation; neither zero nor pressure-derived depth
-should be substituted. A latitude/longitude attachment need not satisfy the
-requirements of a consumer that also requires elevation. See
+### Adopted vertical reference and approximate depth
+
+For the initial marine MERMAID workflow, use a constant sea-level reference:
+`stats.coordinates.elevation = 0.0` and, when SAC projection is requested,
+`stats.sac.stel = 0.0`. This is an explicit application convention consistent
+with automaid, not an elevation observation or an inference from a missing
+GeoCSV `Elevation`. It refers to the sea surface, not the submerged sensor's
+physical elevation. No geoid model, ellipsoid transformation, tidal correction,
+or other vertical-datum model is assumed. Lake-level handling is deferred
+until required.
+
+The projected zero is numerically identical in metres and kilometres. SAC
+`stel` uses metres, while ObsPy array processing expects
+`coordinates.elevation` in kilometres. Any future nonzero convention must
+make the destination units explicit. Supplying zero does not establish that
+surface geometry is suitable for every analysis of a submerged receiver.
+The parsed `Elevation` value, including missingness, remains unchanged in
+`stats.geocsv`; a future nonzero source elevation must not silently redefine
+this reference convention. See
 [array processing](https://docs.obspy.org/packages/autogen/obspy.signal.array_analysis.array_processing.html)
 and [record-section plotting](https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.plot.html).
+
+For optional SAC `stdp` projection, adopt the user's automaid approximation:
+
+```text
+1 dbar = 100 mbar ≈ 1 m of water depth
+stdp [m] = WaterPressure [mbar] / 100
+```
+
+The pressure-unit conversion is exact; the pressure-to-depth relationship is
+an intentionally approximate scientific convention. Event depth in automaid
+`.LOG` and `.MER` is reported in dbar, whereas the parsed GeoCSV
+`WaterPressure` is declared in mbar. Thus a source event depth expressed in
+dbar is numerically equal to the approximate depth in metres, but GeoCSV
+pressure must first be divided by 100. For example, 151800 mbar maps to
+`stdp = 1518.0` metres, positive downward from the sea-level reference.
+
+This convention deliberately follows automaid's 100 mbar per metre rather
+than the 101 mbar per metre stated in the user's cited MERMAID manual
+(Réf: 452.000.852, Version 00). That manual comparison is supplied by the
+user, not independently verified here. Do not apply a latitude-dependent
+pressure-to-depth formula or an additional atmospheric-pressure correction.
+This is not an exact oceanographic depth calculation.
+
+Project `stdp` only when pressure is present, finite, and declared in the
+expected mbar units. Missing pressure means no new `stdp` value; do not
+substitute zero. Preserve original pressure and units in `stats.geocsv`.
+Receiver depth belongs in `stdp`, not seismic-source depth `evdp`.
+
+### Optional SAC projection
+
+When requested, populate `stla` and `stlo` from receiver latitude/longitude,
+`stel = 0.0` from the adopted sea-level convention, and `stdp` from the
+approximation above when pressure is available. Do not populate `evla` or
+`evlo`: the waveform row does not locate a seismic source. Extend existing
+SAC metadata rather than replace it, and report conflicting values rather
+than silently overwrite them. Custom user-header slot allocation remains
+outside this first projection.
+
+This projection carries the same initial-association guarantee as the core
+and coordinate attachment. It adds no later synchronization or persistence
+guarantee.
 
 ## Subsequent behavior belongs to ObsPy
 
@@ -237,12 +290,12 @@ does not make the inspected ObsPy write path lossless. See
 [ObsPy conversion](https://docs.obspy.org/_modules/obspy/io/sac/util.html)
 and [SAC format](https://ds.iris.edu/files/sac-manual/manual/file_format.html).
 
-### Possible SAC mappings, if a SAC workflow is later wanted
+### SAC mapping reference
 
-These are candidate destinations, not an approved slot allocation. Core
-waveform fields are checked during association, rather than overwritten.
-This table is reference material; it does not prescribe default attachment
-destinations for the current in-memory workflow.
+The geographic projection above is agreed; remaining entries are candidate
+destinations, not an approved slot allocation. Core waveform fields are
+checked during association, rather than overwritten. SAC projection is
+optional, not a default attachment destination.
 
 | GeoCSV field | Existing destination | Fit and qualification |
 | --- | --- | --- |
@@ -256,8 +309,8 @@ destinations for the current in-memory workflow.
 | `DataQuality` | `stats.mseed.dataquality` | SAC `iqual` has different categories; no direct equivalent. |
 | `Latitude` | `stats.sac.stla` | Direct degrees-north mapping. |
 | `Longitude` | `stats.sac.stlo` | Direct degrees-east mapping. |
-| `Elevation` | `stats.sac.stel` | Direct only for compatible elevation datum and metres; preserve missingness. |
-| `WaterPressure` | No dedicated pressure field; possibly a free `userN` | Preserve mbar. `stdp` requires depth in metres. |
+| Sea-level reference convention | `stats.sac.stel` | Constant 0.0 metres; preserve parsed `Elevation` separately. |
+| `WaterPressure` | `stats.sac.stdp` in optional projection | Approximate depth in metres = pressure in mbar / 100; preserve source pressure. |
 | `TimeCorrection` | Candidate `stats.sac.user3` | Matches automaid's established slot; seconds, metadata only. |
 | `TimeDelay` | Possibly a free `userN` | Separate quantity; do not put it into `b`, `o`, or a pick header. |
 | `InstrumentDescription` | `stats.sac.kinst` for a short designation only | `452.020` fits; the full `MERMAIDHydrophone(452.020)` string does not. |
@@ -289,13 +342,13 @@ The example demonstrates a useful approach: core waveform headers, recognized
 geographic SAC headers, and explicit application use of user slots. It also
 identifies decisions we should not copy automatically:
 
-- **Pressure and depth:** `stdp = self.depth` uses the stated dbar-to-metres
-  approximation. That is a derived depth, not a direct mapping of GeoCSV's
-  mbar pressure. If offered, document the approximation and preserve pressure.
-- **Vertical reference:** `stel = 0` expresses automaid's surface-reference
-  convention alongside subsurface depth. It does not establish that a missing
-  GeoCSV `Elevation` value means zero. Decide explicitly whether to adopt that
-  convention and how it relates to sensor elevation used by other consumers.
+- **Pressure and depth:** the user explicitly adopted automaid's approximate
+  dbar-to-metres conversion for optional `stdp` projection. Convert GeoCSV
+  mbar to dbar by dividing by 100, and preserve the original pressure.
+- **Vertical reference:** the user explicitly adopted `stel = 0` and
+  `coordinates.elevation = 0` as a sea-level-reference convention, without
+  assuming a geoid model. This does not change parsed GeoCSV elevation or
+  represent the physical elevation of the submerged sensor.
 - **User slots:** leave `user0`–`user2` for SNR, criterion, and trigger index,
   and `user3` for clock correction if preserving automaid compatibility.
   Do not commandeer its `kuser0`–`kuser2` meanings for new labels. No pressure
@@ -393,7 +446,7 @@ Keep existing waveform identity, timing, sample rate, count, calibration,
 and existing defined format headers authoritative. Association checks them;
 it does not repair or replace them. Do not create SAC headers by default.
 Report conflicting custom attachments or initial coordinate
-projections rather than silently overwrite them. An explicit future SAC
+projections rather than silently overwrite them. The optional SAC
 projection should extend its existing header rather than replace it. We still
 need to decide whether an identical repeated attachment is a no-op.
 
@@ -433,15 +486,17 @@ lightweight. Do not add a dependency or change `read` during planning.
 
 The next discussion should settle, in order:
 
-1. Coordinate missingness and elevation units for the initial attachment;
-   identify the first consumer before promising its requirements are met.
+1. Latitude/longitude missingness and the first consumer, before promising
+   its analysis requirements are met. Sea-level zero and the approximate
+   pressure-to-depth convention are now established.
 2. Adapter ownership and public name. `associate` emphasizes matching;
    `attach_metadata` emphasizes mutation. Neither spelling is committed.
 3. Source-record attachment schema and whether its snapshot is immutable.
 4. Whether association itself should append a `processing` entry; preserve
    existing history and do not reconstruct it from GeoCSV.
-5. Existing-header conflict handling. SAC slot allocation and pressure/depth
-   conversion are outside the current in-memory requirement.
+5. Existing-header conflict handling. Custom SAC slot allocation remains
+   outside the first projection; geographic headers and the approximate
+   pressure-to-depth mapping are established above.
 
 Complete SNCL is established. The exact time-matching rule and tolerance are
 deferred until the metadata representation is settled.
