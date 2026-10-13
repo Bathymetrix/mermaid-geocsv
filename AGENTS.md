@@ -16,6 +16,13 @@ changes. If instructions conflict, this file takes precedence.
 
 ## Repository Scope
 
+### Automaid Source Reference
+
+When MERMAID waveform-processing behavior needs verification, use
+`/Users/jdsimon/programs/automaid/` as the definitive source checkout to
+inspect. Inspection is authorized; do not modify files in that repository
+unless the user separately and explicitly requests those changes.
+
 `mermaid-geocsv` provides lightweight, faithful parsing of MERMAID GeoCSV
 files. It owns structural parsing, typed pandas tabular output, and
 preservation of source metadata.

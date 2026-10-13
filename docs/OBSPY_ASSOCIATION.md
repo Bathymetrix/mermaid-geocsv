@@ -39,6 +39,10 @@ reingested/updated, verify whether submitted Q/D labels are now returned before
 using quality in association. EarthScope's current [dataselect help](https://service.earthscope.org/fdsnws/dataselect/docs/1/help/)
 says the default “best” selection merges qualities and removes overlaps in
 quality-preference order; the `quality` selection parameter has been retired.
+Automaid assigns DET=`Q` and REQ=`D` based on stream type, independent of
+sampling frequency. A local DET.WLT2 MiniSEED confirms a detected product at
+2.5 Hz with quality `Q`. The quality code describes timing/stream lineage;
+rate, channel, and location identify the sampling configuration.
 
 The current workflow is in memory: the waveforms are not SAC files and SAC
 reading/writing is not a requirement. Existing SAC headers were examined as

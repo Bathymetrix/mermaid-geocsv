@@ -33,7 +33,17 @@ traces; our guarantee ends at initial association.
    and partial acquisitions be reported without silently guessing?
 7. **Initial attachment:** settle source-record schema, mutability, existing
    header conflicts, and whether association appends a processing entry.
-8. **Upstream sampling-rate representation:** the user identifies integer-valued
+8. **Verify the rebuilt processed dataset:** a newly added DET.WLT2 fixture
+   reads as 2.5 Hz, location 10, quality Q, so DET is not limited to WLT5 / 20
+   Hz. Automaid's quality assignment is stream-based: DET Q, REQ D, independent
+   of rate. Inspect the fixture's source MER header, then verify representative
+   regenerated outputs against the source classification, current SNCL mapping,
+   and quality rule. A separate older v4.5.1 DET.WLT2 product has location 01;
+   preserve such actual headers rather than rewriting them. Keep `.REQ.RAW`
+   event products (D, about 40 Hz) distinct from physically recovered
+   continuous raw-buffer streams (R, location 20). See
+   [MERMAID_DATA_QUALITY.md](MERMAID_DATA_QUALITY.md).
+9. **Upstream sampling-rate representation:** the user identifies integer-valued
    GeoCSV rates in place of intended measured rates as a writer issue, to be
    fixed outside this project. Preserve the parsed value and the downloaded
    rate; do not compensate by rounding or snapping either to a nominal rate.

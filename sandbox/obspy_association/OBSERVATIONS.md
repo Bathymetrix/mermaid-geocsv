@@ -82,6 +82,35 @@ representations, not demonstrated clock accuracy. This does not make precise
 waveform sample intervals meaningless, and it does not authorize overwriting
 downloaded timing from GeoCSV. No hardware-precision verification was performed.
 
+### Filename, quality, and raw-buffer distinction
+
+Inspected the newly added fixture
+`20210527T154441.0030_60AFC696.MER.DET.WLT2.mseed` with ObsPy 1.5.1. It reads
+as `MH.P0030.10.MDH`, 2.5009128631 Hz, 584 samples, and MiniSEED quality Q.
+Its paired SAC file has `kuser1=DET.WLT2`. This confirms a DET.WLT2 product at
+2.5 Hz with quality Q and the current helper's location 10. It contradicts
+the earlier interpretation that DET was restricted to WLT5 / 20 Hz. The
+source MER header still needs inspection to verify how this product was
+classified and encoded before processing. Preserve the quality rule
+independently of rate: DET is Q and REQ is D.
+
+A separate older v4.5.1 DET.WLT2 example,
+`20210528T053250.0030_60B08BB3.MER.DET.WLT2.mseed`, reads as
+`MH.P0030.01.MDH`, 2.5009138679 Hz, 3000 samples, and quality Q. Its location
+01 differs from the current helper's location 10, which remains a historical
+location-code difference. Preserve the downloaded trace's actual SNCL.
+
+Separately inspected local `.REQ.RAW.mseed` event products and continuous P0023
+buffer files. The `.REQ.RAW` products have MiniSEED quality D and use several
+location codes across historical products; a recent example is location 10.
+They are requested event files with un-wavelet-transformed data, not the
+physically recovered continuous raw-buffer stream. The latter is represented
+locally by files such as `buffers/P0023/mseed/MH.P0023.20.BDH...mseed`, which
+ObsPy reads at 40.01405975 Hz with quality R. This resolves the apparent
+location discrepancy: current `STAGES=-1` event mapping to location 10 and the
+table's physical-buffer location 20 describe different data products. Do not
+infer the R quality code or location 20 from the filename token `RAW`.
+
 ### Month request
 
 Requested `MH.P0006.00.BDH` from 2018-06-29 00:00:00Z through

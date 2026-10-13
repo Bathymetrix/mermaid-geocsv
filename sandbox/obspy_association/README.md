@@ -42,6 +42,16 @@ The explicit HTTPS EarthScope endpoint serves the role of `Client("IRIS")`
 in the supplied example, without depending on alias behavior across versions.
 Fixture timestamps are already corrected; do not apply `TimeCorrection` again.
 
+## Inspect a MiniSEED file
+
+Use ObsPy's MiniSEED reader and built-in stream plotter to inspect a local file
+and print each trace's MiniSEED data-quality flag:
+
+```bash
+.venv/bin/python sandbox/obspy_association/view_mseed.py \
+    data/fixtures/mseed/20210527T154441.0030_60AFC696.MER.DET.WLT2.mseed
+```
+
 ## Longer window
 
 ```bash
