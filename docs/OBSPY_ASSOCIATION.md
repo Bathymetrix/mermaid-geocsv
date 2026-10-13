@@ -28,6 +28,18 @@ Preserve both representations; do not round or snap rates to hide discrepancies.
 The matching proposal below remains provisional pending corrected source data
 and investigation of the other differences.
 
+The user-provided automaid writer diff assigns submitted MiniSEED quality `D`
+to requested waveforms and `Q` to detected waveforms. Our current EarthScope
+retrievals return `M` for both. EarthScope documents that its legacy archive
+rewrote every submitted record's quality to `M` to indicate possible facility
+modification; legacy `M` records will retain that code. This appears consistent
+with archive handling even when MERMAID submitted separate files, and does not
+prove any particular trace combined multiple files. After MERMAID data are
+reingested/updated, verify whether submitted Q/D labels are now returned before
+using quality in association. EarthScope's current [dataselect help](https://service.earthscope.org/fdsnws/dataselect/docs/1/help/)
+says the default “best” selection merges qualities and removes overlaps in
+quality-preference order; the `quality` selection parameter has been retired.
+
 The current workflow is in memory: the waveforms are not SAC files and SAC
 reading/writing is not a requirement. Existing SAC headers were examined as
 one possible attachment mechanism, not as a requirement to use SAC for the
@@ -447,8 +459,11 @@ Proposed first matching policy:
    check `abs(obspy_sps - geocsv_sps) <= 0.01`, in Hz (samples per second).
    A difference greater than 0.01 Hz fails this check; do not round either
    value or overwrite waveform headers to force agreement. This is a necessary
-   consistency check, not proof of a unique match. Count and quality still
-   require a rule for combined/split coverage and quality M versus source Q/D.
+   consistency check, not proof of a unique match. Count and coverage still
+   require a rule for combined/split acquisitions. Keep GeoCSV and MiniSEED
+   quality indicators separately as stream/archive metadata; they may differ
+   and are not a hard association filter. See the sandbox's
+   [user-supplied data-quality mapping](../sandbox/obspy_association/MERMAID_DATA_QUALITY.md).
    ObsPy reads the returned MiniSEED quality flag into
    `stats.mseed.dataquality`; see
    [MiniSEED source](https://docs.obspy.org/_modules/obspy/io/mseed/core.html).

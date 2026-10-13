@@ -60,4 +60,6 @@ request does not establish completeness; compare with eligible GeoCSV rows
 before concluding that all expected acquisitions were returned.
 
 See [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) for the running design questions
-and [OBSERVATIONS.md](OBSERVATIONS.md) for execution evidence.
+and [OBSERVATIONS.md](OBSERVATIONS.md) for execution evidence. The supplied
+[MERMAID data-quality note](MERMAID_DATA_QUALITY.md) records DET/REQ/raw-buffer
+meaning and the nominal channel/location/rate table.

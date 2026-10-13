@@ -31,6 +31,23 @@ Returned starts are `2018-06-29T17:07:31.205618Z` and
 They contain STEIM2, big-endian, 4096-byte records. The normal client path
 adds a `trim` processing entry even though these examples retained the count.
 
+The user supplied the relevant automaid writer change: requested waveforms set
+MiniSEED data quality `D`, and detected waveforms set `Q`. Those are the
+submitted qualities expected from that writer, consistent with their GeoCSV
+rows. EarthScope's [archive transition note](https://www.earthscope.org/news/miniseed-archiving-and-distribution-changes/)
+explains that its legacy archive changed all submitted quality codes to `M`
+to mark records as potentially modified during facility processing. Existing
+legacy `M` records will retain that code; new submissions after the transition
+retain contributor quality codes. The retrieved `M` headers therefore appear
+consistent with legacy archive handling, not necessarily an incorrect MERMAID
+file header. EarthScope notes that `M` indicates potential modification; it
+does not prove a particular trace combines multiple submitted files.
+Recheck after MERMAID data are reingested/updated before making a quality-based
+association or precedence rule. The current FDSN dataselect documentation also
+says default “best” selection merges available qualities and removes overlaps
+by quality preference, while its `quality` request parameter is now retired:
+[service help](https://service.earthscope.org/fdsnws/dataselect/docs/1/help/).
+
 The fixture also has record 101 at `2018-07-06T01:49:28.613Z`, quality Q,
 4736 samples. The second returned trace starts near that row's time but has
 record 100's count. This is an ambiguity to investigate, not a demonstrated
