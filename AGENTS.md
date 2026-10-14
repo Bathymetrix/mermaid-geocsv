@@ -16,6 +16,12 @@ changes. If instructions conflict, this file takes precedence.
 
 ## Repository Scope
 
+Repository ethos: **simple rules, clear projections, and no surprise side effects**.
+Before changing association or describing ObsPy's main Stats attributes, consult
+`docs/OBSPY_STATS_REFERENCE.md`, which records the relevant supplied source.
+Keep the ten core defaults distinct from optional namespaces and processing
+history; `_add_processing_info` is a decorator, not a core Stats field.
+
 ### Processed Data Reference
 
 `$MERMAID/processed/` is a canonical source of test examples. Its recursive
@@ -63,12 +69,13 @@ existing attachment wholesale as the starting state.
 Populate association metadata only from that trace's uniquely matched source
 record, its dataset provenance, and explicitly documented projection rules
 (such as the adopted sea-level reference). Never use an earlier match or
-pre-existing trace metadata to fill missing source values. Existing values
-may be inspected for conflicts, but are not fallback data. Required groups,
-including latitude/longitude pairs, must be complete or follow an explicit
-error/skip-with-warning policy; skipping must not retain stale projected
-values. Apply this rule to all association-owned fields, including future SAC
-projections, not only coordinates.
+pre-existing trace metadata to fill missing source values. Requested destination
+containers (`stats.geocsv`, `stats.coordinates`, and `stats.sac` when requested)
+must be absent, even if empty or apparently equivalent; otherwise raise. Never
+merge, overwrite, or delete existing destinations. Required groups, including
+latitude/longitude pairs, must be complete or raise; do not introduce per-field
+missing-data policy switches. Apply this rule to all association-owned fields,
+including future SAC projections, not only coordinates.
 
 This rule concerns newly associated metadata, not clearing the waveform's
 native Stats or data: existing waveform identity, timing, sampling, and

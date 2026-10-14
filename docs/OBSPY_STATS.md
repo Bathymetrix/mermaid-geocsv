@@ -2,7 +2,9 @@
 
 Source survey, 2026-10-08, using current official ObsPy documentation and
 implementation. Companion to the [association discussion](OBSPY_ASSOCIATION.md).
-This records observed behavior; it does not settle our attachment API.
+This records observed behavior. Consult the
+[focused core Stats reference](OBSPY_STATS_REFERENCE.md) before changing the
+associator; it incorporates the source supplied by the user on 2026-10-14.
 
 `Stats` is an extensible dictionary-like container. There is no closed list
 of all possible entries: waveform readers and user code add their own.
@@ -140,6 +142,7 @@ representation for each overlapping field. A requirement for perpetual
 synchronization should be stated explicitly rather than inferred from
 ObsPy's support for nested metadata.
 
-Verification was by source/documentation inspection. ObsPy is not installed
-in this repository's `.venv`, and these relationships were not exercised in
-a local runtime during this survey.
+The original survey used source/documentation inspection. ObsPy is now
+installed in the repository's `.venv`; the focused reference checks its ten
+core defaults against the user-supplied source. Processing history remains
+optional decorator-maintained metadata, not a default Stats field.

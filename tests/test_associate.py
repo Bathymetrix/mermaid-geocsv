@@ -188,20 +188,19 @@ def test_quality_is_preserved_and_does_not_select_matches(histories):
     assert trace.stats.geocsv.DataQuality == "D"
 
 
-def test_missing_coordinates_and_pressure_remain_missing(histories):
+def test_missing_coordinate_pair_fails_without_attachment(histories):
     trace, frame = one_event(histories)
     frame.loc[:, ["Latitude", "Longitude", "WaterPressure"]] = pd.NA
-    with pytest.warns(RuntimeWarning, match="coordinate projection skipped"):
-        associate(trace, [frame], missing_coordinates="warn")
-    assert pd.isna(trace.stats.geocsv.Latitude)
-    assert pd.isna(trace.stats.geocsv.WaterPressure)
-    assert "coordinates" not in trace.stats
+    before = deepcopy(trace.stats)
+    with pytest.raises(ValueError, match="requires both Latitude and Longitude"):
+        associate(trace, [frame])
+    assert trace.stats == before
 
 
 def test_coordinate_conflict_is_rejected_without_attachment(histories):
     trace, frame = one_event(histories)
     trace.stats.coordinates = {"latitude": 0.0}
-    with pytest.raises(ValueError, match="conflicting existing coordinates.latitude"):
+    with pytest.raises(ValueError, match="stats.coordinates already exists"):
         associate(trace, [frame])
     assert "geocsv" not in trace.stats
     assert trace.stats.coordinates.latitude == 0

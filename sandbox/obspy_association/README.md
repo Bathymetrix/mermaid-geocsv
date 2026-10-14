@@ -112,7 +112,7 @@ separately from MiniSEED quality. Latitude/longitude use their declared units;
 elevation is the explicit sea-level constant 0, with no geoid model.
 
 All matches and projections are validated before any batch mutation. Existing
-GeoCSV attachments or conflicting coordinates raise `ValueError`. The mutable
+GeoCSV or coordinate containers raise `ValueError`, even if empty or equivalent. The mutable
 attachment keeps original columns plus dataset index, source record index,
 and immutable dataset metadata. Guarantees end at initial association;
 trimmed/merged/resampled inputs remain outside this matching scope.
@@ -130,10 +130,14 @@ from `$MERMAID/processed/` after checking their hashes. See the fixture README
 for instructions; association tests explicitly skip when histories are absent.
 
 Coordinate projection requires a complete source latitude/longitude pair.
-Missing either raises by default. `missing_coordinates="warn"` skips the
-whole projection with a warning, attaches the source row, and removes any
-old coordinates. There are no default latitude/longitude values from ObsPy
-or this adapter. Reference elevation 0 is supplied only with a valid pair.
+Missing either raises. `stats.geocsv` and `stats.coordinates` must be absent;
+when SAC projection is requested, `stats.sac` must also be absent. No merge,
+overwrite, deletion, or per-field missing-data options are provided. Reference
+elevation 0 is supplied only with a valid source pair. Native waveform fields
+are validated and preserved, never filled or relabeled from GeoCSV.
+See the [source-based Stats reference](../../docs/OBSPY_STATS_REFERENCE.md):
+processing history is decorator-maintained optional metadata, not a mainline
+Stats default or an association projection.
 
 `time_tolerance=None` defaults to the source timestamp's recorded resolution;
 pass a finite nonnegative number of seconds to override it, or zero for exact

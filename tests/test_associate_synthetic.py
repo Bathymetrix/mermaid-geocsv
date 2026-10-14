@@ -2,7 +2,6 @@
 
 from copy import deepcopy
 from pathlib import Path
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -47,25 +46,12 @@ def test_complete_projection_and_source_snapshot(records):
 
 
 @pytest.mark.parametrize('station', ['SYN03', 'SYN04', 'SYN05'])
-def test_incomplete_pair_fails_even_with_old_coordinates(station, records):
+def test_incomplete_pair_fails(station, records):
     tr = trace(station)
-    tr.stats.coordinates = {'latitude': -80., 'longitude': 20.}
     before = deepcopy(tr.stats)
     with pytest.raises(ValueError, match='requires both Latitude and Longitude'):
         associate(tr, records)
     assert tr.stats == before
-
-
-@pytest.mark.parametrize('station', ['SYN03', 'SYN04', 'SYN05'])
-def test_optional_warning_skips_whole_projection(station, records):
-    tr = trace(station)
-    tr.stats.coordinates = {'latitude': -80., 'longitude': 20.}
-    with pytest.warns(RuntimeWarning, match='coordinate projection skipped'):
-        associate(tr, records, missing_coordinates='warn')
-    assert 'coordinates' not in tr.stats
-    assert 'geocsv' in tr.stats
-    row = tr.stats.geocsv
-    assert pd.isna(row.Latitude) or pd.isna(row.Longitude)
 
 
 def test_missing_pair_does_not_partially_modify_stream(records):
@@ -76,29 +62,61 @@ def test_missing_pair_does_not_partially_modify_stream(records):
     assert [tr.stats for tr in st] == before
 
 
-def test_warning_as_error_does_not_modify_stream(records):
-    st = obspy.Stream([trace(), trace('SYN03')])
+@pytest.mark.parametrize('key,value,project_sac', [
+    ('geocsv', {}, False), ('geocsv', None, False),
+    ('coordinates', {}, False),
+    ('coordinates', {'latitude': 10., 'longitude': 20., 'elevation': 0.}, False),
+    ('coordinates', {'latitude': -80.}, False),
+    ('sac', {}, True),
+])
+def test_existing_destinations_fail_without_mutation(key, value, project_sac, records):
+    tr = trace()
+    tr.stats[key] = value
+    before = deepcopy(tr.stats)
+    with pytest.raises(ValueError, match=f'stats.{key} already exists'):
+        associate(tr, records, project_sac=project_sac)
+    assert tr.stats == before
+
+
+def test_later_trace_destination_conflict_leaves_batch_unchanged(records):
+    st = obspy.Stream([trace(), trace('SYN02')])
+    st[1].stats.coordinates = {}
     before = [deepcopy(tr.stats) for tr in st]
-    with warnings.catch_warnings():
-        warnings.simplefilter('error', RuntimeWarning)
-        with pytest.raises(RuntimeWarning):
-            associate(st, records, missing_coordinates='warn')
+    with pytest.raises(ValueError, match='stats.coordinates already exists'):
+        associate(st, records)
     assert [tr.stats for tr in st] == before
 
 
-def test_coordinate_conflict_fails(records):
+def test_core_stats_and_processing_history_are_preserved(records):
     tr = trace()
-    tr.stats.coordinates = {'latitude': -80.}
-    with pytest.raises(ValueError, match='conflicting existing coordinates.latitude'):
-        associate(tr, records)
-    assert 'geocsv' not in tr.stats
-
-
-def test_projection_starts_from_source_pair(records):
-    tr = trace()
-    tr.stats.coordinates = {'latitude': 10., 'longitude': 20., 'unverified': 999}
+    tr.stats.calib = 2.5
+    tr.stats.processing = ['existing upstream operation']
+    before = deepcopy(tr.stats)
     associate(tr, records)
-    assert set(tr.stats.coordinates) == {'latitude', 'longitude', 'elevation'}
+    for key, value in before.items():
+        assert tr.stats[key] == value
+    assert set(tr.stats.defaults) == {
+        'network', 'station', 'location', 'channel', 'starttime', 'endtime',
+        'sampling_rate', 'delta', 'npts', 'calib'}
+    assert 'processing' not in trace().stats
+    assert 'processing' not in tr.stats.defaults
+
+
+def test_sncl_mismatch_is_not_repaired_from_geocsv(records):
+    tr = trace()
+    tr.stats.location = '20'
+    before = deepcopy(tr.stats)
+    with pytest.raises(ValueError, match='no match'):
+        associate(tr, records)
+    assert tr.stats == before
+
+
+def test_unrequested_sac_projection_does_not_touch_existing_headers(records):
+    tr = trace()
+    tr.stats.sac = {'unrelated': 'leave untouched'}
+    before = deepcopy(tr.stats.sac)
+    associate(tr, records)
+    assert tr.stats.sac == before
 
 
 def test_multiple_traces_and_quality_preservation(records):

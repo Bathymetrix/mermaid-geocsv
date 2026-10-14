@@ -67,16 +67,18 @@ performance still apply to MiniSEED input.
 
 ### Complete coordinate pairs
 
-The projection now starts empty. Both Latitude and Longitude are required;
-existing values never supply a missing source component. Missing either
-raises by default, before any batch mutation. `missing_coordinates="warn"`
-attaches the original source row, warns, skips the **whole** projection, and
-removes existing coordinates on successful association. No elevation-only
-container or partial coordinate pair is created. A complete valid pair gets
-only source latitude/longitude and the explicit elevation=0 sea-level
-reference. Existing conflicts still raise; extra old coordinate fields are
-not carried into the new container. Warnings are emitted before mutation so
-warnings treated as errors also leave the batch unchanged.
+The final rule is strict: the projection starts empty and both Latitude and
+Longitude are required. Each requested destination container must be absent,
+even if empty or apparently equivalent. Existing values cannot supply a missing
+component. No container is merged, overwritten, or deleted. All checks complete
+before any trace is mutated. A complete pair gets source latitude/longitude
+and the explicit sea-level elevation=0 convention.
+
+An intermediate remedy offered `missing_coordinates="warn"`; this was removed
+at the user's request in favor of simple rules, clear projections, and no
+surprise side effects. Processing history is not a projection or one of the
+ten core Stats defaults; its existing list is left untouched. See the
+[source-based reference](OBSPY_STATS_REFERENCE.md).
 
 ### Reproducible unit coverage without cutting real histories
 
@@ -129,15 +131,15 @@ Findings 4 and 5, package ownership/exposure, public schema/exception contracts,
 and optional SAC projection remain later work. These fixes do not expose
 `geocsv.associate`. Optional SAC projection remains NotImplementedError.
 
-## Verification after remediation
+## Verification after strict-rule simplification
 
-- Full local suite: **215 passed**, including complete-history integration.
-- Fresh files without ignored histories: **181 passed, 34 skipped**. The
+- Full local suite: **219 passed**, including complete-history integration.
+- Fresh files without ignored histories: **185 passed, 34 skipped**. The
   tracked synthetic association tests execute; only full-history cases skip.
-- Focused reader/synthetic suite: **155 passed**.
+- Focused synthetic/full-history association suite: **80 passed**.
 - Source timestamp values, timezone equivalence, per-record resolution and
   trailing zeros, mixed dataset record indices, immutable resolution metadata,
-  coordinate-pair failure/optional warning, batch atomicity, and the writer
+  coordinate-pair failure, strict destination conflicts, batch atomicity, and the writer
   rounding boundary are covered. Repository diff whitespace checks pass.
 
 No processed source histories or Automaid files were modified. No commits or

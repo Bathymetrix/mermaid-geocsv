@@ -202,13 +202,14 @@ or other format/analysis headers.
 | `npts` | Validate `SampleCount` against the waveform count and data length; do not use a header assignment to repair a mismatched array. |
 | `delta`, `endtime` | Leave calculation to ObsPy from the current core fields; do not assign independently. |
 | `calib` | Preserve the existing value, including ObsPy's default of 1.0. Current GeoCSV rows supply no calibration factor. |
-| `coordinates` | Require both valid latitude and longitude from the matched row, then project elevation 0.0. Missing either component raises by default; `missing_coordinates="warn"` skips the whole projection with a warning. Existing values never supply a missing component. |
-| `processing` | Preserve existing history. GeoCSV method/version is source provenance, not a reconstructed ObsPy processing history. Whether to record association itself remains open. |
+| `coordinates` | Require both valid source latitude and longitude, then project elevation 0.0 into a fresh container. Missing either component or an existing destination raises. |
 
-The ten default attributes of `Stats` are the four channel codes,
+The [source-based Stats reference](OBSPY_STATS_REFERENCE.md) is the canonical
+reference for these distinctions. The ten default attributes of `Stats` are the four channel codes,
 `starttime`, `endtime`, `sampling_rate`, `delta`, `npts`, and `calib`.
 `coordinates` and `processing` are additional conventions, not initialized
-core defaults. `component` is a convenience view of the last channel
+core defaults. Processing history is an optional list maintained by ObsPy
+processing decorators; association does not project or alter it. `component` is a convenience view of the last channel
 character, not another independent field to populate. See
 [Stats](https://docs.obspy.org/packages/autogen/obspy.core.trace.Stats.html).
 
@@ -221,18 +222,22 @@ original traces, much of this is validation rather than assignment.
 The decision to include coordinates in initial association replaces the
 previous proposal for optional, separately requested coordinate projection.
 Latitude and longitude form one position and must both be present, finite,
-and expressed in compatible declared units. Missing either raises by default.
-`missing_coordinates="warn"` attaches source metadata but skips the entire
-coordinate projection and removes existing `stats.coordinates`, with a warning.
-No latitude, longitude, or elevation-only operational container is created.
+and expressed in compatible declared units. Missing either raises. No partial
+or elevation-only operational container is created. Source missingness in
+other fields remains faithfully attached under `stats.geocsv`.
 
-The projection starts empty and uses only the matched source pair plus the
-explicit sea-level convention. Existing coordinate values are checked for
-conflicts, never used as fallback data; extra existing coordinate fields are
-not inherited into the new projection. This replaces the previous behavior
-that copied existing coordinates and could mix old latitude with new longitude.
-ObsPy itself initializes no default latitude/longitude. Source missingness is
-preserved under `stats.geocsv`.
+Every requested destination container must be absent: `stats.geocsv` and
+`stats.coordinates`, plus `stats.sac` when SAC projection is requested. Even
+an empty or apparently equivalent container raises. Nothing is merged,
+overwritten, or deleted. All requested projections start fresh and use only
+the matched record, provenance, and documented conventions. There are no
+per-field missing-data options; the former `missing_coordinates` argument has
+been removed from this experimental sandbox interface.
+
+This strict destination rule is separate from validation of native waveform
+fields. Existing MiniSEED SNCL, timing, rate, count, and calibration remain
+intact and authoritative. Matching validates their agreement; it never assigns
+GeoCSV values to repair a mismatch. All checks finish before any batch mutation.
 
 ### Adopted vertical reference and approximate depth
 
@@ -308,9 +313,8 @@ mappings rather than an unconditional whole-header equivalence promise.
 When requested, populate `stla` and `stlo` from receiver latitude/longitude,
 `stel = 0.0` from the adopted sea-level convention, and `stdp` from the
 approximation above when pressure is available. Do not populate `evla` or
-`evlo`: the waveform row does not locate a seismic source. Extend existing
-SAC metadata rather than replace it, and report conflicting values rather
-than silently overwrite them. Custom user-header slot allocation remains
+`evlo`: the waveform row does not locate a seismic source. Require the output `stats.sac` container to be absent and build it fresh;
+never merge with or overwrite inherited headers. Custom user-header slot allocation remains
 outside this first projection.
 
 This projection carries the same initial-association guarantee as the core
@@ -547,19 +551,18 @@ framework. A diagnostic table can be added if real batch use needs it.
 
 ## Mutation and subsequent processing
 
-ObsPy commonly operates in place. An attachment function that mutates and
-returns the supplied `Trace` or `Stream` is a natural starting proposal.
+The agreed function mutates the supplied `Trace` or `Stream` in place and
+returns `None`.
 Callers who want independence can first use `.copy()`, which copies waveform
-data too. The function name and return contract are still open. See
+data too. See
 [Trace.copy](https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.copy.html).
 
 Keep existing waveform identity, timing, sample rate, count, calibration,
 and existing defined format headers authoritative. Association checks them;
 it does not repair or replace them. Do not create SAC headers by default.
-Report conflicting custom attachments or initial coordinate
-projections rather than silently overwrite them. The optional SAC
-projection should extend its existing header rather than replace it. We still
-need to decide whether an identical repeated attachment is a no-op.
+Require association-owned destination containers to be absent. Do not merge,
+overwrite, or delete them; identical repeated attachments also raise. Optional
+SAC output projection will build fresh headers, never extend an inherited one.
 
 Attachment describes the original source waveform. After trimming, its
 original `StartTime` and `SampleCount` remain provenance, not assertions about
@@ -610,15 +613,15 @@ and returns `None`. Iterate over traces using one matching routine; recursion
 is unnecessary. Records can span multiple floats and multiple datasets. Each
 trace must have exactly one match, but independent traces may match the same
 row. Zero and multiple matches raise informative `ValueError`s including
-source paths and candidate row indices. All matches and coordinate conflicts
+source paths and candidate row indices. All matches and destination checks
 are validated before modifying any trace in the batch.
 
-The prototype preserves waveform core fields, calibration, MiniSEED quality,
-and existing processing history. It adds no `processing` entry. It retains
-only source latitude/longitude and reference elevation in a fresh coordinate
-container, rejects conflicting existing coordinate projections,
-and rejects a pre-existing `stats.geocsv` attachment rather than overwriting
-it. Optional SAC projection is reserved and explicitly unimplemented.
+The prototype preserves the ten native core Stats fields, MiniSEED format
+metadata, waveform samples, and any existing processing history. It adds no
+processing entry. It requires absent destination containers and complete source
+coordinates, with no warning/skip/overwrite switches. Optional SAC projection
+is reserved and explicitly unimplemented. See the
+[Stats reference](OBSPY_STATS_REFERENCE.md) for core defaults versus extras.
 
 The [rebuilt fixture audit](../data/fixtures/association/README.md) covers 18
 paired examples from the six observed naming combinations and their 14 full

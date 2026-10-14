@@ -35,7 +35,7 @@ traces; our guarantee ends at initial association.
    and partial acquisitions be reported without silently guessing?
 7. **Initial attachment:** the sandbox uses a mutable row snapshot under
    `stats.geocsv`, plus immutable dataset metadata, source record index, and
-   dataset index. It rejects coordinate conflicts and existing attachments;
+   dataset index. It requires every requested destination container to be absent;
    it preserves processing history without adding an entry. Package promotion
    and the reserved SAC projection remain open.
 8. **Verify the rebuilt processed dataset:** a newly added DET.WLT2 fixture

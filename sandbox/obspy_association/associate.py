@@ -5,7 +5,6 @@ This sandbox interface is not yet part of ``mermaid.geocsv``'s public API.
 
 from math import isfinite
 from decimal import Decimal, InvalidOperation
-import warnings
 
 from obspy import Stream, Trace
 from obspy.core.util import AttribDict
@@ -23,12 +22,10 @@ def _project_sac():
     raise NotImplementedError("SAC projection is reserved but not implemented")
 
 
-def _coordinates(trace, row, metadata, missing_coordinates):
+def _coordinates(trace, row, metadata):
     missing = [field for field in ("Latitude", "Longitude")
                if pd.isna(row.get(field, pd.NA))]
     if missing:
-        if missing_coordinates == "warn":
-            return None
         raise ValueError(f"{trace.id}: coordinate projection requires both Latitude "
                          f"and Longitude; missing {', '.join(missing)}")
     projected = {}
@@ -43,15 +40,10 @@ def _coordinates(trace, row, metadata, missing_coordinates):
             raise ValueError(f"{trace.id}: invalid {field} {value!r}")
         projected[key] = float(value)
     projected["elevation"] = 0.0  # Sea-level convention; no geoid model.
-    existing = trace.stats.get("coordinates", {})
-    for key, value in projected.items():
-        if key in existing and existing[key] != value:
-            raise ValueError(f"{trace.id}: conflicting existing coordinates.{key}")
     return AttribDict(projected)
 
 
-def associate(waveforms, records, *, project_sac=False, missing_coordinates="raise",
-              time_tolerance=None):
+def associate(waveforms, records, *, project_sac=False, time_tolerance=None):
     """Associate a Trace or Stream with event rows returned by geocsv.read.
 
     Validate all matches before modifying any trace; return None. Require exact
@@ -59,14 +51,11 @@ def associate(waveforms, records, *, project_sac=False, missing_coordinates="rai
     sample count, and rate difference <= 0.01 Hz. Waveform core fields remain
     authoritative. Quality is retained separately and is not a match filter.
     Guarantees end at initial association. ``project_sac=True`` is reserved.
-    Missing Latitude or Longitude fails by default. ``missing_coordinates='warn'``
-    attaches source metadata but skips the entire coordinate projection, warns,
-    and removes any existing coordinates rather than retaining stale values.
+    Missing Latitude or Longitude fails. Destination containers must be absent:
+    geocsv, coordinates, and sac when requested. Nothing is merged or overwritten.
     ``time_tolerance`` overrides the per-record default in seconds, including
     zero for exact matching. Comparisons preserve full nanosecond values.
     """
-    if missing_coordinates not in {"raise", "warn"}:
-        raise ValueError("missing_coordinates must be 'raise' or 'warn'")
     tolerance_ns = None
     if time_tolerance is not None:
         try:
@@ -75,14 +64,21 @@ def associate(waveforms, records, *, project_sac=False, missing_coordinates="rai
             raise ValueError("time_tolerance must be finite, nonnegative seconds") from exc
         if not tolerance_ns.is_finite() or tolerance_ns < 0:
             raise ValueError("time_tolerance must be finite, nonnegative seconds")
-    if project_sac:
-        _project_sac()
     if isinstance(waveforms, Trace):
         traces = [waveforms]
     elif isinstance(waveforms, Stream):
         traces = list(waveforms)
     else:
         raise TypeError("waveforms must be an ObsPy Trace or Stream")
+
+    destinations = ("geocsv", "coordinates", "sac") if project_sac else ("geocsv", "coordinates")
+    for trace in traces:
+        for key in destinations:
+            if key in trace.stats:
+                raise ValueError(f"{trace.id}: stats.{key} already exists; "
+                                 "association requires absent destination containers")
+    if project_sac:
+        _project_sac()
 
     datasets = []
     required = set(IDENTITY) | {"MethodIdentifier", "StartTime", "SampleRate",
@@ -109,8 +105,6 @@ def associate(waveforms, records, *, project_sac=False, missing_coordinates="rai
 
     plans = []
     for trace in traces:
-        if "geocsv" in trace.stats:
-            raise ValueError(f"{trace.id}: stats.geocsv is already attached")
         if trace.stats.npts != len(trace.data):
             raise ValueError(f"{trace.id}: npts differs from data length; load the samples")
         rate = trace.stats.sampling_rate
@@ -152,19 +146,8 @@ def associate(waveforms, records, *, project_sac=False, missing_coordinates="rai
         dataset_index, record_index, row, metadata = matches[0]
         attachment = AttribDict({**row.to_dict(), "source_record_index": record_index,
                                  "dataset_index": dataset_index, "metadata": metadata})
-        plans.append((trace, attachment, _coordinates(
-            trace, row, metadata, missing_coordinates)))
-
-    # Emit warnings before mutation, including when callers treat warnings as errors.
-    for trace, attachment, coordinates in plans:
-        if coordinates is None:
-            warnings.warn(f"{trace.id}: Latitude/Longitude pair incomplete; "
-                          "coordinate projection skipped; existing coordinates removed",
-                          RuntimeWarning, stacklevel=2)
+        plans.append((trace, attachment, _coordinates(trace, row, metadata)))
 
     for trace, attachment, coordinates in plans:
         trace.stats.geocsv = attachment
-        if coordinates is not None:
-            trace.stats.coordinates = coordinates
-        elif "coordinates" in trace.stats:
-            del trace.stats.coordinates
+        trace.stats.coordinates = coordinates
