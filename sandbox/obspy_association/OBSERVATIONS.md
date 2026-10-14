@@ -142,3 +142,29 @@ service merging policy. A year-long request has not been executed.
 Both scripts compiled, and both live retrieval examples completed. The
 package's 136 tests passed after adding the optional ObsPy dependency.
 Editable installation metadata confirms version 0.10.3 and the `obspy` extra.
+
+## Rebuilt processed fixtures, 2026-10-13
+
+`$MERMAID/processed/` is the canonical read-only source. The inventory contains
+43,337 acoustic event MiniSEED files across six naming combinations. We copied
+three random paired SAC/MiniSEED examples for each present combination (18
+pairs), plus verbatim full combined GeoCSV histories for their 14 floats.
+The [fixture inventory](../../data/fixtures/association/README.md) and manifest
+record the seed, missing combinations, original source paths, and file hashes.
+
+A read-only audit of all 43,337 source MiniSEED files found no SNCL or
+DET Q / REQ D inconsistencies relative to the documented current mapping.
+The selected SAC files agree on SNCL and `kuser1` labels. Each selected waveform
+has one association in its full GeoCSV history, with the expected quality.
+The GeoCSV histories render measured rates to six decimal places; all sampled
+MiniSEED/GeoCSV rate differences are below 0.000002 Hz. Geographic/depth SAC
+header comparisons are deferred. Some SAC reads emit ObsPy's documented
+sample-spacing rounding warning; MiniSEED remains the timing/rate ground truth.
+
+The sandbox prototype now supports a Trace or Stream, including records from
+multiple floats. It validates all matches and projected coordinates before
+mutation, retains a row/provenance snapshot under `stats.geocsv`, and preserves
+waveform core fields. Its time criterion is equal UTC millisecond bins, its
+original sample count criterion is exact, and the provisional rate criterion
+is 0.01 Hz. Quality is retained separately rather than used to select matches.
+Optional SAC projection is an explicit `NotImplementedError` placeholder.

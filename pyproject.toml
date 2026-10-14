@@ -41,5 +41,5 @@ namespaces = true
 version = { attr = "mermaid.geocsv.__version__" }
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "sandbox/obspy_association"]
 testpaths = ["tests"]

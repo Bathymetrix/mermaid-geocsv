@@ -7,6 +7,12 @@ returning one table per dataset. It preserves source column names, record
 order, timestamps and their timezones, and GeoCSV metadata, including units,
 comments, and the source file path.
 
+An experimental [ObsPy association sandbox](sandbox/obspy_association/README.md)
+attaches parsed event metadata to original processed traces. Its paired
+waveform fixtures and full GeoCSV histories are documented in the
+[rebuilt-source audit](data/fixtures/association/README.md); the adapter is
+not yet part of the package's public API.
+
 ## Install
 
 Requires Python 3.12 or newer and pandas 2.2 or newer. After cloning the

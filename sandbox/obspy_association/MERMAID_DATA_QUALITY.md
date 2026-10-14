@@ -80,15 +80,17 @@ For the acoustic DET/REQ branch, the filename code has these combinations:
 
 | Stream slot | Processing slot(s) | Output file ending |
 | --- | --- | --- |
-| `DET` | `WLT1`–`WLT5` (code-generated; DET.WLT2 confirmed in a local fixture) | `.mseed` or `.sac` |
+| `DET` | `WLT1`–`WLT5` (code-permitted; rebuilt inventory contains WLT2 and WLT5) | `.mseed` or `.sac` |
 | `REQ` (manually requested) | `WLT1`, `WLT2`, `WLT3`, `WLT4`, `WLT5` | `.mseed` or `.sac` |
 | `DET` or `REQ` | `RAW` (code-generated; DET.RAW not locally observed) | `.mseed` or `.sac` |
 
 The code selects DET versus REQ from the event trigger classification and
 selects RAW versus WLT from the scale field. It does not restrict DET to a
-particular WLT scale. A local fixture confirms `.MER.DET.WLT2`; DET.WLT1,
-DET.WLT3–WLT5 and DET.RAW are constructible by the code, but their occurrence
-in actual source MER data must be established from those inputs. The local
+particular WLT scale. The rebuilt processed inventory contains DET.WLT2 and
+DET.WLT5. DET.WLT1, DET.WLT3, DET.WLT4, and DET.RAW are code-permitted but
+absent from that inventory. REQ.WLT3, REQ.WLT4, REQ.WLT5, and REQ.RAW are
+present; REQ.WLT1 and REQ.WLT2 are absent. See the
+[rebuilt fixture audit](../../data/fixtures/association/README.md). The local
 `.REQ.RAW` examples are requested event products, not the continuous
 raw-buffer stream. Preliminary-position products may insert `.prelim` before
 `.mseed` or `.sac`.
@@ -111,10 +113,11 @@ different from the nominal rate.
 The newly added fixture `20210527T154441.0030_60AFC696.MER.DET.WLT2.mseed`
 reads as `MH.P0030.10.MDH`, 2.5009128631 Hz, 584 samples, with MiniSEED quality
 `Q`; its paired SAC file has `kuser1=DET.WLT2`. This confirms a non-20-Hz DET
-product using the current helper's WLT2 location `10`. A separate older
+product using the current helper's WLT2 location `10`. Before the rebuild, a separate older
 v4.5.1 product, `20210528T053250.0030_60B08BB3.MER.DET.WLT2.mseed`, has
 location `01`, showing a historical location-code difference, not a reason
-to limit DET to WLT5. The source MER header for the newly identified DET.WLT2
+to limit DET to WLT5. The rebuilt v4.5.11 copy of this same basename now
+uses location `10` and is included in the new paired fixtures. The source MER header for the newly identified DET.WLT2
 record should be checked to confirm its event classification and scale. Keep
 the quality rule independent of rate: detected products are Q; requested
 products are D. Association preserves the actual downloaded SNCL.

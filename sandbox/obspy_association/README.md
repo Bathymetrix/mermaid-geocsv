@@ -1,7 +1,7 @@
 # ObsPy association sandbox
 
-Exploratory retrieval examples for planning initial GeoCSV association.
-These scripts do not implement an association API or change the parser.
+Retrieval examples and an experimental association prototype. The reader
+package API remains unchanged; the prototype contract is described below.
 Run from the repository root with an environment containing this package and
 ObsPy. Downloaded responses go under ignored `downloads/`.
 
@@ -49,7 +49,7 @@ and print each trace's MiniSEED data-quality flag:
 
 ```bash
 .venv/bin/python sandbox/obspy_association/view_mseed.py \
-    data/fixtures/mseed/20210527T154441.0030_60AFC696.MER.DET.WLT2.mseed
+    data/fixtures/association/452.020-P-0030/0002_20210527-14h28m09s/20210527T154441.0030_60AFC696.MER.DET.WLT2.mseed
 ```
 
 ## Longer window
@@ -73,3 +73,52 @@ See [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) for the running design questions
 and [OBSERVATIONS.md](OBSERVATIONS.md) for execution evidence. The supplied
 [MERMAID data-quality note](MERMAID_DATA_QUALITY.md) records DET/REQ/raw-buffer
 meaning and the nominal channel/location/rate table.
+## Original processed waveform association
+
+The sandbox now implements `associate` for an original processed `Trace` or
+`Stream`. The public reader API is unchanged. `$MERMAID/processed/` is the
+canonical read-only source: never modify it without express instruction.
+Its float directories supply paired waveforms and complete GeoCSV histories.
+See the [fixture inventory and audit](../../data/fixtures/association/README.md).
+
+From this sandbox directory (with the repository environment installed):
+
+```python
+from obspy import read
+from mermaid import geocsv
+from associate import associate
+
+st = read("/path/to/original.MER.DET.WLT5.mseed")
+records = geocsv.read("/path/to/geo_DET_REQ.csv")
+associate(st, records, project_sac=False)
+tr = st[0]
+print(tr.stats.geocsv.Latitude)
+print(tr.stats.geocsv.source_record_index)
+print(tr.stats.geocsv.metadata.source_path)
+print(tr.stats.coordinates)
+```
+
+The function mutates in place and returns `None`. It requires exactly one
+event-row match per trace: full SNCL, equal UTC millisecond bins, exact original
+sample count/data length, and measured rates within 0.01 Hz. Waveform core
+headers and processing history are preserved. Source quality is attached
+separately from MiniSEED quality. Latitude/longitude use their declared units;
+elevation is the explicit sea-level constant 0, with no geoid model.
+
+All matches and projections are validated before any batch mutation. Existing
+GeoCSV attachments or conflicting coordinates raise `ValueError`. The mutable
+attachment keeps original columns plus dataset index, source record index,
+and immutable dataset metadata. Guarantees end at initial association;
+trimmed/merged/resampled inputs remain outside this matching scope.
+
+`project_sac=True` currently raises `NotImplementedError` before any mutation.
+The future geographic projection is stla/stlo, stel=0, and approximately
+stdp=WaterPressure[mbar]/100, as described in the architecture notes.
+
+`collect_processed_examples.py` is the reproducible sampling script; it writes
+only a new repository fixture directory and refuses to overwrite one. It
+copies both waveform formats and complete GeoCSV files verbatim.
+Full association histories are ignored local files. On a fresh checkout,
+`restore_geocsv_histories.py` copies the manifest-listed complete histories
+from `$MERMAID/processed/` after checking their hashes. See the fixture README
+for instructions; association tests explicitly skip when histories are absent.

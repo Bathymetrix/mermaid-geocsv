@@ -19,7 +19,8 @@ traces; our guarantee ends at initial association.
    selecting overlapping records; distinguish service selection from our
    association behavior. Legacy EarthScope archives may mark submitted records
    M after facility processing; see the observations and mapping note.
-4. **Timing:** establish an acquisition-matching rule without treating stored
+4. **Timing:** the prototype compares equal UTC millisecond bins for original
+   processed acquisitions. Revisit boundary effects and establish a broader rule without treating stored
    fractional digits as MERMAID clock accuracy. The user clarifies that the
    current waveform clock does not have millisecond timing precision;
    sub-millisecond GeoCSV fidelity is not a scientific requirement. Preserve
@@ -31,8 +32,11 @@ traces; our guarantee ends at initial association.
 6. **Matching and ambiguity:** after complete SNCL/time checks, when do rate,
    count, and quality distinguish candidates? How should zero/multiple matches
    and partial acquisitions be reported without silently guessing?
-7. **Initial attachment:** settle source-record schema, mutability, existing
-   header conflicts, and whether association appends a processing entry.
+7. **Initial attachment:** the sandbox uses a mutable row snapshot under
+   `stats.geocsv`, plus immutable dataset metadata, source record index, and
+   dataset index. It rejects coordinate conflicts and existing attachments;
+   it preserves processing history without adding an entry. Package promotion
+   and the reserved SAC projection remain open.
 8. **Verify the rebuilt processed dataset:** a newly added DET.WLT2 fixture
    reads as 2.5 Hz, location 10, quality Q, so DET is not limited to WLT5 / 20
    Hz. Automaid's quality assignment is stream-based: DET Q, REQ D, independent
@@ -50,8 +54,8 @@ traces; our guarantee ends at initial association.
    The agreed provisional minimum check is
    `abs(obspy_sps - geocsv_sps) <= 0.01` Hz, potentially grossly relaxed.
    Revisit it: the user reports microsecond-precision sampling timing in raw
-   MER files (trustworthiness and exact encoding unverified) but writes
-   single-decimal rates to GeoCSV. Compare raw MER, writer input/output,
+   MER files (trustworthiness and exact encoding unverified); earlier GeoCSV
+   outputs used single-decimal rates. Compare raw MER, writer input/output,
    MiniSEED headers, and ObsPy reading to check whether ObsPy changes the value
    slightly. Preserve all evidence and tighten the criterion when justified.
    See the [reader follow-up](../../docs/OPEN_QUESTIONS.md#mermaid-sampling-rate-follow-up).
@@ -60,8 +64,8 @@ The first probes already expose overlapping source rows, differing quality
 indicators, rate differences, and a one-sample returned trace. See
 [OBSERVATIONS.md](OBSERVATIONS.md) and the user-supplied
 [quality mapping](MERMAID_DATA_QUALITY.md). The 0.01 Hz rate check is a
-provisional design decision, not implemented code; count/coverage matching
-remains open.
+implemented provisional check for original processed traces. Exact original
+count matching is implemented; transformed coverage matching remains open.
 
 Settled: preserve the source row/provenance in `stats.geocsv`; validate core
 waveform fields; populate coordinates with sea-level reference elevation 0;
@@ -84,3 +88,10 @@ If MERMAID data are reingested under the newer archive process, contributor
 Q/D codes should be served unchanged; verify the result then before making
 quality-based association or precedence rules. See [EarthScope's archive
 transition note](https://www.earthscope.org/news/miniseed-archiving-and-distribution-changes/).
+
+Rebuilt-source follow-up: full combined GeoCSV histories now accompany the
+sampled waveforms. The sampled measured rates are rendered to six decimal
+places, replacing the earlier rate-format concern for these particular
+outputs. Differences from MiniSEED remain below 0.000002 Hz in the sample;
+the broader raw-MER/writer/ObsPy precision investigation is still open.
+See [the fixture audit](../../data/fixtures/association/README.md).

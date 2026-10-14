@@ -16,6 +16,19 @@ changes. If instructions conflict, this file takes precedence.
 
 ## Repository Scope
 
+### Processed Data Reference
+
+`$MERMAID/processed/` is a canonical source of test examples. Its recursive
+float directories contain paired SAC/MiniSEED waveforms and GeoCSV metadata
+(including `geo_DET_REQ.csv`). Reading and copying examples into this
+repository is authorized. Never write, rename, delete, regenerate, or otherwise
+modify anything in that source tree without the user's express instruction.
+Document fixture provenance. Copy both waveform formats for each selected
+basename and copy the complete GeoCSV history for each sampled float, verbatim;
+do not subset those histories to the selected waveform rows.
+The complete association GeoCSV histories are local, Git-ignored copies;
+retain their provenance/hashes in the tracked manifest. Do not stage them.
+
 ### Automaid Source Reference
 
 When MERMAID waveform-processing behavior needs verification, use

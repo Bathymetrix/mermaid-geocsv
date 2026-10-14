@@ -36,5 +36,11 @@ jobs:
           PANDAS_REQUIREMENT: ${{ matrix.pandas }}
           NUMPY_REQUIREMENT: ${{ matrix.numpy }}
         run: python -m pip install ".[dev]" "$PANDAS_REQUIREMENT" "$NUMPY_REQUIREMENT"
+      - name: Install ObsPy for association fixture tests
+        if: matrix.python == '3.12'
+        env:
+          PANDAS_REQUIREMENT: ${{ matrix.pandas }}
+          NUMPY_REQUIREMENT: ${{ matrix.numpy }}
+        run: python -m pip install ".[obspy]" "$PANDAS_REQUIREMENT" "$NUMPY_REQUIREMENT"
       - name: Run tests
         run: python -m pytest -q

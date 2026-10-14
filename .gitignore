@@ -6,3 +6,6 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+
+# Complete local association histories; provenance stays in manifest.json.
+/data/fixtures/association/*/geo_DET_REQ.csv

@@ -1,0 +1,13 @@
+{
+  "source_root": "/Users/jdsimon/mermaid/processed",
+  "mseed_files_checked": 43337,
+  "counts": {
+    "DET.WLT5": 39677,
+    "REQ.WLT5": 3438,
+    "DET.WLT2": 22,
+    "REQ.RAW": 177,
+    "REQ.WLT3": 16,
+    "REQ.WLT4": 7
+  },
+  "inconsistencies": []
+}

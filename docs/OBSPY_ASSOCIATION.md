@@ -1,18 +1,21 @@
 # Associating GeoCSV records with ObsPy traces
 
-Discussion draft, 2026-10-08. This proposes an architecture; it does not define
-an implemented or committed public API.
+Architecture notes, updated 2026-10-13. A sandbox prototype now implements
+the initial association contract below; it is not a committed package API.
 
 ## Starting point
 
 Treat `geocsv.read` as complete for the current MERMAID parsing scope. The
 reader preserves the information needed here: typed columns, source record
 indices, units, comments, and immutable dataset metadata with source paths.
-The current 136 tests pass. The [open format questions](OPEN_QUESTIONS.md)
+The reader test suite passes. The [open format questions](OPEN_QUESTIONS.md)
 remain qualifications on general GeoCSV interoperability, rather than reasons
 to mix waveform interpretation into the reader.
 
-The user-selected first target is **original downloaded MERMAID traces**.
+The first implementation target is **original rebuilt processed MERMAID
+traces**, before EarthScope archive handling. `$MERMAID/processed/` supplies
+waveforms and complete GeoCSV histories; treat this tree as read-only.
+EarthScope retrievals below remain evidence for later service handling.
 The motivating workflow is to attach record-specific station location and
 other metadata to an existing ObsPy `Trace` or `Stream`. The first downstream
 consumer has not yet been selected.
@@ -44,10 +47,12 @@ sampling frequency. A local DET.WLT2 MiniSEED confirms a detected product at
 2.5 Hz with quality `Q`. The quality code describes timing/stream lineage;
 rate, channel, and location identify the sampling configuration.
 
-The current workflow is in memory: the waveforms are not SAC files and SAC
-reading/writing is not a requirement. Existing SAC headers were examined as
+The association workflow is in memory, with MiniSEED as waveform ground
+truth. Paired SAC fixtures are retained for later header comparisons. Existing SAC headers were examined as
 one possible attachment mechanism, not as a requirement to use SAC for the
-whole payload. Complete SNCL is required; matching tolerance is deferred.
+whole payload. Complete SNCL is required; the initial prototype compares UTC
+millisecond bins under the current writer convention. Broader timing
+tolerance is deferred.
 
 ## What ObsPy provides
 
@@ -163,8 +168,7 @@ not an independent check. This association does not recalculate sampling rates.
 ## Agreed boundary: initial association
 
 The agreed design boundary is: **our guarantee ends at initial association;
-subsequent behavior is governed by ObsPy**. This is a design decision, not an
-implemented public API.
+subsequent behavior is governed by ObsPy**. This is implemented in the sandbox, without establishing a public package API.
 
 An associated original downloaded trace receives `stats.geocsv` from the
 matched row returned by `geocsv.read`. The initial eligible category is
@@ -178,19 +182,22 @@ first association scope. Do not hard-code one producer version.
 The attachment retains the parsed row's source names, values, and missingness.
 It also needs the row's `source_record_index` and dataset metadata from
 `frame.attrs["geocsv"]`, including units and source path. Dataset metadata
-alone is not the matched row. The exact attachment schema and mutability
-remain to be designed; no scientific inference or conversion belongs in the
-source attachment.
+alone is not the matched row. The sandbox stores the row's original columns directly under an ObsPy
+`AttribDict` at `stats.geocsv`, with `source_record_index`, `dataset_index`
+(the index in the supplied records list), and `metadata` (the original
+immutable `GeoCSVMetadata`). The row attachment is a mutable snapshot,
+independent of the DataFrame. No scientific conversion belongs in it.
 
 Initial association is limited to the following existing waveform attributes
-and coordinate convention. An optional SAC projection may also populate
-the geographic headers specified below. It does not fill response, rotation,
+and coordinate convention. The reserved optional SAC projection will populate the geographic headers
+specified below; the prototype currently raises `NotImplementedError` when
+`project_sac=True`. It does not fill response, rotation,
 or other format/analysis headers.
 
 | Attribute | Initial association responsibility |
 | --- | --- |
 | `network`, `station`, `location`, `channel` | Validate against the matched complete SNCL. Existing waveform codes are authoritative; do not silently relabel an input to make it match. |
-| `starttime` | Validate the acquisition time under the matching rule still to be chosen; retain the waveform's `UTCDateTime` as received, without claiming hardware precision from its displayed digits. Do not reapply `TimeCorrection`. |
+| `starttime` | Validate the acquisition time in equal UTC millisecond bins; retain the waveform's `UTCDateTime` as received, without claiming hardware precision from its displayed digits. Do not reapply `TimeCorrection`. |
 | `sampling_rate` | Require an absolute difference from GeoCSV `SampleRate` of at most 0.01 Hz under the provisional check below; preserve the downloaded waveform rate. |
 | `npts` | Validate `SampleCount` against the waveform count and data length; do not use a header assignment to repair a mismatched array. |
 | `delta`, `endtime` | Leave calculation to ObsPy from the current core fields; do not assign independently. |
@@ -378,7 +385,7 @@ Putting them in `userN` does not remove the custom semantics. Decide whether
 to retain their exact parsed values as well, especially if SAC round-trip
 precision matters. Retaining the complete matched record is the simplest
 self-contained option; retaining only residual fields is the smaller option
-when callers keep the original tables. Neither attachment schema is settled.
+when callers keep the original tables. The sandbox retains the complete matched record as described above.
 
 ### Reviewing the automaid example
 
@@ -456,9 +463,12 @@ Proposed first matching policy:
 2. Require complete, matching station, network, channel, and location codes
    (SNCL). Missing values are not wildcards and do not silently become empty
    codes. A valid explicitly empty location code is distinct from missing.
-3. Use start time to identify the acquisition. Precision and matching
-   tolerance are deferred, as requested; retain the producer evidence above
-   for that later discussion.
+3. Require equal UTC millisecond bins: `floor(starttime_ns / 1_000_000)`.
+   This matches the current automaid millisecond rendering and succeeds for
+   all 18 rebuilt waveform samples. It is a representation rule, not clock
+   accuracy or a general time-slop tolerance. Wider tolerance and boundary
+   effects remain future questions. Require the full original sample count
+   and loaded data length to agree exactly with GeoCSV `SampleCount`.
 4. Require present, finite, positive rates satisfying the provisional minimum
    check `abs(obspy_sps - geocsv_sps) <= 0.01`, in Hz (samples per second).
    A difference greater than 0.01 Hz fails this check; do not round either
@@ -478,7 +488,9 @@ Proposed first matching policy:
 **Revisit the sampling-rate threshold:** 0.01 Hz is explicitly provisional
 and potentially grossly relaxed. The user reports that raw MER files quote
 sampling timing at microsecond precision, with uncertain trustworthiness,
-whereas the current GeoCSV writer emits single-decimal sampling rates. Verify
+whereas the earlier GeoCSV outputs used single-decimal sampling rates. The
+rebuilt sampled files now render rates to six decimal places; verify all
+producer versions before generalizing this change. Verify
 the raw quantity, its units/encoding, and its reliability; compare raw MER,
 writer input/output, MiniSEED rate representation, and ObsPy reader output.
 Determine whether ObsPy changes the value slightly rather than assuming it
@@ -547,28 +559,38 @@ not justified solely by this small operation.
 Keep ObsPy optional if the adapter lives here, so GeoCSV parsing remains
 lightweight. Do not add a dependency or change `read` during planning.
 
-The next discussion should settle, in order:
+## Implemented sandbox API
 
-1. Latitude/longitude missingness and the first consumer, before promising
-   its analysis requirements are met. Sea-level zero and the approximate
-   pressure-to-depth convention are now established.
-2. Adapter ownership and public name. `associate` emphasizes matching;
-   `attach_metadata` emphasizes mutation. Neither spelling is committed.
-3. Source-record attachment schema and whether its snapshot is immutable.
-4. Whether association itself should append a `processing` entry; preserve
-   existing history and do not reconstruct it from GeoCSV.
-5. Existing-header conflict handling. Custom SAC slot allocation remains
-   outside the first projection; geographic headers and the approximate
-   pressure-to-depth mapping are established above.
+```python
+from associate import associate  # sandbox/obspy_association on the import path
 
-Complete SNCL is established. The exact time-matching rule and tolerance are
-deferred until the metadata representation is settled.
+records = geocsv.read("geo_DET_REQ.csv")
+associate(tr, records, project_sac=False)
+associate(st, records, project_sac=False)
+```
 
-Before implementation, validate the proposed rule on a real original trace,
-including its quality flag, full-precision start time, rate, and count. Then
-use focused examples for multiple candidates, missing pressure/elevation,
-equivalent timezones, and metadata copying through trimming. ObsPy is now
-available in this repository's `.venv` after the sandbox work. The initial
-design used documentation/source and local writer inspection; live retrieval
-evidence is now recorded in the sandbox. An association prototype has not
-been implemented.
+`associate` accepts one `Trace` or a `Stream`, mutates supplied traces in place,
+and returns `None`. Iterate over traces using one matching routine; recursion
+is unnecessary. Records can span multiple floats and multiple datasets. Each
+trace must have exactly one match, but independent traces may match the same
+row. Zero and multiple matches raise informative `ValueError`s including
+source paths and candidate row indices. All matches and coordinate conflicts
+are validated before modifying any trace in the batch.
+
+The prototype preserves waveform core fields, calibration, MiniSEED quality,
+and existing processing history. It adds no `processing` entry. It retains
+existing extra coordinate fields, rejects conflicting coordinate projections,
+and rejects a pre-existing `stats.geocsv` attachment rather than overwriting
+it. Optional SAC projection is reserved and explicitly unimplemented.
+
+The [rebuilt fixture audit](../data/fixtures/association/README.md) covers 18
+paired examples from the six observed naming combinations and their 14 full
+GeoCSV histories. Tests exercise multi-float streams, ambiguity, atomic batch
+failure, count/rate mismatches, timezone equivalence, missing coordinates,
+unit validation, and quality preservation.
+
+Remaining decisions: promote this sandbox interface into the package or keep
+it downstream; implement the optional SAC projection; revisit timing and rate
+criteria against more source data; establish policies for trimmed, merged,
+split, or resampled traces. None of those transformed inputs are supported
+by the original-acquisition matching contract yet.
