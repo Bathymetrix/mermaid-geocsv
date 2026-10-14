@@ -285,6 +285,26 @@ Receiver depth belongs in `stdp`, not seismic-source depth `evdp`.
 
 ### Optional SAC projection
 
+Until further instruction, MiniSEED-derived traces are the only development
+target for association. The paired SAC files are independent output references,
+not association inputs. The intended promoted workflow is:
+
+```python
+records = geocsv.read(geocsv_path)
+tr = obspy.read(mseed_path)[0]
+geocsv.associate(tr, records, project_sac=True)  # Planned package API.
+reference = obspy.read(sac_path)[0]
+# Compare agreed projected keys: tr.stats.sac[key] vs reference.stats.sac[key].
+```
+
+The current sandbox still reserves `project_sac=True` with NotImplementedError;
+this clarification does not implement it or expose the package API. Reference
+SAC headers are consulted only after association/projection and never used
+as fallback source metadata or matching hints. Define the comparison's field
+coverage, units, missingness, and float32/formatting precision. GeoCSV does not
+describe every inherited SAC header, so key-by-key comparison covers approved
+mappings rather than an unconditional whole-header equivalence promise.
+
 When requested, populate `stla` and `stlo` from receiver latitude/longitude,
 `stel = 0.0` from the adopted sea-level convention, and `stdp` from the
 approximation above when pressure is available. Do not populate `evla` or

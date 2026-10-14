@@ -7,6 +7,13 @@ express instruction. The fixtures contain 18 MiniSEED/SAC pairs and 14
 including GPS, pressure, thermocline, and event records. GeoCSV histories must
 not be subset to the selected waveform rows.
 
+MiniSEED fixtures are association inputs. SAC fixtures are independent output
+references only: read them separately with ObsPy, then compare their inherited
+`stats.sac` values key-by-key against approved SAC fields projected onto the
+MiniSEED traces after GeoCSV association. Never use SAC reference headers to
+fill or match association metadata. SAC-input association is outside scope
+until further instruction; the optional output projection remains reserved.
+
 The complete GeoCSV copies are local, ignored files; they are not distributed
 through GitHub. Waveform pairs, the manifest, and audit results remain tracked.
 On a fresh checkout, waveform header/hash tests still run; tests requiring

@@ -75,6 +75,12 @@ and [OBSERVATIONS.md](OBSERVATIONS.md) for execution evidence. The supplied
 meaning and the nominal channel/location/rate table.
 ## Original processed waveform association
 
+Develop association for MiniSEED-derived traces only until further instruction.
+Paired SAC files are read separately as output references for later key-by-key
+checks of `stats.sac` projected onto associated MiniSEED traces. Their inherited
+headers never supply association inputs or defaults. SAC-input association
+is outside scope; optional SAC output projection remains reserved.
+
 The sandbox now implements `associate` for an original processed `Trace` or
 `Stream`. The public reader API is unchanged. `$MERMAID/processed/` is the
 canonical read-only source: never modify it without express instruction.

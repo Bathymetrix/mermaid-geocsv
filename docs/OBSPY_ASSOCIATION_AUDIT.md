@@ -4,6 +4,26 @@ Audit performed 2026-10-14 against the sandbox `associate.py`. This records
 findings before remediation and their dispositions; the function remains an
 experimental sandbox interface, not an exposed package API.
 
+## Input scope clarification
+
+Original MiniSEED-derived traces are the association inputs. Paired SAC files
+are read separately only as reference outputs: after MiniSEED -> GeoCSV
+association -> optional SAC header projection, compare the agreed projected
+keys with the reference trace's inherited `stats.sac`. SAC-input association
+is outside scope until further instruction. SAC reference values must never
+be used to construct, match, or fill the associated MiniSEED metadata.
+
+This narrows the interpretation of finding 1. Its adversarial trace had
+manually pre-populated `stats.coordinates`; it was not a freshly read MiniSEED
+fixture and was not a SAC-input test. No cross-trace/loop leakage was found.
+There was no inherited coordinate contamination observed in the intended
+MiniSEED workflow. The original P1 rating describes a conditional scientific
+failure for pre-populated inputs, not an observed in-scope MiniSEED defect or
+a separate blocker requiring SAC-input support. The fresh-state and complete
+coordinate-pair rules remain useful and have been implemented. Findings
+about CI coverage, timestamp comparison, invalid-row handling, and batch
+performance still apply to MiniSEED input.
+
 ## Original findings
 
 1. **P1: coordinate projection can mix sources.** The helper copied existing

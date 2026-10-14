@@ -29,12 +29,53 @@ do not subset those histories to the selected waveform rows.
 The complete association GeoCSV histories are local, Git-ignored copies;
 retain their provenance/hashes in the tracked manifest. Do not stage them.
 
+### Association Inputs and SAC Comparison References
+
+Until further instruction, develop association for original MiniSEED-derived
+traces/streams only. Paired `.sac` fixtures are independent comparison
+references, not association inputs. Their inherited `stats.sac` headers must
+never supply defaults, matching hints, or missing values to the associator.
+
+The intended verification sequence is: read MiniSEED, associate its trace with
+GeoCSV records, optionally project approved fields into fresh `stats.sac`
+headers, then compare those fields key-by-key with `stats.sac` on the paired
+SAC trace read separately by ObsPy. Define field coverage, units, missing-value
+conventions, and numeric precision for the comparisons. Do not promise whole
+SAC-header equivalence for fields without a GeoCSV source or agreed mapping.
+Supporting association of SAC-derived input traces is outside current scope;
+creating SAC headers on associated MiniSEED traces is in scope.
+
 ### Automaid Source Reference
 
 When MERMAID waveform-processing behavior needs verification, use
 `/Users/jdsimon/programs/automaid/` as the definitive source checkout to
 inspect. Inspection is authorized; do not modify files in that repository
 unless the user separately and explicitly requests those changes.
+
+### Fresh Association State for Every Trace
+
+Every trace association must start with empty, newly allocated association
+state for every association-owned key/value and projection. This applies to
+each trace, each loop iteration, and each invocation. Never reuse a mutable
+attachment/container from another trace or iteration, and never copy an
+existing attachment wholesale as the starting state.
+
+Populate association metadata only from that trace's uniquely matched source
+record, its dataset provenance, and explicitly documented projection rules
+(such as the adopted sea-level reference). Never use an earlier match or
+pre-existing trace metadata to fill missing source values. Existing values
+may be inspected for conflicts, but are not fallback data. Required groups,
+including latitude/longitude pairs, must be complete or follow an explicit
+error/skip-with-warning policy; skipping must not retain stale projected
+values. Apply this rule to all association-owned fields, including future SAC
+projections, not only coordinates.
+
+This rule concerns newly associated metadata, not clearing the waveform's
+native Stats or data: existing waveform identity, timing, sampling, and
+calibration remain authoritative. Immutable dataset provenance may be shared
+only when explicitly obtained from the currently matched dataset. Validation
+must finish before mutating the supplied traces; a failure must not clear or
+partially replace their existing metadata.
 
 `mermaid-geocsv` provides lightweight, faithful parsing of MERMAID GeoCSV
 files. It owns structural parsing, typed pandas tabular output, and
