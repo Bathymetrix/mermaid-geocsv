@@ -15,6 +15,28 @@ FIXTURES = Path(__file__).parent / "fixtures"
 CANONICAL = Path(__file__).parents[1] / "data" / "fixtures" / "P0006" / "P0006.geocsv"
 
 
+def test_datetime_source_resolution_is_per_record_and_preserves_values(tmp_path):
+    path = tmp_path / "precision.geocsv"
+    path.write_text(
+        "#dataset: GeoCSV\n#field_type:datetime\nStartTime\n"
+        "2025-01-01T00:00:00.120Z\n"
+        "2025-01-01T00:00:00.120000Z\n"
+        "2025-01-01T00:00Z\n2025-01-01\nnan\n"
+        "#dataset: GeoCSV\n#field_type:datetime\nStartTime\n"
+        "2025-01-01T00:00:00.123456789Z\n",
+        encoding="utf-8",
+    )
+    first, second = geocsv.read(path)
+    resolutions = first.attrs["geocsv"].datetime_resolution_ns
+    assert dict(resolutions["StartTime"]) == {
+        0: 1_000_000, 1: 1000, 2: 60_000_000_000, 3: 86_400_000_000_000}
+    assert second.attrs["geocsv"].datetime_resolution_ns["StartTime"][5] == 1
+    assert first.loc[0, "StartTime"] == first.loc[1, "StartTime"]
+    assert second.loc[5, "StartTime"].value == 1735689600123456789
+    with pytest.raises(TypeError):
+        resolutions["StartTime"][0] = 1
+
+
 def read_one(path: str | Path) -> pd.DataFrame:
     frames = geocsv.read(path)
     assert len(frames) == 1

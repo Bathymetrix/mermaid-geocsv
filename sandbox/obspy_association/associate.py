@@ -4,6 +4,8 @@ This sandbox interface is not yet part of ``mermaid.geocsv``'s public API.
 """
 
 from math import isfinite
+from decimal import Decimal, InvalidOperation
+import warnings
 
 from obspy import Stream, Trace
 from obspy.core.util import AttribDict
@@ -21,37 +23,58 @@ def _project_sac():
     raise NotImplementedError("SAC projection is reserved but not implemented")
 
 
-def _coordinates(trace, row, metadata):
-    coordinates = dict(trace.stats.get("coordinates", {}))
-    projected = {"elevation": 0.0}  # Sea-level convention; no geoid model.
+def _coordinates(trace, row, metadata, missing_coordinates):
+    missing = [field for field in ("Latitude", "Longitude")
+               if pd.isna(row.get(field, pd.NA))]
+    if missing:
+        if missing_coordinates == "warn":
+            return None
+        raise ValueError(f"{trace.id}: coordinate projection requires both Latitude "
+                         f"and Longitude; missing {', '.join(missing)}")
+    projected = {}
     for field, key, unit, lower, upper in (
         ("Latitude", "latitude", "degrees_north", -90, 90),
         ("Longitude", "longitude", "degrees_east", -180, 180),
     ):
         value = row[field]
-        if pd.isna(value):
-            continue
         if metadata.field_units.get(field) != unit:
             raise ValueError(f"{trace.id}: {field} requires declared units {unit}")
         if not isfinite(float(value)) or not lower <= value <= upper:
             raise ValueError(f"{trace.id}: invalid {field} {value!r}")
         projected[key] = float(value)
+    projected["elevation"] = 0.0  # Sea-level convention; no geoid model.
+    existing = trace.stats.get("coordinates", {})
     for key, value in projected.items():
-        if key in coordinates and coordinates[key] != value:
+        if key in existing and existing[key] != value:
             raise ValueError(f"{trace.id}: conflicting existing coordinates.{key}")
-        coordinates[key] = value
-    return AttribDict(coordinates)
+    return AttribDict(projected)
 
 
-def associate(waveforms, records, *, project_sac=False):
+def associate(waveforms, records, *, project_sac=False, missing_coordinates="raise",
+              time_tolerance=None):
     """Associate a Trace or Stream with event rows returned by geocsv.read.
 
     Validate all matches before modifying any trace; return None. Require exact
-    SNCL, equal UTC millisecond bins (the current writer's rendering), exact
+    SNCL, UTC times within the source timestamp resolution by default, exact
     sample count, and rate difference <= 0.01 Hz. Waveform core fields remain
     authoritative. Quality is retained separately and is not a match filter.
     Guarantees end at initial association. ``project_sac=True`` is reserved.
+    Missing Latitude or Longitude fails by default. ``missing_coordinates='warn'``
+    attaches source metadata but skips the entire coordinate projection, warns,
+    and removes any existing coordinates rather than retaining stale values.
+    ``time_tolerance`` overrides the per-record default in seconds, including
+    zero for exact matching. Comparisons preserve full nanosecond values.
     """
+    if missing_coordinates not in {"raise", "warn"}:
+        raise ValueError("missing_coordinates must be 'raise' or 'warn'")
+    tolerance_ns = None
+    if time_tolerance is not None:
+        try:
+            tolerance_ns = Decimal(str(time_tolerance)) * 1_000_000_000
+        except InvalidOperation as exc:
+            raise ValueError("time_tolerance must be finite, nonnegative seconds") from exc
+        if not tolerance_ns.is_finite() or tolerance_ns < 0:
+            raise ValueError("time_tolerance must be finite, nonnegative seconds")
     if project_sac:
         _project_sac()
     if isinstance(waveforms, Trace):
@@ -63,7 +86,7 @@ def associate(waveforms, records, *, project_sac=False):
 
     datasets = []
     required = set(IDENTITY) | {"MethodIdentifier", "StartTime", "SampleRate",
-                                "SampleCount", "Latitude", "Longitude"}
+                                "SampleCount"}
     for dataset_index, frame in enumerate(records):
         if "MethodIdentifier" not in frame:
             continue
@@ -102,9 +125,14 @@ def associate(waveforms, records, *, project_sac=False):
                 time = row["StartTime"]
                 if pd.isna(time) or pd.Timestamp(time).tzinfo is None:
                     raise ValueError(f"{trace.id}: record {record_index} lacks aware StartTime")
-                # Current automaid renders StartTime to milliseconds. This is
-                # a representation rule, not a claim about clock accuracy.
-                if pd.Timestamp(time).value // 1_000_000 != trace.stats.starttime.ns // 1_000_000:
+                allowed_ns = tolerance_ns
+                if allowed_ns is None:
+                    allowed_ns = metadata.datetime_resolution_ns.get("StartTime", {}).get(record_index)
+                    if allowed_ns is None:
+                        raise ValueError(f"{trace.id}: record {record_index} lacks source "
+                                         "time resolution; reread GeoCSV or set time_tolerance")
+                difference_ns = abs(pd.Timestamp(time).value - trace.stats.starttime.ns)
+                if difference_ns > allowed_ns:
                     continue
                 candidates.append((str(metadata.source_path), dataset_index, record_index))
                 count, source_rate = row["SampleCount"], row["SampleRate"]
@@ -124,8 +152,19 @@ def associate(waveforms, records, *, project_sac=False):
         dataset_index, record_index, row, metadata = matches[0]
         attachment = AttribDict({**row.to_dict(), "source_record_index": record_index,
                                  "dataset_index": dataset_index, "metadata": metadata})
-        plans.append((trace, attachment, _coordinates(trace, row, metadata)))
+        plans.append((trace, attachment, _coordinates(
+            trace, row, metadata, missing_coordinates)))
+
+    # Emit warnings before mutation, including when callers treat warnings as errors.
+    for trace, attachment, coordinates in plans:
+        if coordinates is None:
+            warnings.warn(f"{trace.id}: Latitude/Longitude pair incomplete; "
+                          "coordinate projection skipped; existing coordinates removed",
+                          RuntimeWarning, stacklevel=2)
 
     for trace, attachment, coordinates in plans:
         trace.stats.geocsv = attachment
-        trace.stats.coordinates = coordinates
+        if coordinates is not None:
+            trace.stats.coordinates = coordinates
+        elif "coordinates" in trace.stats:
+            del trace.stats.coordinates

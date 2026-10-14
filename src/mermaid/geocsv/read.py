@@ -7,7 +7,7 @@ from datetime import tzinfo
 import math
 import re
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 from itertools import chain
 from os import PathLike
@@ -46,6 +46,12 @@ class GeoCSVMetadata:
     represented that column as a string. Empty values in the other field
     mappings mean those attributes were undeclared or empty. The mappings are
     read-only. ``delimiter`` is the decoded CSV character.
+    ``datetime_resolution_ns`` maps datetime column names to source record
+    indices and the resolution of each non-missing source timestamp spelling
+    in nanoseconds. It preserves fractional digit counts including trailing
+    zeros; seconds-only, minutes-only, and dates have nominal resolutions of
+    one second, one minute, and one day. It describes notation, not clock
+    accuracy. Both mapping levels are read-only; timestamp values are unchanged.
     """
 
     source_path: Path
@@ -56,6 +62,7 @@ class GeoCSVMetadata:
     field_standard_names: Mapping[str, str]
     field_missing: Mapping[str, str]
     delimiter: str
+    datetime_resolution_ns: Mapping[str, Mapping[int, int]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "comments", tuple(self.comments))
@@ -67,6 +74,10 @@ class GeoCSVMetadata:
             "field_missing",
         ):
             object.__setattr__(self, name, MappingProxyType(dict(getattr(self, name))))
+        object.__setattr__(self, "datetime_resolution_ns", MappingProxyType({
+            name: MappingProxyType(dict(resolutions))
+            for name, resolutions in self.datetime_resolution_ns.items()
+        }))
 
     def __deepcopy__(self, memo: dict) -> GeoCSVMetadata:
         # pandas copies attrs during normal selection. This value is immutable,
@@ -303,6 +314,17 @@ def _parse_datetime_value(value: str, line_number: int, field_name: str) -> pd.T
         ) from exc
 
 
+def _datetime_resolution_ns(value: str) -> int:
+    """Resolution of the source spelling, independently of pandas storage."""
+    clock = re.search(r"[Tt ]\d{2}:\d{2}(?::(\d{2})(?:\.(\d+))?)?", value)
+    if clock is None:
+        return 86_400_000_000_000  # Calendar date only.
+    if clock.group(1) is None:
+        return 60_000_000_000  # Hours and minutes only.
+    fraction = clock.group(2)
+    return 10 ** (9 - len(fraction)) if fraction else 1_000_000_000
+
+
 def _read_datasets(
     lines: Iterator[tuple[int, str]],
     source_path: Path,
@@ -324,10 +346,15 @@ def _read_datasets(
             raise GeoCSVError("dataset has no header")
 
         typed_columns = {}
+        datetime_resolutions = {}
         for name, field_type in zip(header, field_types):
             effective_type = field_type.lower() or "string"
             values = columns[name]
             if effective_type == "datetime":
+                datetime_resolutions[name] = {
+                    source_record_start + position: _datetime_resolution_ns(value)
+                    for position, value in enumerate(values) if not pd.isna(value)
+                }
                 if not any(not pd.isna(value) for value in values):
                     # No source timestamp exists to establish or convert a timezone.
                     array = pd.to_datetime(values, format="ISO8601", errors="raise")
@@ -382,6 +409,7 @@ def _read_datasets(
                 dict(zip(header, field_missing)) if "field_missing" in declarations else {}
             ),
             delimiter=delimiter,
+            datetime_resolution_ns=datetime_resolutions,
         )
         return frame
 

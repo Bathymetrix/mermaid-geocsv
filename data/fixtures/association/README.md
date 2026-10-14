@@ -65,7 +65,7 @@ audit did not compare every source waveform to SAC or GeoCSV.
 The repeatable fixture tests compare all 18 copied MiniSEED/SAC pairs' SNCL,
 SAC `kuser1` product labels, MiniSEED quality flags, and their matched GeoCSV
 event quality values. All agree. All sampled waveforms match exactly one row
-in their full GeoCSV history by complete SNCL, equal UTC millisecond bins,
+in their full GeoCSV history by complete SNCL, source-resolution time tolerance,
 original sample count, and the provisional 0.01 Hz rate check. The largest
 sampled GeoCSV/MiniSEED rate difference is below 0.000002 Hz. Full-history
 GeoCSV event rows carry only Q/D values; independent DET/REQ labels are absent
@@ -83,7 +83,7 @@ MiniSEED remains the ground truth for this association stage.
 Run the checks from the repository root:
 
 ```bash
-.venv/bin/pytest -q tests/test_associate.py tests/test_data_quality_fixtures.py
+.venv/bin/pytest -q tests/test_associate_synthetic.py tests/test_associate.py tests/test_data_quality_fixtures.py
 ```
 
 Do not overwrite/regenerate these fixtures during tests. The collection script

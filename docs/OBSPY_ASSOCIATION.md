@@ -51,8 +51,8 @@ The association workflow is in memory, with MiniSEED as waveform ground
 truth. Paired SAC fixtures are retained for later header comparisons. Existing SAC headers were examined as
 one possible attachment mechanism, not as a requirement to use SAC for the
 whole payload. Complete SNCL is required; the initial prototype compares UTC
-millisecond bins under the current writer convention. Broader timing
-tolerance is deferred.
+full UTC timestamps using the source GeoCSV resolution as the default
+absolute matching tolerance, with an optional seconds-valued override.
 
 ## What ObsPy provides
 
@@ -197,12 +197,12 @@ or other format/analysis headers.
 | Attribute | Initial association responsibility |
 | --- | --- |
 | `network`, `station`, `location`, `channel` | Validate against the matched complete SNCL. Existing waveform codes are authoritative; do not silently relabel an input to make it match. |
-| `starttime` | Validate the acquisition time in equal UTC millisecond bins; retain the waveform's `UTCDateTime` as received, without claiming hardware precision from its displayed digits. Do not reapply `TimeCorrection`. |
+| `starttime` | Validate the acquisition time within source resolution or explicit `time_tolerance`; retain the waveform's `UTCDateTime` as received, without claiming hardware precision from its displayed digits. Do not reapply `TimeCorrection`. |
 | `sampling_rate` | Require an absolute difference from GeoCSV `SampleRate` of at most 0.01 Hz under the provisional check below; preserve the downloaded waveform rate. |
 | `npts` | Validate `SampleCount` against the waveform count and data length; do not use a header assignment to repair a mismatched array. |
 | `delta`, `endtime` | Leave calculation to ObsPy from the current core fields; do not assign independently. |
 | `calib` | Preserve the existing value, including ObsPy's default of 1.0. Current GeoCSV rows supply no calibration factor. |
-| `coordinates` | Populate available valid latitude/longitude from the matched row and elevation 0.0 under the sea-level-reference convention below. Report conflicts rather than silently overwrite. |
+| `coordinates` | Require both valid latitude and longitude from the matched row, then project elevation 0.0. Missing either component raises by default; `missing_coordinates="warn"` skips the whole projection with a warning. Existing values never supply a missing component. |
 | `processing` | Preserve existing history. GeoCSV method/version is source provenance, not a reconstructed ObsPy processing history. Whether to record association itself remains open. |
 
 The ten default attributes of `Stats` are the four channel codes,
@@ -220,9 +220,19 @@ original traces, much of this is validation rather than assignment.
 
 The decision to include coordinates in initial association replaces the
 previous proposal for optional, separately requested coordinate projection.
-Latitude and longitude can be copied when present, finite, and expressed in
-compatible declared units. Preserve missing values in the source attachment;
-do not invent missing operational coordinates.
+Latitude and longitude form one position and must both be present, finite,
+and expressed in compatible declared units. Missing either raises by default.
+`missing_coordinates="warn"` attaches source metadata but skips the entire
+coordinate projection and removes existing `stats.coordinates`, with a warning.
+No latitude, longitude, or elevation-only operational container is created.
+
+The projection starts empty and uses only the matched source pair plus the
+explicit sea-level convention. Existing coordinate values are checked for
+conflicts, never used as fallback data; extra existing coordinate fields are
+not inherited into the new projection. This replaces the previous behavior
+that copied existing coordinates and could mix old latitude with new longitude.
+ObsPy itself initializes no default latitude/longitude. Source missingness is
+preserved under `stats.geocsv`.
 
 ### Adopted vertical reference and approximate depth
 
@@ -463,12 +473,18 @@ Proposed first matching policy:
 2. Require complete, matching station, network, channel, and location codes
    (SNCL). Missing values are not wildcards and do not silently become empty
    codes. A valid explicitly empty location code is distinct from missing.
-3. Require equal UTC millisecond bins: `floor(starttime_ns / 1_000_000)`.
-   This matches the current automaid millisecond rendering and succeeds for
-   all 18 rebuilt waveform samples. It is a representation rule, not clock
-   accuracy or a general time-slop tolerance. Wider tolerance and boundary
-   effects remain future questions. Require the full original sample count
-   and loaded data length to agree exactly with GeoCSV `SampleCount`.
+3. Compare full UTC nanosecond timestamps using absolute differences; neither
+   input is truncated. `time_tolerance=None` uses one unit of each candidate's
+   source timestamp resolution from reader metadata. For `.123Z` that is
+   0.001 seconds, for `.123456Z` it is 0.000001 seconds, and for nine fractional
+   digits it is one nanosecond. Trailing zeros count: `.120Z` and `.120000Z`
+   express different source resolutions despite representing the same instant.
+   Bounds are inclusive. An explicit finite, nonnegative `time_tolerance` in
+   seconds overrides this default; zero requires exact equality. Symmetric
+   tolerance accommodates the current writer's truncation and printing-rounding
+   boundary without inferring that the waveform's physical clock is that exact.
+   Require the full original sample count and loaded data length to agree
+   exactly with GeoCSV `SampleCount`.
 4. Require present, finite, positive rates satisfying the provisional minimum
    check `abs(obspy_sps - geocsv_sps) <= 0.01`, in Hz (samples per second).
    A difference greater than 0.01 Hz fails this check; do not round either
@@ -579,7 +595,8 @@ are validated before modifying any trace in the batch.
 
 The prototype preserves waveform core fields, calibration, MiniSEED quality,
 and existing processing history. It adds no `processing` entry. It retains
-existing extra coordinate fields, rejects conflicting coordinate projections,
+only source latitude/longitude and reference elevation in a fresh coordinate
+container, rejects conflicting existing coordinate projections,
 and rejects a pre-existing `stats.geocsv` attachment rather than overwriting
 it. Optional SAC projection is reserved and explicitly unimplemented.
 
@@ -594,3 +611,41 @@ it downstream; implement the optional SAC projection; revisit timing and rate
 criteria against more source data; establish policies for trimmed, merged,
 split, or resampled traces. None of those transformed inputs are supported
 by the original-acquisition matching contract yet.
+
+## Timestamp precision and metadata dependencies
+
+A former millisecond “bin” meant a half-open 0.001-second interval: times
+`.123000` through `.123999999` were treated alike, but `.124000` belonged to
+another interval. Only comparisons used those bins; input values were never
+rewritten. That rule has now been replaced by the explicit tolerance above.
+
+`geocsv.read` already preserved timestamp values to nine fractional digits.
+Version 0.11.0 additionally retains their lexical resolution in immutable
+`frame.attrs["geocsv"].datetime_resolution_ns[column][source_record_index]`.
+This records the precision written in the file rather than guessing from
+pandas storage units or trailing zero values. Missing timestamps have no
+resolution entry. The reader does not restore digits discarded by a writer.
+
+As of 2026-10-14, the user's MERMAID convention is that temporal resolution
+finer than 0.01 s has no physical significance for the current instruments.
+This is not a general GeoCSV rule, an accuracy bound, or an automatic 0.01 s
+matching tolerance. Preserve all source precision for this general reader.
+[miniSEED 3](https://docs.fdsn.org/projects/miniseed3/en/latest/background.html)
+defines nanosecond start-time resolution; its binary decoding support is a
+separate ObsPy concern and is not implemented by this GeoCSV reader.
+
+Related metadata must be interpreted together:
+
+| Metadata group | Required context before meaningful projection/use |
+| --- | --- |
+| Receiver position | Latitude **and** longitude, angular units, and coordinate convention; elevation also needs its vertical reference. |
+| Waveform identity | Network, station, location, channel; missing codes are not wildcards. |
+| Sample timing/coverage | Start time, sample count, sample rate (or delta), and endpoint convention; endtime is derived. |
+| Orientation | Azimuth plus dip/incidence, units, and SEED versus SAC angle convention. No orientation projection is implemented. |
+| Pressure-derived depth | Pressure, pressure units, and adopted pressure/depth and vertical-reference conventions; optional SAC projection remains reserved. |
+| Calibration/response | Scaling or response values plus input/output units and the relevant response definition; a URL alone supplies no ObsPy Response. |
+| Clock correction | Correction value, seconds units, and whether it was already applied; association never applies it again. |
+| Provenance | Source path, record index, and dataset metadata together; an index alone does not identify a source row. |
+
+These are interpretation dependencies, not a new general validation framework.
+The remaining audit findings are tracked in [the audit](OBSPY_ASSOCIATION_AUDIT.md).

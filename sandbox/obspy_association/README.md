@@ -99,7 +99,7 @@ print(tr.stats.coordinates)
 ```
 
 The function mutates in place and returns `None`. It requires exactly one
-event-row match per trace: full SNCL, equal UTC millisecond bins, exact original
+event-row match per trace: full SNCL, UTC time differences within GeoCSV source resolution by default, exact original
 sample count/data length, and measured rates within 0.01 Hz. Waveform core
 headers and processing history are preserved. Source quality is attached
 separately from MiniSEED quality. Latitude/longitude use their declared units;
@@ -122,3 +122,19 @@ Full association histories are ignored local files. On a fresh checkout,
 `restore_geocsv_histories.py` copies the manifest-listed complete histories
 from `$MERMAID/processed/` after checking their hashes. See the fixture README
 for instructions; association tests explicitly skip when histories are absent.
+
+Coordinate projection requires a complete source latitude/longitude pair.
+Missing either raises by default. `missing_coordinates="warn"` skips the
+whole projection with a warning, attaches the source row, and removes any
+old coordinates. There are no default latitude/longitude values from ObsPy
+or this adapter. Reference elevation 0 is supplied only with a valid pair.
+
+`time_tolerance=None` defaults to the source timestamp's recorded resolution;
+pass a finite nonnegative number of seconds to override it, or zero for exact
+matching. Both source and waveform timestamps retain full nanosecond precision.
+The current MERMAID 0.01 s physical-resolution convention does not truncate
+generic GeoCSV input and does not define matching tolerance.
+
+Tracked synthetic examples in `tests/fixtures/association/` exercise the
+adapter on CI without cutting any real history. Full local histories remain
+integration inputs. See the [saved adversarial audit](../../docs/OBSPY_ASSOCIATION_AUDIT.md).

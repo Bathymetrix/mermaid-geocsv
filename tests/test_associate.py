@@ -168,14 +168,14 @@ def test_provisional_rate_check_and_waveform_authority(histories):
         associate(trace, [frame])
 
 
-def test_equivalent_timezone_and_millisecond_rendering(histories):
+def test_equivalent_timezone_and_source_resolution(histories):
     trace, frame = one_event(histories)
     time = frame.iloc[0]["StartTime"].tz_convert("Pacific/Honolulu")
     frame.loc[:, "StartTime"] = time
     associate(trace, [frame])
     assert trace.stats.geocsv.StartTime == time
     trace = load_trace()
-    frame.loc[:, "StartTime"] = time + pd.Timedelta(milliseconds=1)
+    frame.loc[:, "StartTime"] = time + pd.Timedelta(milliseconds=2)
     with pytest.raises(ValueError, match="no match"):
         associate(trace, [frame])
 
@@ -191,10 +191,11 @@ def test_quality_is_preserved_and_does_not_select_matches(histories):
 def test_missing_coordinates_and_pressure_remain_missing(histories):
     trace, frame = one_event(histories)
     frame.loc[:, ["Latitude", "Longitude", "WaterPressure"]] = pd.NA
-    associate(trace, [frame])
+    with pytest.warns(RuntimeWarning, match="coordinate projection skipped"):
+        associate(trace, [frame], missing_coordinates="warn")
     assert pd.isna(trace.stats.geocsv.Latitude)
     assert pd.isna(trace.stats.geocsv.WaterPressure)
-    assert dict(trace.stats.coordinates) == {"elevation": 0.0}
+    assert "coordinates" not in trace.stats
 
 
 def test_coordinate_conflict_is_rejected_without_attachment(histories):

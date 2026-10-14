@@ -13,6 +13,12 @@ waveform fixtures and full GeoCSV histories are documented in the
 [rebuilt-source audit](data/fixtures/association/README.md); the adapter is
 not yet part of the package's public API.
 
+Reader version 0.11.0 also preserves source datetime resolution in immutable
+`frame.attrs["geocsv"].datetime_resolution_ns[column][source_record_index]`
+(integer nanoseconds per non-missing timestamp). Timestamp values retain up to
+nine fractional digits, including timezone information; no MERMAID clock
+resolution is imposed on this general reader.
+
 ## Install
 
 Requires Python 3.12 or newer and pandas 2.2 or newer. After cloning the

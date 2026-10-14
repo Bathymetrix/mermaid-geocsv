@@ -1,0 +1,12 @@
+#dataset: GeoCSV
+#description: Invented association test data; no rows selected from real histories
+#field_type: string,datetime,string,string,string,string,string,float,float,float,integer
+#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,hertz,unitless
+MethodIdentifier,StartTime,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,SampleRate,SampleCount
+Measurement:GPS:synthetic,2025-01-01T00:00:00.123456789Z,MH,SYN01,00,BDH,nan,10,20,nan,nan
+Algorithm(event):synthetic:v0,2025-01-01T00:00:00.123456789Z,MH,SYN01,00,BDH,Q,10,20,20,4
+Algorithm(event):synthetic:v0,2025-01-01T00:00:01.120Z,MH,SYN02,00,BDH,D,-10,-20,20,4
+Algorithm(event):synthetic:v0,2025-01-01T00:00:02.000Z,MH,SYN03,00,BDH,Q,nan,20,20,4
+Algorithm(event):synthetic:v0,2025-01-01T00:00:03.000Z,MH,SYN04,00,BDH,Q,10,nan,20,4
+Algorithm(event):synthetic:v0,2025-01-01T00:00:04.000Z,MH,SYN05,00,BDH,Q,nan,nan,20,4
+Algorithm(event):synthetic:v0,2025-01-01T00:00:00.001Z,MH,SYN06,00,BDH,Q,10,20,20,4

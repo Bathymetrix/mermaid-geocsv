@@ -19,8 +19,9 @@ traces; our guarantee ends at initial association.
    selecting overlapping records; distinguish service selection from our
    association behavior. Legacy EarthScope archives may mark submitted records
    M after facility processing; see the observations and mapping note.
-4. **Timing:** the prototype compares equal UTC millisecond bins for original
-   processed acquisitions. Revisit boundary effects and establish a broader rule without treating stored
+4. **Timing:** the prototype compares full UTC nanosecond values using each
+   source timestamp's resolution by default, with a `time_tolerance` override
+   in seconds. The previous bins have been removed. Revisit other producers without treating stored
    fractional digits as MERMAID clock accuracy. The user clarifies that the
    current waveform clock does not have millisecond timing precision;
    sub-millisecond GeoCSV fidelity is not a scientific requirement. Preserve
