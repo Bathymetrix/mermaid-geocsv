@@ -138,6 +138,27 @@ def test_ambiguous_and_absent_matches(records):
         associate(tr, records)
 
 
+def test_incomplete_unrelated_event_does_not_block_unique_match(records):
+    incomplete = records[0].loc[1].copy()
+    incomplete['StartTime'] = pd.NaT
+    records[0].loc[7] = incomplete
+
+    tr = trace()
+    associate(tr, records)
+    assert tr.stats.geocsv.source_record_index == 1
+
+
+def test_incomplete_event_is_reported_when_no_match_exists(records):
+    incomplete = records[0].loc[1].copy()
+    incomplete['StartTime'] = pd.NaT
+    records[0].loc[7] = incomplete
+
+    tr = trace()
+    tr.stats.starttime += 10
+    with pytest.raises(ValueError, match='incomplete event rows.*record.*7'):
+        associate(tr, records)
+
+
 @pytest.mark.parametrize('kind', ['rate', 'count'])
 def test_waveform_mismatch_fails(records, kind):
     tr = trace()

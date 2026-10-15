@@ -50,18 +50,42 @@ performance still apply to MiniSEED input.
    when source precision distinguished them. Input values themselves were
    not rewritten. The reader already retained nine-digit timestamps.
 
-4. **P2: unrelated incomplete events can prevent a unique match.** A valid
-   matching event plus a same-SNCL event with missing StartTime caused a fatal
-   error on the incomplete row. Count/rate missingness instead eliminated
-   candidates, so invalid-row policy was inconsistent. Decide validation scope
-   and diagnostic behavior before API exposure. Deferred by the user.
+4. **P2: unrelated incomplete events can prevent a unique match. Resolved in
+   the sandbox.** A valid matching event plus a same-SNCL event with missing
+   StartTime previously caused a fatal error on the incomplete row.
+   Count/rate missingness instead eliminated candidates, so invalid-row policy
+   was inconsistent.
 
-5. **P2 performance concern: batch matching repeats event scans.** The same
-   SNCL's rows are inspected for every trace. A synthetic benchmark excluding
-   parsing took 0.158 s at 100 traces/rows and 2.008 s at 400. One sampled
-   float history contains 1,830 events. A simple lookup built once is a possible
-   improvement; realistic whole-float measurements should drive the change.
-   Deferred by the user.
+5. **P2 performance concern: batch matching repeats event scans. Resolved in
+   the sandbox.** The same SNCL's rows were selected by rescanning every event
+   for each trace. A synthetic benchmark excluding parsing took 0.158 s at 100
+   traces/rows and 2.008 s at 400. One sampled float history contains 1,830
+   events.
+
+## Remediation of findings 4 and 5
+
+Rows with missing or timezone-naive `StartTime`, or without source timestamp
+resolution metadata, are now ineligible candidates rather than call-wide
+errors. A valid unique match can proceed. When a trace has no unique match,
+the error lists skipped incomplete rows with source, dataset, record index,
+and reason. Missing count/rate values remain candidate mismatch reasons once
+the row's time is eligible. This policy cannot establish whether a row lacking
+time would otherwise have matched; its omission remains visible in failure
+diagnostics.
+
+At dataset preparation, event rows are grouped by complete SNCL and sorted by
+UTC start time. Binary search selects a broad window using the maximum relevant
+source resolution (or the explicit tolerance); the existing per-row tolerance,
+count, rate, and ambiguity checks then run unchanged. This avoids inspecting
+every same-SNCL event for every trace. The index is local to one `associate`
+call and adds no persistent index or public interface.
+
+A microbenchmark on the complete 1,830-event P0048 history, with lookup/parsing
+separated and 400 repeated traces, took 8.922 s for full SNCL/time scans and
+0.024 s to build the sorted index and perform binary-search lookups (377x in
+this workload). The traces intentionally repeated one valid event to model
+repeated requests; this isolates lookup cost and is not an end-to-end waveform
+throughput estimate.
 
 ## Remediation of the first three findings
 
@@ -143,8 +167,8 @@ attached. The initial-association guarantee ends before subsequent ObsPy
 manipulation. The agreed provisional 0.01 Hz sampling-rate tolerance is a
 separate quantity from timestamp precision and remains unchanged.
 
-Findings 4 and 5, package ownership/exposure, public schema/exception contracts,
-and optional SAC projection remain later work. These fixes do not expose
+Package ownership/exposure, public schema/exception contracts, and optional
+SAC projection remain later work. These fixes do not expose
 `geocsv.associate`. Optional SAC projection remains NotImplementedError.
 
 ## Verification after strict-rule simplification
@@ -157,6 +181,16 @@ and optional SAC projection remain later work. These fixes do not expose
   trailing zeros, mixed dataset record indices, immutable resolution metadata,
   coordinate-pair failure, strict destination conflicts, batch atomicity, and the writer
   rounding boundary are covered. Repository diff whitespace checks pass.
+- Synthetic matching also covers ignored incomplete same-SNCL rows, their
+  failure diagnostics, and the sorted SNCL/time lookup.
 
 No processed source histories or Automaid files were modified. No commits or
 pushes were performed for this remediation.
+
+## Verification after findings 4 and 5
+
+- Full suite: **236 passed**.
+- Focused association suite: **97 passed**.
+- The P0048 lookup microbenchmark used a complete local history and did not
+  modify the fixture or its processed source.
+- `git diff --check` passes.

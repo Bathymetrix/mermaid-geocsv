@@ -114,9 +114,10 @@ references, never association inputs.
 - Which metadata beyond location can meaningfully describe the entire merge?
 
 The original many-traces-to-one-row rule remains. The opt-in still chooses
-one location anchor, not several competing source rows. Incomplete-event-row
-handling (audit finding 4), matching performance (finding 5), package exposure,
-and SAC projection implementation remain separate unfinished work.
+one location anchor, not several competing source rows. Incomplete-event
+handling and per-call SNCL/time indexing address audit findings 4 and 5;
+package exposure and SAC projection implementation remain separate unfinished
+work.
 
 ## Verification
 

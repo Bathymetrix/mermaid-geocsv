@@ -3,8 +3,9 @@
 This sandbox interface is not yet part of ``mermaid.geocsv``'s public API.
 """
 
-from math import isfinite
+from bisect import bisect_left, bisect_right
 from decimal import Decimal, InvalidOperation
+from math import isfinite
 
 from obspy import Stream, Trace
 from obspy.core.util import AttribDict
@@ -109,7 +110,28 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
         reserved = {"source_record_index", "dataset_index", "metadata", "association"} & set(frame.columns)
         if reserved:
             raise ValueError(f"event columns collide with attachment keys: {sorted(reserved)}")
-        datasets.append((dataset_index, events, metadata))
+        event_index = {}
+        for sncl, group in events.groupby(list(IDENTITY), sort=False, dropna=False):
+            timed_rows, incomplete_rows = [], []
+            max_resolution_ns = 0
+            for record_index, row in group.iterrows():
+                time = row["StartTime"]
+                if pd.isna(time) or pd.Timestamp(time).tzinfo is None:
+                    incomplete_rows.append((record_index,
+                                            "missing or timezone-naive StartTime; row is ineligible"))
+                    continue
+                resolution_ns = metadata.datetime_resolution_ns.get("StartTime", {}).get(record_index)
+                if resolution_ns is not None:
+                    max_resolution_ns = max(max_resolution_ns, resolution_ns)
+                elif time_tolerance is None:
+                    incomplete_rows.append((record_index,
+                                            "missing source time resolution; row is ineligible"))
+                timed_rows.append((pd.Timestamp(time).value, record_index))
+            timed_rows.sort()
+            timed_times = tuple(item[0] for item in timed_rows)
+            event_index[sncl] = (group, timed_rows, timed_times,
+                                 max_resolution_ns, incomplete_rows)
+        datasets.append((dataset_index, event_index, metadata))
 
     plans = []
     for trace_index, trace in enumerate(traces):
@@ -121,22 +143,29 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
         if np.ma.is_masked(trace.data):
             raise ValueError(f"trace {trace_index} {trace.id}: masked gaps prevent "
                              "contiguous segment association")
-        matches, anchors, candidates = [], [], []
-        for dataset_index, events, metadata in datasets:
-            mask = pd.Series(True, index=events.index)
-            for field, key in IDENTITY.items():
-                mask &= events[field].eq(trace.stats[key]).fillna(False)
-            for record_index, row in events.loc[mask].iterrows():
-                time = row["StartTime"]
-                if pd.isna(time) or pd.Timestamp(time).tzinfo is None:
-                    raise ValueError(f"{trace.id}: record {record_index} lacks aware StartTime")
+        matches, anchors, candidates, incomplete_events = [], [], [], []
+        sncl = tuple(trace.stats[key] for key in IDENTITY.values())
+        trace_time_ns = trace.stats.starttime.ns
+        for dataset_index, event_index, metadata in datasets:
+            indexed = event_index.get(sncl)
+            if indexed is None:
+                continue
+            events, timed_rows, timed_times, max_resolution_ns, incomplete_rows = indexed
+            incomplete_events.extend({
+                "source": str(metadata.source_path), "dataset": dataset_index,
+                "record": record_index, "reason": reason,
+            } for record_index, reason in incomplete_rows)
+            window_ns = tolerance_ns if tolerance_ns is not None else max_resolution_ns
+            first = bisect_left(timed_times, trace_time_ns - window_ns)
+            last = bisect_right(timed_times, trace_time_ns + window_ns)
+            for time_ns, record_index in timed_rows[first:last]:
+                row = events.loc[record_index]
                 allowed_ns = tolerance_ns
                 if allowed_ns is None:
                     allowed_ns = metadata.datetime_resolution_ns.get("StartTime", {}).get(record_index)
                     if allowed_ns is None:
-                        raise ValueError(f"{trace.id}: record {record_index} lacks source "
-                                         "time resolution; reread GeoCSV or set time_tolerance")
-                difference_ns = abs(pd.Timestamp(time).value - trace.stats.starttime.ns)
+                        continue
+                difference_ns = abs(time_ns - trace_time_ns)
                 if difference_ns > allowed_ns:
                     continue
                 count, source_rate = row["SampleCount"], row["SampleRate"]
@@ -180,7 +209,9 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
                              f"through {trace.stats.endtime}: {outcome}; "
                              f"required npts={trace.stats.npts}, rate={rate} Hz "
                              f"within {SAMPLE_RATE_TOLERANCE_HZ} Hz; "
-                             f"SNCL/time candidates (source, dataset, record, reasons): {candidates}")
+                             f"SNCL/time candidates (source, dataset, record, reasons): {candidates}; "
+                             f"incomplete event rows (source, dataset, record, reason): "
+                             f"{incomplete_events}")
         dataset_index, record_index, row, metadata = matches[0]
         attachment = AttribDict({**row.to_dict(), "source_record_index": record_index,
                                  "dataset_index": dataset_index, "metadata": metadata,
