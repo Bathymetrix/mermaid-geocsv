@@ -600,6 +600,28 @@ lightweight. Do not add a dependency or change `read` during planning.
 
 ## Implemented sandbox API
 
+### Source identity, repeated requests, and location
+
+Under the user's MERMAID construction, each original contiguous segment has
+one algorithm:event row. Multiple traces may map to the same row; repeated
+requests in different MER files do not by themselves imply different waveform
+metadata. Each trace must still have exactly one eligible row. Multiple rows
+cannot be combined into one trace association for the core metadata considered
+here; duplicates/ambiguity must be reported.
+
+Position means the interpolated receiver position at the first sample time,
+irrespective of waveform length or request date. It is not averaged over
+duration. GeoCSV `SampleCount` already supplies NPTS and is checked against the
+waveform; this extra validation does not replace mandatory SNCL and time.
+
+DET Q / REQ D may help distinguish original overlapping streams. That evidence
+can be lost in legacy EarthScope M responses, including when coverage has been
+combined. Quality-based validation, merged coverage, and contiguity handling
+remain open; the prototype's matching policy is unchanged. See the
+[open questions](../sandbox/obspy_association/OPEN_QUESTIONS.md).
+
+### Call contract
+
 ```python
 from associate import associate  # sandbox/obspy_association on the import path
 

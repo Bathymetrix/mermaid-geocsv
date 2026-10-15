@@ -7,9 +7,13 @@ traces; our guarantee ends at initial association.
    return when original acquisitions share SNCL? Are acquisition boundaries
    retained, combined, or obscured? Distinguish archive/server behavior from
    MiniSEED record assembly and ObsPy's own client-side trimming.
-2. **One row versus multiple traces:** can a single original acquisition be
-   returned as several traces because of gaps, quality, or sampling changes?
-   Can one returned trace contain samples from several GeoCSV waveform rows?
+2. **Source cardinality versus archive segmentation:** the user's construction
+   has one algorithm:event row per original contiguous segment. Multiple input
+   traces may legitimately use one row, including repeat requests of the same
+   waveform in different MER files. A trace must not acquire metadata from
+   multiple rows; multiple eligible rows remain an error. Still open: can a
+   service split an original acquisition or combine coverage from several rows,
+   and how should those transformed inputs be detected and handled?
 3. **Quality indicators:** preserve the GeoCSV and MiniSEED indicators
    separately; they can differ after archive processing. The user-supplied
    stream mapping says quality labels DET/REQ/raw-buffer lineage, while
@@ -19,6 +23,11 @@ traces; our guarantee ends at initial association.
    selecting overlapping records; distinguish service selection from our
    association behavior. Legacy EarthScope archives may mark submitted records
    M after facility processing; see the observations and mapping note.
+   DET Q versus REQ D can distinguish original overlapping streams, but
+   EarthScope may expose both as M and may combine their coverage. Quality-based
+   validation/disambiguation then loses that distinction. M alone proves no
+   particular merge. Resolve this later; current association preserves quality
+   separately and does not use equality as a hard match filter.
 4. **Timing:** the prototype compares full UTC nanosecond values using each
    source timestamp's resolution by default, with a `time_tolerance` override
    in seconds. The previous bins have been removed. Revisit other producers without treating stored
@@ -96,3 +105,35 @@ places, replacing the earlier rate-format concern for these particular
 outputs. Differences from MiniSEED remain below 0.000002 Hz in the sample;
 the broader raw-MER/writer/ObsPy precision investigation is still open.
 See [the fixture audit](../../data/fixtures/association/README.md).
+
+## Clarifications and original-file inspection, 2026-10-15
+
+`$MERMAID/waveforms/mseed/` and `sac/` are authorized read-only context sources;
+they may contain symlinks into `$MERMAID/processed/`. SAC remains a comparison
+reference, never a metadata input for MiniSEED association.
+
+The July 13 DET file and three repeated REQ files named by the user were
+inspected directly. DET is Q/4768 samples; all REQs are D/9600 samples with
+equal start times, sampling rates, and sample arrays. In the rebuilt P0006
+GeoCSV, all three REQs have the same matching row (238); DET matches row 237.
+See the [inspection evidence](OBSERVATIONS.md#original-july-13-waveforms-2026-10-15).
+
+GeoCSV already carries NPTS as `SampleCount` (typed Int64), and the associator
+checks it against `stats.npts` and data length. No additional NPTS column is
+needed for the current schema. Count is additional evidence, not a substitute
+for SNCL/time or proof of identical samples/lineage.
+
+Receiver position is interpolated at the first sample time, regardless of
+waveform length or subsequent request dates. There is no duration-averaged
+position. Repeated identical requests can therefore share a source row and
+location. A case with different counts still needs the existing count checks;
+the position convention does not authorize ignoring a count mismatch.
+
+Contiguity is necessary to establish a segment; an individual MiniSEED record
+always has a start time. Distinguish discontinuity from the expected next
+sample from merely encountering another record header. The legacy month
+response also contains overlapping DET/REQ coverage without a clean original
+acquisition boundary, so gap inspection alone does not recover its provenance.
+No merged-stream policy, quality-based selection policy, invalid-event-row
+policy (audit finding 4), performance remedy (finding 5), or public API
+promotion is settled by this note. The audit and other discussion remain open.

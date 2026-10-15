@@ -35,6 +35,32 @@ do not subset those histories to the selected waveform rows.
 The complete association GeoCSV histories are local, Git-ignored copies;
 retain their provenance/hashes in the tracked manifest. Do not stage them.
 
+`$MERMAID/waveforms/mseed/` and `$MERMAID/waveforms/sac/` are additional
+authorized read-only references for the waveforms described by these GeoCSV
+files. Entries may be symlinks into the protected processed tree. Consult
+them for context without modifying either the entries or their targets.
+
+### Association Cardinality and Location Meaning
+
+Complete SNCL and time are always required. In the user's MERMAID construction,
+each original contiguous waveform segment has one algorithm:event record.
+Multiple input traces may associate with the same GeoCSV row, including
+identical traces requested again in different MER files. Never consume or
+reserve a matched row exclusively for one trace. Conversely, one trace must
+not receive multiple source-row associations; multiple eligible rows are an
+error, not permission to combine their metadata.
+
+The assigned position is the interpolated receiver position at the first
+sample time, irrespective of waveform length or when a repeat request was
+made. Do not average position over the waveform. This position convention
+does not relax sample-count validation: GeoCSV `SampleCount` already represents
+NPTS and remains an additional check against the original waveform.
+
+Retain DET Q and REQ D as useful lineage/validation evidence, independent of
+rate. Loss of these distinctions in EarthScope M data, overlaps, contiguity,
+and association of transformed/merged coverage remain open design questions;
+do not infer original segment identity from M or silently change matching rules.
+
 ### Association Inputs and SAC Comparison References
 
 Until further instruction, develop association for original MiniSEED-derived

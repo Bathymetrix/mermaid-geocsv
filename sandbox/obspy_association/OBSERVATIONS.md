@@ -168,3 +168,35 @@ waveform core fields. Its time criterion is equal UTC millisecond bins, its
 original sample count criterion is exact, and the provisional rate criterion
 is 0.01 Hz. Quality is retained separately rather than used to select matches.
 Optional SAC projection is an explicit `NotImplementedError` placeholder.
+
+## Original July 13 waveforms, 2026-10-15
+
+Inspected the four user-named files under `$MERMAID/waveforms/mseed/`, whose
+entries are symlinks to processed originals. All read as one trace each with
+SNCL `MH.P0006.00.BDH`; no source files or symlinks were modified.
+
+| Filename | Quality | Start UTC | NPTS | Rebuilt GeoCSV row |
+| --- | --- | --- | ---: | ---: |
+| `20180713T094803.06_5B4C1D4F.MER.DET.WLT5.mseed` | Q | 2018-07-13T09:48:03.139974Z | 4768 | 237 |
+| `20180713T094831.06_5B6DEF16.MER.REQ.WLT5.mseed` | D | 2018-07-13T09:48:31.908782Z | 9600 | 238 |
+| `20180713T094831.06_5B73E987.MER.REQ.WLT5.mseed` | D | 2018-07-13T09:48:31.908782Z | 9600 | 238 |
+| `20180713T094831.06_5B773AE6.MER.REQ.WLT5.mseed` | D | 2018-07-13T09:48:31.908782Z | 9600 | 238 |
+
+All four rates are 20.007052186177717 Hz. The three REQ traces have exactly
+equal sample arrays, starts, rates, and counts. This establishes equality of
+the inspected waveform data/core headers, not a claim about every file byte
+or every item of request provenance. The files' different MER identifiers
+do not require different GeoCSV metadata rows. The current prototype was
+called on all four fresh traces in one Stream using the full rebuilt P0006
+GeoCSV history: DET associated with row 237 and all REQs with row 238.
+
+GeoCSV `SampleCount` is already present (4768 / 9600), equivalent to NPTS,
+and is checked by the prototype. Rebuilt GeoCSV rates here are 20.007051 Hz;
+the waveform rate is preserved. Position is taken from the matched row at
+the first sample time, independently of request date and waveform duration.
+
+This supports the user's many-traces-to-one-row rule. It does not establish
+an association policy for the legacy EarthScope response's one 10176-sample
+M trace spanning these overlapping source windows. The response's loss of
+Q/D distinctions, possible coverage combination, and quality-based validation
+remain open. No functional code or matching policy changed for this inspection.

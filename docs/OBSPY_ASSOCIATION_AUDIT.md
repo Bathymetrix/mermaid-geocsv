@@ -120,6 +120,19 @@ pressure/depth, clock corrections, and provenance) are listed in the
 
 ## Readiness boundary
 
+The 2026-10-15 source clarification establishes the user's construction:
+multiple traces may share one row, but one trace must not be associated with
+multiple rows for the core metadata considered here. Repeated identical REQ
+files were inspected and successfully mapped to the same rebuilt GeoCSV row.
+Position is interpolated at the first sample time, regardless of request date
+or sample length. `SampleCount` already supplies the proposed NPTS check.
+See the [original-file evidence](../sandbox/obspy_association/OBSERVATIONS.md#original-july-13-waveforms-2026-10-15).
+
+These clarifications do not finish this audit or resolve findings 4 and 5.
+In particular, legacy EarthScope M responses may lose DET Q / REQ D evidence
+and combine overlapping coverage. Contiguity and quality-based validation of
+such transformed inputs remain open; no matching behavior was changed.
+
 Preserve the sound parts: waveform metadata is authoritative; quality remains
 independent; sample count and rate checks are explicit; zero/multiple matches
 fail; batch validation precedes mutation; source values and provenance remain
