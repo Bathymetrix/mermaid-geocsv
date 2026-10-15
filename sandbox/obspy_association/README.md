@@ -96,7 +96,7 @@ from associate import associate
 
 st = read("/path/to/original.MER.DET.WLT5.mseed")
 records = geocsv.read("/path/to/geo_DET_REQ.csv")
-associate(st, records, project_sac=False)
+associate(st, records, project_sac=False, allow_merge=False)
 tr = st[0]
 print(tr.stats.geocsv.Latitude)
 print(tr.stats.geocsv.source_record_index)
@@ -114,8 +114,16 @@ elevation is the explicit sea-level constant 0, with no geoid model.
 All matches and projections are validated before any batch mutation. Existing
 GeoCSV or coordinate containers raise `ValueError`, even if empty or equivalent. The mutable
 attachment keeps original columns plus dataset index, source record index,
-and immutable dataset metadata. Guarantees end at initial association;
-trimmed/merged/resampled inputs remain outside this matching scope.
+immutable dataset metadata, and `association`. Standard matches are labeled
+`one_segment`. With `allow_merge=True`, a longer trace may instead receive
+`first_segment`: one unique SNCL/start-time anchor must have a compatible rate,
+a positive integer count, and duration fully covered by the trace. Masked gaps
+raise. The anchor location applies to the whole trace; other source fields
+still describe the anchor only. This neither merges waveforms nor reconstructs
+contributing acquisitions, and does not require MiniSEED quality M. See the
+[merged-trace policy](../../docs/OBSPY_MERGED_TRACES.md).
+Guarantees end at initial association; arbitrary trimming/resampling and
+upstream gap filling remain outside this matching contract.
 
 `project_sac=True` currently raises `NotImplementedError` before any mutation.
 The future geographic projection is stla/stlo, stel=0, and approximately

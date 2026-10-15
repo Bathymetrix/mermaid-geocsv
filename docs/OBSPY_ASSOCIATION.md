@@ -1,6 +1,6 @@
 # Associating GeoCSV records with ObsPy traces
 
-Architecture notes, updated 2026-10-13. A sandbox prototype now implements
+Architecture notes, updated 2026-10-15. A sandbox prototype now implements
 the initial association contract below; it is not a committed package API.
 
 ## Starting point
@@ -185,7 +185,9 @@ It also needs the row's `source_record_index` and dataset metadata from
 alone is not the matched row. The sandbox stores the row's original columns directly under an ObsPy
 `AttribDict` at `stats.geocsv`, with `source_record_index`, `dataset_index`
 (the index in the supplied records list), and `metadata` (the original
-immutable `GeoCSVMetadata`). The row attachment is a mutable snapshot,
+immutable `GeoCSVMetadata`), plus `association` (`one_segment` or
+`first_segment`). These four names are reserved against source-column
+collisions. The row attachment is a mutable snapshot,
 independent of the DataFrame. No scientific conversion belongs in it.
 
 Initial association is limited to the following existing waveform attributes
@@ -199,7 +201,7 @@ or other format/analysis headers.
 | `network`, `station`, `location`, `channel` | Validate against the matched complete SNCL. Existing waveform codes are authoritative; do not silently relabel an input to make it match. |
 | `starttime` | Validate the acquisition time within source resolution or explicit `time_tolerance`; retain the waveform's `UTCDateTime` as received, without claiming hardware precision from its displayed digits. Do not reapply `TimeCorrection`. |
 | `sampling_rate` | Require an absolute difference from GeoCSV `SampleRate` of at most 0.01 Hz under the provisional check below; preserve the downloaded waveform rate. |
-| `npts` | Validate `SampleCount` against the waveform count and data length; do not use a header assignment to repair a mismatched array. |
+| `npts` | By default validate `SampleCount` against the waveform count and data length; do not use a header assignment to repair a mismatched array. |
 | `delta`, `endtime` | Leave calculation to ObsPy from the current core fields; do not assign independently. |
 | `calib` | Preserve the existing value, including ObsPy's default of 1.0. Current GeoCSV rows supply no calibration factor. |
 | `coordinates` | Require both valid source latitude and longitude, then project elevation 0.0 into a fresh container. Missing either component or an existing destination raises. |
@@ -508,7 +510,8 @@ Proposed first matching policy:
    tolerance accommodates the current writer's truncation and printing-rounding
    boundary without inferring that the waveform's physical clock is that exact.
    Require the full original sample count and loaded data length to agree
-   exactly with GeoCSV `SampleCount`.
+   exactly with GeoCSV `SampleCount` by default. The explicit `allow_merge=True`
+   fallback below is the sole exception to original-count equality.
 4. Require present, finite, positive rates satisfying the provisional minimum
    check `abs(obspy_sps - geocsv_sps) <= 0.01`, in Hz (samples per second).
    A difference greater than 0.01 Hz fails this check; do not round either
@@ -575,8 +578,9 @@ Merging is more consequential: trace addition constructs the result from
 one input's stats, rather than combining arbitrary metadata from both. A
 retained `stats.geocsv` entry cannot be assumed to describe all merged
 samples. Prefer attaching before trimming, and keep distinct source waveforms
-separate when their positions matter. Designing associations for already
-merged, trimmed, resampled, or clock-shifted inputs is outside the first scope.
+separate when their positions matter. Already merged inputs have the explicit
+first-segment location option below. Arbitrarily trimmed, resampled, or
+clock-shifted inputs remain outside the matching contract.
 See [trace addition source](https://docs.obspy.org/_modules/obspy/core/trace.html).
 
 This is initially an in-memory contract. MiniSEED's writer uses specific
@@ -612,12 +616,13 @@ here; duplicates/ambiguity must be reported.
 Position means the interpolated receiver position at the first sample time,
 irrespective of waveform length or request date. It is not averaged over
 duration. GeoCSV `SampleCount` already supplies NPTS and is checked against the
-waveform; this extra validation does not replace mandatory SNCL and time.
+waveform by default; this extra validation does not replace mandatory SNCL and
+time. The opt-in first-segment policy relaxes count equality as specified below.
 
 DET Q / REQ D may help distinguish original overlapping streams. That evidence
 can be lost in legacy EarthScope M responses, including when coverage has been
-combined. Quality-based validation, merged coverage, and contiguity handling
-remain open; the prototype's matching policy is unchanged. See the
+combined. Quality-based validation and recovery of original contributions
+remain open. The opt-in below adopts a location without resolving that provenance. See the
 [open questions](../sandbox/obspy_association/OPEN_QUESTIONS.md).
 
 ### Call contract
@@ -626,8 +631,8 @@ remain open; the prototype's matching policy is unchanged. See the
 from associate import associate  # sandbox/obspy_association on the import path
 
 records = geocsv.read("geo_DET_REQ.csv")
-associate(tr, records, project_sac=False)
-associate(st, records, project_sac=False)
+associate(tr, records, project_sac=False, allow_merge=False)
+associate(st, records, allow_merge=True)  # Optional first-segment location fallback.
 ```
 
 `associate` accepts one `Trace` or a `Stream`, mutates supplied traces in place,
@@ -637,6 +642,25 @@ trace must have exactly one match, but independent traces may match the same
 row. Zero and multiple matches raise informative `ValueError`s including
 source paths and candidate row indices. All matches and destination checks
 are validated before modifying any trace in the batch.
+
+`allow_merge=False` requires a standard match and labels it
+`stats.geocsv.association = "one_segment"`. With `allow_merge=True`, standard
+matches retain that label. Only if no standard match exists may a trace use
+`"first_segment"`: require exactly one complete SNCL/start-time anchor under the
+same time tolerance, a compatible rate, positive integer anchor SampleCount,
+a strictly larger trace count, and trace duration `(npts - 1) / sampling_rate`
+at least as long as the anchor duration. Masked gaps raise in both modes.
+Ambiguous anchors, shorter traces, incompatible rates, missing coordinates,
+and destination conflicts still fail before batch mutation.
+
+The fallback adopts the anchor's location for the whole trace under the
+MERMAID drift convention; all attached row fields retain their anchor values,
+including SampleCount and DataQuality. It does not validate the provenance of
+the additional samples, recover contributors, or detect gaps already filled
+upstream. Quality M neither enables nor prevents either association. The flag
+performs no waveform merge. These labels describe the initial association;
+they are not recomputed after subsequent ObsPy operations. See the
+[merged-trace policy](OBSPY_MERGED_TRACES.md) for evidence and limitations.
 
 The prototype preserves the ten native core Stats fields, MiniSEED format
 metadata, waveform samples, and any existing processing history. It adds no
@@ -653,9 +677,9 @@ unit validation, and quality preservation.
 
 Remaining decisions: promote this sandbox interface into the package or keep
 it downstream; implement the optional SAC projection; revisit timing and rate
-criteria against more source data; establish policies for trimmed, merged,
-split, or resampled traces. None of those transformed inputs are supported
-by the original-acquisition matching contract yet.
+criteria against more source data; establish policies for trimmed, split,
+or resampled traces and stronger validation of merged coverage. The opt-in
+first-segment policy does not establish full merge provenance.
 
 ## Timestamp precision and metadata dependencies
 

@@ -11,7 +11,10 @@ An experimental [ObsPy association sandbox](sandbox/obspy_association/README.md)
 attaches parsed event metadata to original processed traces. Its paired
 waveform fixtures and full GeoCSV histories are documented in the
 [rebuilt-source audit](data/fixtures/association/README.md); the adapter is
-not yet part of the package's public API.
+not yet part of the package's public API. Strict association is the default;
+`allow_merge=True` permits adopting the first segment's location for a longer
+trace. `stats.geocsv.association` records `one_segment` or `first_segment`.
+See the [merged-trace policy](docs/OBSPY_MERGED_TRACES.md) for checks and limits.
 
 Reader version 0.11.0 also preserves source datetime resolution in immutable
 `frame.attrs["geocsv"].datetime_resolution_ns[column][source_record_index]`

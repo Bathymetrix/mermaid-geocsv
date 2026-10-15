@@ -195,3 +195,94 @@ def test_source_resolution_and_nanosecond_reader_metadata(records):
     assert records[0].loc[1, 'StartTime'].value == 1735689600123456789
     with pytest.raises(TypeError):
         resolution[1] = 1000
+
+
+@pytest.mark.parametrize('allow_merge', [False, True])
+def test_standard_match_label_with_or_without_merge_permission(records, allow_merge):
+    tr = trace()
+    tr.stats.mseed = {'dataquality': 'M'}
+    associate(tr, records, allow_merge=allow_merge)
+    assert tr.stats.geocsv.association == 'one_segment'
+    assert tr.stats.mseed.dataquality == 'M'
+
+
+def test_merge_requires_opt_in_and_preserves_anchor_and_waveform(records):
+    tr = trace()
+    tr.data = np.arange(10, dtype=np.float32)
+    tr.stats.mseed = {'dataquality': 'M'}
+    before = tr.copy()
+    with pytest.raises(ValueError, match='SampleCount=4 differs from npts=10') as exc:
+        associate(tr, records)
+    assert 'MH.SYN01.00.BDH' in str(exc.value)
+    assert str(FIXTURE.resolve()) in str(exc.value)
+    assert "'record': 1" in str(exc.value)
+    assert tr.stats == before.stats
+    associate(tr, records, allow_merge=True)
+    assert tr.stats.geocsv.association == 'first_segment'
+    assert tr.stats.geocsv.SampleCount == 4
+    assert tr.stats.geocsv.DataQuality == 'Q'
+    assert tr.stats.geocsv.source_record_index == 1
+    assert dict(tr.stats.coordinates) == {'latitude': 10., 'longitude': 20., 'elevation': 0.}
+    assert all(tr.stats[key] == value for key, value in before.stats.items())
+    np.testing.assert_array_equal(tr.data, before.data)
+
+
+@pytest.mark.parametrize('problem', ['short', 'rate', 'time', 'sncl', 'ambiguous',
+                                    'missing_coordinates', 'missing_count', 'duration'])
+def test_merge_permission_does_not_bypass_other_requirements(records, problem):
+    tr = trace()
+    tr.data = np.arange(10, dtype=np.float32)
+    if problem == 'short':
+        tr.data = tr.data[:2]
+    elif problem == 'rate':
+        tr.stats.sampling_rate = 21
+    elif problem == 'time':
+        tr.stats.starttime += 1
+    elif problem == 'sncl':
+        tr.stats.location = '99'
+    elif problem == 'ambiguous':
+        records = records + records
+    elif problem == 'missing_coordinates':
+        records[0].loc[1, 'Longitude'] = pd.NA
+    elif problem == 'missing_count':
+        records[0].loc[1, 'SampleCount'] = pd.NA
+    elif problem == 'duration':
+        # A slightly faster waveform can have more samples but less duration.
+        records[0].loc[1, 'SampleCount'] = 10000
+        records[0].loc[1, 'SampleRate'] = 19.991
+        tr.data = np.arange(10001, dtype=np.float32)
+    before = tr.copy()
+    with pytest.raises(ValueError):
+        associate(tr, records, allow_merge=True)
+    assert tr.stats == before.stats
+    np.testing.assert_array_equal(tr.data, before.data)
+
+
+@pytest.mark.parametrize('allow_merge', [False, True])
+def test_masked_gaps_are_not_contiguous_segments(records, allow_merge):
+    tr = trace()
+    tr.data = np.ma.array(np.arange(10, dtype=np.float32), mask=[False] * 5 + [True] + [False] * 4)
+    with pytest.raises(ValueError, match='masked gaps'):
+        associate(tr, records, allow_merge=allow_merge)
+    assert 'geocsv' not in tr.stats
+
+
+def test_mixed_batch_labels_and_failure_atomicity(records):
+    first, second = trace(), trace('SYN02')
+    second.data = np.arange(10, dtype=np.float32)
+    bad = trace('SYN03')
+    st = obspy.Stream([first, second, bad])
+    before = [deepcopy(tr.stats) for tr in st]
+    with pytest.raises(ValueError, match='requires both'):
+        associate(st, records, allow_merge=True)
+    assert [tr.stats for tr in st] == before
+    associate(obspy.Stream([first, second]), records, allow_merge=True)
+    assert first.stats.geocsv.association == 'one_segment'
+    assert second.stats.geocsv.association == 'first_segment'
+    assert first.stats.geocsv is not second.stats.geocsv
+
+
+def test_association_column_is_reserved(records):
+    records[0]['association'] = 'source value'
+    with pytest.raises(ValueError, match='collide.*association'):
+        associate(trace(), records)

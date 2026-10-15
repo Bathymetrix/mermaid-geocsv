@@ -1,7 +1,13 @@
 # Open questions / TBD
 
-Keep observations separate from decisions. Scope remains original downloaded
-traces; our guarantee ends at initial association.
+Keep observations separate from decisions. Strict matching targets original
+acquisitions; our guarantee ends at initial association.
+
+The [merged-trace policy](../../docs/OBSPY_MERGED_TRACES.md) documents the
+implemented `allow_merge=False` default and opt-in first-segment location
+fallback. `stats.geocsv.association` distinguishes `one_segment` from
+`first_segment`. Stronger coverage/provenance checks and the questions below
+remain open.
 
 1. **EarthScope aggregation and merging:** what does a month/year request
    return when original acquisitions share SNCL? Are acquisition boundaries
@@ -127,13 +133,15 @@ Receiver position is interpolated at the first sample time, regardless of
 waveform length or subsequent request dates. There is no duration-averaged
 position. Repeated identical requests can therefore share a source row and
 location. A case with different counts still needs the existing count checks;
-the position convention does not authorize ignoring a count mismatch.
+the position convention alone does not authorize ignoring a count mismatch.
+Only explicit `allow_merge=True` permits the documented longer-trace fallback.
 
 Contiguity is necessary to establish a segment; an individual MiniSEED record
 always has a start time. Distinguish discontinuity from the expected next
 sample from merely encountering another record header. The legacy month
 response also contains overlapping DET/REQ coverage without a clean original
 acquisition boundary, so gap inspection alone does not recover its provenance.
-No merged-stream policy, quality-based selection policy, invalid-event-row
-policy (audit finding 4), performance remedy (finding 5), or public API
-promotion is settled by this note. The audit and other discussion remain open.
+The opt-in first-segment location policy does not settle reconstruction of
+merged coverage, quality-based selection, invalid-event-row handling (audit
+finding 4), performance (finding 5), or public API promotion. The audit and
+other discussion remain open.

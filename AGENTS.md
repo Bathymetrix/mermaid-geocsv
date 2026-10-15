@@ -54,17 +54,23 @@ The assigned position is the interpolated receiver position at the first
 sample time, irrespective of waveform length or when a repeat request was
 made. Do not average position over the waveform. This position convention
 does not relax sample-count validation: GeoCSV `SampleCount` already represents
-NPTS and remains an additional check against the original waveform.
+NPTS and remains an additional check against the original waveform. The
+explicit `allow_merge=True` option is the documented exception: a unique
+SNCL/start-time anchor may supply location for a longer trace covering its
+full duration. Label standard matches `stats.geocsv.association = "one_segment"`
+and fallback matches `"first_segment"`; never change raw anchor row values.
 
 Retain DET Q and REQ D as useful lineage/validation evidence, independent of
 rate. Loss of these distinctions in EarthScope M data, overlaps, contiguity,
-and association of transformed/merged coverage remain open design questions;
+and reconstruction of transformed/merged coverage remain open design questions.
+The first-segment option adopts a location without claiming that reconstruction;
 do not infer original segment identity from M or silently change matching rules.
 
 ### Association Inputs and SAC Comparison References
 
 Until further instruction, develop association for original MiniSEED-derived
-traces/streams only. Paired `.sac` fixtures are independent comparison
+traces/streams and the explicit first-segment location fallback only.
+Paired `.sac` fixtures are independent comparison
 references, not association inputs. Their inherited `stats.sac` headers must
 never supply defaults, matching hints, or missing values to the associator.
 

@@ -39,7 +39,7 @@ The broader [metadata survey](OBSPY_STATS.md) covers other namespaces and consum
 | network, station, location, channel | Match the complete MiniSEED identity; never fill or relabel it from GeoCSV. |
 | starttime | Validate against GeoCSV under the explicit tolerance; preserve the original UTCDateTime and its nanoseconds. |
 | sampling_rate | Check the source rate; preserve the waveform rate. |
-| npts | Check source SampleCount and loaded data length; preserve the waveform count. |
+| npts | Check source SampleCount and loaded data length by default; preserve the waveform count. The explicit first-segment fallback permits a longer trace. |
 | delta | ObsPy maintains its reciprocal relationship with sampling_rate; do not assign separately. |
 | endtime | Read-only last-sample time derived by ObsPy from starttime, npts, and sampling_rate. |
 | calib | Preserve the calibration factor; current GeoCSV supplies no replacement. |
@@ -78,7 +78,7 @@ create, reconstruct, append to, or clear it. Existing history remains unchanged.
 
 ## Explicit non-core destinations
 
-The current adapter adds only `stats.geocsv` (source row and provenance) and
+The current adapter adds only `stats.geocsv` (source row, provenance, and association label) and
 `stats.coordinates` (complete source latitude/longitude plus the adopted
 sea-level reference elevation). Optional `stats.sac` output projection is
 reserved for later comparison against independently read SAC fixtures.
@@ -91,3 +91,8 @@ is empty or looks equivalent. Build fresh complete projections, validate the
 whole batch, then attach. No merge, overwrite, deletion, fallback, or per-field
 missing-data policy switches. Missing required inputs raise. Source fields
 that have no agreed projection remain faithfully available under stats.geocsv.
+
+`stats.geocsv.association` records `one_segment` or `first_segment` at initial
+association. The latter requires explicit `allow_merge=True`; see the
+[merged-trace policy](OBSPY_MERGED_TRACES.md). It adopts an anchor location
+without rewriting native waveform fields or source-row values.
