@@ -4,6 +4,21 @@ Audit performed 2026-10-14 against the sandbox `associate.py`. This records
 findings before remediation and their dispositions; the function remains an
 experimental sandbox interface, not an exposed package API.
 
+## Current policy update, 2026-10-16
+
+Version 0.13.0 replaces the source-resolution default below with a fixed
+100-microsecond absolute tolerance (`time_tolerance=0.0001`). `None` is no
+longer accepted; source lexical resolution remains reader metadata, not a
+matching requirement. Current millisecond-rendered histories require an
+explicit tolerance when their offsets exceed the default. Rate checks use
+inclusive floating-point endpoints around the unchanged 0.01 Hz threshold.
+The first-segment fallback now requires exact gap-free source sample coverage
+on the waveform grid, with overlapping samples counted once. Start and
+last-sample alignment must satisfy the chosen time tolerance. The historical
+remediation details and test counts below describe earlier implementations.
+See [current matching rules](OBSPY_ASSOCIATION.md#matching-original-traces) and
+[merged coverage](OBSPY_MERGED_TRACES.md) for the active contract.
+
 ## Input scope clarification
 
 Original MiniSEED-derived traces are the association inputs. Paired SAC files

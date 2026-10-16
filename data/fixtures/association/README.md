@@ -72,7 +72,7 @@ audit did not compare every source waveform to SAC or GeoCSV.
 The repeatable fixture tests compare all 18 copied MiniSEED/SAC pairs' SNCL,
 SAC `kuser1` product labels, MiniSEED quality flags, and their matched GeoCSV
 event quality values. All agree. All sampled waveforms match exactly one row
-in their full GeoCSV history by complete SNCL, source-resolution time tolerance,
+in their full GeoCSV history by complete SNCL, an explicit 1 ms time tolerance,
 original sample count, and the provisional 0.01 Hz rate check. The largest
 sampled GeoCSV/MiniSEED rate difference is below 0.000002 Hz. Full-history
 GeoCSV event rows carry only Q/D values; independent DET/REQ labels are absent

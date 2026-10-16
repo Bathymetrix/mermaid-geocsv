@@ -111,6 +111,19 @@ def test_sncl_mismatch_is_not_repaired_from_geocsv(records):
     assert tr.stats == before
 
 
+@pytest.mark.parametrize('location', ['', '""'])
+def test_empty_source_location_is_missing_not_a_blank_seed_code(tmp_path, location):
+    source = tmp_path / 'missing_location.geocsv'
+    source.write_text(FIXTURE.read_text().replace(',00,BDH,', f',{location},BDH,'))
+    records = geocsv.read(source)
+    assert pd.isna(records[0].loc[1, 'Location'])
+    tr = trace()
+    tr.stats.location = ''
+    with pytest.raises(ValueError, match='no match'):
+        associate(tr, records)
+    assert 'geocsv' not in tr.stats
+
+
 def test_unrequested_sac_projection_does_not_touch_existing_headers(records):
     tr = trace()
     tr.stats.sac = {'unrelated': 'leave untouched'}
@@ -170,18 +183,20 @@ def test_waveform_mismatch_fails(records, kind):
         associate(tr, records)
 
 
-def test_default_resolution_uses_source_digits_and_preserves_nanoseconds(records):
-    tr = trace()
-    tr.stats.starttime = obspy.UTCDateTime(ns=tr.stats.starttime.ns + 1)
-    associate(tr, records)  # Nine source digits => 1 ns tolerance.
-    assert tr.stats.geocsv.StartTime.value == pd.Timestamp(TIMES['SYN01']).value
-    tr = trace()
-    tr.stats.starttime = obspy.UTCDateTime(ns=tr.stats.starttime.ns + 2)
-    with pytest.raises(ValueError, match='no match'):
+@pytest.mark.parametrize('station', ['SYN01', 'SYN02'])
+@pytest.mark.parametrize('offset_ns', [-100_001, -100_000, 100_000, 100_001])
+def test_default_time_tolerance_is_fixed_and_inclusive(records, station, offset_ns):
+    tr = trace(station)
+    source_ns = tr.stats.starttime.ns
+    tr.stats.starttime = obspy.UTCDateTime(ns=source_ns + offset_ns)
+    if abs(offset_ns) <= 100_000:
         associate(tr, records)
-    tr = trace('SYN02')
-    tr.stats.starttime = obspy.UTCDateTime(ns=tr.stats.starttime.ns + 999_999)
-    associate(tr, records)  # Three source digits => 1 ms tolerance.
+        assert tr.stats.geocsv.StartTime.value == source_ns
+        assert tr.stats.starttime.ns == source_ns + offset_ns
+    else:
+        with pytest.raises(ValueError, match='no match'):
+            associate(tr, records)
+        assert 'geocsv' not in tr.stats
 
 
 def test_explicit_time_tolerance_overrides_default(records):
@@ -203,7 +218,7 @@ def test_writer_rounding_boundary_preserves_both_input_times(records):
     assert tr.stats.geocsv.StartTime.value == pd.Timestamp(TIMES['SYN06']).value
 
 
-@pytest.mark.parametrize('tolerance', [-1, float('inf'), float('nan'), 'invalid'])
+@pytest.mark.parametrize('tolerance', [None, -1, float('inf'), float('nan'), 'invalid'])
 def test_bad_tolerance_fails(records, tolerance):
     with pytest.raises(ValueError, match='finite, nonnegative'):
         associate(trace(), records, time_tolerance=tolerance)
@@ -216,6 +231,63 @@ def test_source_resolution_and_nanosecond_reader_metadata(records):
     assert records[0].loc[1, 'StartTime'].value == 1735689600123456789
     with pytest.raises(TypeError):
         resolution[1] = 1000
+
+
+@pytest.mark.parametrize('direction', [-1, 1])
+@pytest.mark.parametrize('position', ['inside', 'endpoint', 'outside'])
+def test_rate_tolerance_uses_inclusive_representable_endpoints(records, direction, position):
+    source_rate = 20.0 + direction * 0.01
+    if position == 'inside':
+        source_rate = np.nextafter(source_rate, 20.0)
+    elif position == 'outside':
+        source_rate = np.nextafter(source_rate, direction * np.inf)
+    records[0].loc[1, 'SampleRate'] = source_rate
+    tr = trace()
+    if position == 'outside':
+        with pytest.raises(ValueError, match='no match'):
+            associate(tr, records)
+        assert 'geocsv' not in tr.stats
+    else:
+        associate(tr, records)
+        assert tr.stats.geocsv.SampleRate == source_rate
+    assert tr.stats.sampling_rate == 20.0
+    assert records[0].loc[1, 'SampleRate'] == source_rate
+
+
+def test_index_selects_expected_row_among_unsorted_competitors():
+    records = geocsv.read(FIXTURE.with_name('indexed.geocsv'))
+    tr = trace()
+    tr.stats.starttime = obspy.UTCDateTime(ns=1735689600000100000)
+
+    associate(tr, records)
+
+    # Expected from the invented input, independently of the returned selection.
+    assert tr.stats.geocsv.source_record_index == 1
+    assert tr.stats.coordinates.latitude == 10.0
+    assert tr.stats.geocsv.starttime_difference_seconds == 0.0001
+
+
+def test_index_does_not_prefer_exact_time_over_another_eligible_row():
+    records = geocsv.read(FIXTURE.with_name('indexed.geocsv'))
+    records[0].loc[4, 'SampleCount'] = 4
+    tr = trace()
+    tr.stats.starttime = obspy.UTCDateTime(ns=1735689600000100000)
+    before = tr.copy()
+
+    with pytest.raises(ValueError, match=r'ambiguous \(2 matches\)'):
+        associate(tr, records)
+
+    assert tr.stats == before.stats
+    np.testing.assert_array_equal(tr.data, before.data)
+
+
+def test_time_matching_does_not_require_source_resolution_metadata(records):
+    from dataclasses import replace
+    records[0].attrs['geocsv'] = replace(records[0].attrs['geocsv'],
+                                       datetime_resolution_ns={})
+    tr = trace()
+    associate(tr, records)
+    assert tr.stats.geocsv.source_record_index == 1
 
 
 @pytest.mark.parametrize('allow_merge', [False, True])
@@ -246,6 +318,95 @@ def test_merge_requires_opt_in_and_preserves_anchor_and_waveform(records):
     assert dict(tr.stats.coordinates) == {'latitude': 10., 'longitude': 20., 'elevation': 0.}
     assert all(tr.stats[key] == value for key, value in before.stats.items())
     np.testing.assert_array_equal(tr.data, before.data)
+
+
+def test_overlapping_source_ranges_count_each_sample_once(records):
+    records[0].loc[7, 'StartTime'] = pd.Timestamp('2025-01-01T00:00:00.223456789Z')
+    first = trace()
+    second = first.copy()
+    second.stats.starttime += 0.1
+    second.data = np.arange(2, 8, dtype=np.float32)
+    stream = obspy.Stream([first, second])
+    stream.merge(method=1, misalignment_threshold=0)
+    tr, = stream
+    assert tr.stats.npts == 8
+    associate(tr, records, allow_merge=True)
+    assert tr.stats.geocsv.association == 'first_segment'
+    assert tr.stats.geocsv.SampleCount == 4  # Anchor remains unchanged.
+    assert tr.stats.coordinates.latitude == 10.0
+    np.testing.assert_array_equal(tr.data, np.arange(8, dtype=np.float32))
+
+
+def test_merged_coverage_rejects_ambiguous_grid_alignment(records):
+    tr = trace()
+    tr.data = np.arange(10, dtype=np.float32)
+    with pytest.raises(ValueError, match='multiple waveform sample indices'):
+        associate(tr, records, allow_merge=True, time_tolerance=0.05)
+    assert 'geocsv' not in tr.stats
+
+
+def test_exact_merged_alignment_uses_integer_nanosecond_sample_times(records):
+    records[0].loc[[1, 7], 'SampleRate'] = 3.0
+    records[0].loc[7, 'StartTime'] = (pd.Timestamp(TIMES['SYN01'])
+                                    + pd.Timedelta(nanoseconds=1_333_333_333))
+    tr = trace()
+    tr.stats.sampling_rate = 3.0
+    tr.data = np.arange(10, dtype=np.float32)
+    associate(tr, records, allow_merge=True, time_tolerance=0)
+    assert tr.stats.geocsv.association == 'first_segment'
+    assert tr.stats.geocsv.starttime_difference_seconds == 0
+
+
+def test_later_merged_count_failure_leaves_entire_batch_unchanged(records):
+    first, second = trace(), trace('SYN02')
+    second.data = np.arange(11, dtype=np.float32)
+    stream = obspy.Stream([first, second])
+    before = [tr.copy() for tr in stream]
+    with pytest.raises(ValueError, match='requires exactly npts=11'):
+        associate(stream, records, allow_merge=True)
+    for tr, original in zip(stream, before):
+        assert tr.stats == original.stats
+        np.testing.assert_array_equal(tr.data, original.data)
+
+
+@pytest.mark.parametrize('problem', ['one_short', 'one_extra', 'gap', 'off_grid',
+                                    'overlap_sum', 'incomplete', 'rate', 'rate_drift'])
+def test_merge_requires_exact_grid_coverage(records, problem):
+    tr = trace()
+    tr.data = np.arange(10, dtype=np.float32)
+    if problem == 'one_short':
+        tr.data = tr.data[:-1]
+    elif problem == 'one_extra':
+        tr.data = np.arange(11, dtype=np.float32)
+    elif problem == 'gap':
+        records[0].loc[7, 'StartTime'] += pd.Timedelta(milliseconds=50)
+        tr.data = np.arange(11, dtype=np.float32)
+    elif problem == 'off_grid':
+        records[0].loc[7, 'StartTime'] += pd.Timedelta(nanoseconds=100_001)
+    elif problem == 'overlap_sum':
+        records[0].loc[7, 'StartTime'] -= pd.Timedelta(milliseconds=100)
+        # The sum is 4 + 6 = 10, but the union contains only 8 samples.
+    elif problem == 'incomplete':
+        records[0].loc[7, 'SampleCount'] = pd.NA
+    elif problem == 'rate':
+        records[0].loc[7, 'SampleRate'] = 21
+    elif problem == 'rate_drift':
+        # Within 0.01 Hz, but six samples accumulate more than 100 us of drift.
+        records[0].loc[7, 'SampleRate'] = 19.991
+    before = tr.copy()
+    with pytest.raises(ValueError, match='merged coverage'):
+        associate(tr, records, allow_merge=True)
+    assert tr.stats == before.stats
+    np.testing.assert_array_equal(tr.data, before.data)
+
+
+@pytest.mark.parametrize('offset_ns', [-100_000, 100_000])
+def test_merged_segment_alignment_accepts_timing_boundary(records, offset_ns):
+    records[0].loc[7, 'StartTime'] += pd.Timedelta(nanoseconds=offset_ns)
+    tr = trace()
+    tr.data = np.arange(10, dtype=np.float32)
+    associate(tr, records, allow_merge=True)
+    assert tr.stats.geocsv.association == 'first_segment'
 
 
 @pytest.mark.parametrize('problem', ['short', 'rate', 'time', 'sncl', 'ambiguous',

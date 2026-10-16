@@ -43,10 +43,23 @@ def one_event(histories):
     """Keep one known matching row for focused matching-policy tests."""
     example = EXAMPLES[0]
     trace = load_trace(example)
-    associate(trace, histories[example["geocsv"]])
-    source = histories[example["geocsv"]][trace.stats.geocsv.dataset_index]
-    frame = source.loc[[trace.stats.geocsv.source_record_index]].copy()
-    return load_trace(example), frame
+    # P0030's first manifest example corresponds to full-history record 689.
+    source = histories[example["geocsv"]][0]
+    frame = source.loc[[689]].copy()
+    return trace, frame
+
+
+def test_default_rejects_real_writer_offset_beyond_100_microseconds(histories):
+    trace = load_trace()
+    records = histories[EXAMPLES[0]['geocsv']]
+    assert trace.stats.starttime.ns - records[0].loc[689, 'StartTime'].value == 349_000
+    before = trace.copy()
+    with pytest.raises(ValueError, match='no match'):
+        associate(trace, records)
+    assert trace.stats == before.stats
+    assert (trace.data == before.data).all()
+    associate(trace, records, time_tolerance=0.001)
+    assert trace.stats.geocsv.source_record_index == 689
 
 
 def test_sample_coverage_and_verbatim_copy_hashes():
@@ -89,7 +102,7 @@ def test_sampled_association(example, histories):
     core = {key: deepcopy(trace.stats[key]) for key in trace.stats.defaults}
     samples = trace.data.copy()
     records = histories[example["geocsv"]]
-    assert associate(trace, records) is None
+    assert associate(trace, records, time_tolerance=0.001) is None
     attachment = trace.stats.geocsv
     assert attachment.DataQuality == expected_quality
     row = records[attachment.dataset_index].loc[attachment.source_record_index]
@@ -116,14 +129,14 @@ def test_full_history_event_quality_domain(histories):
 def test_stream_supports_records_from_multiple_floats(histories):
     stream = obspy.Stream([load_trace(item) for item in EXAMPLES])
     records = [frame for frames in histories.values() for frame in frames]
-    assert associate(stream, records) is None
+    assert associate(stream, records, time_tolerance=0.001) is None
     assert all("geocsv" in trace.stats for trace in stream)
 
 
 def test_independent_traces_can_use_the_same_source_row(histories):
     trace, frame = one_event(histories)
     stream = obspy.Stream([trace, trace.copy()])
-    associate(stream, [frame])
+    associate(stream, [frame], time_tolerance=0.001)
     assert stream[0].stats.geocsv.source_record_index == stream[1].stats.geocsv.source_record_index
     assert stream[0].stats.geocsv is not stream[1].stats.geocsv
 
@@ -132,7 +145,7 @@ def test_ambiguous_records_are_rejected_without_mutation(histories):
     trace, frame = one_event(histories)
     before = deepcopy(trace.stats)
     with pytest.raises(ValueError, match="ambiguous.*record"):
-        associate(trace, [frame, frame])
+        associate(trace, [frame, frame], time_tolerance=0.001)
     assert trace.stats == before
 
 
@@ -143,7 +156,7 @@ def test_stream_failure_does_not_partially_associate(histories):
     stream = obspy.Stream([good, bad])
     before = [deepcopy(trace.stats) for trace in stream]
     with pytest.raises(ValueError, match="no match"):
-        associate(stream, histories[EXAMPLES[0]["geocsv"]])
+        associate(stream, histories[EXAMPLES[0]["geocsv"]], time_tolerance=0.001)
     assert [trace.stats for trace in stream] == before
 
 
@@ -152,7 +165,7 @@ def test_count_and_rate_mismatches_fail(histories, field, value):
     trace, frame = one_event(histories)
     frame.loc[:, field] = value
     with pytest.raises(ValueError, match="no match"):
-        associate(trace, [frame])
+        associate(trace, [frame], time_tolerance=0.001)
     assert "geocsv" not in trace.stats
 
 
@@ -160,30 +173,30 @@ def test_provisional_rate_check_and_waveform_authority(histories):
     trace, frame = one_event(histories)
     original = trace.stats.sampling_rate
     frame.loc[:, "SampleRate"] = original + 0.00999
-    associate(trace, [frame])
+    associate(trace, [frame], time_tolerance=0.001)
     assert trace.stats.sampling_rate == original
     trace = load_trace()
     frame.loc[:, "SampleRate"] = original + 0.01001
     with pytest.raises(ValueError, match="no match"):
-        associate(trace, [frame])
+        associate(trace, [frame], time_tolerance=0.001)
 
 
 def test_equivalent_timezone_and_source_resolution(histories):
     trace, frame = one_event(histories)
     time = frame.iloc[0]["StartTime"].tz_convert("Pacific/Honolulu")
     frame.loc[:, "StartTime"] = time
-    associate(trace, [frame])
+    associate(trace, [frame], time_tolerance=0.001)
     assert trace.stats.geocsv.StartTime == time
     trace = load_trace()
     frame.loc[:, "StartTime"] = time + pd.Timedelta(milliseconds=2)
     with pytest.raises(ValueError, match="no match"):
-        associate(trace, [frame])
+        associate(trace, [frame], time_tolerance=0.001)
 
 
 def test_quality_is_preserved_and_does_not_select_matches(histories):
     trace, frame = one_event(histories)
     frame.loc[:, "DataQuality"] = "D"
-    associate(trace, [frame])
+    associate(trace, [frame], time_tolerance=0.001)
     assert trace.stats.mseed.dataquality == "Q"
     assert trace.stats.geocsv.DataQuality == "D"
 
@@ -193,7 +206,7 @@ def test_missing_coordinate_pair_fails_without_attachment(histories):
     frame.loc[:, ["Latitude", "Longitude", "WaterPressure"]] = pd.NA
     before = deepcopy(trace.stats)
     with pytest.raises(ValueError, match="requires both Latitude and Longitude"):
-        associate(trace, [frame])
+        associate(trace, [frame], time_tolerance=0.001)
     assert trace.stats == before
 
 
@@ -201,7 +214,7 @@ def test_coordinate_conflict_is_rejected_without_attachment(histories):
     trace, frame = one_event(histories)
     trace.stats.coordinates = {"latitude": 0.0}
     with pytest.raises(ValueError, match="stats.coordinates already exists"):
-        associate(trace, [frame])
+        associate(trace, [frame], time_tolerance=0.001)
     assert "geocsv" not in trace.stats
     assert trace.stats.coordinates.latitude == 0
 
@@ -213,7 +226,7 @@ def test_bad_coordinate_units_are_rejected(histories):
     units["Latitude"] = "radians"
     frame.attrs["geocsv"] = replace(frame.attrs["geocsv"], field_units=units)
     with pytest.raises(ValueError, match="Latitude requires declared units"):
-        associate(trace, [frame])
+        associate(trace, [frame], time_tolerance=0.001)
     assert "geocsv" not in trace.stats
 
 
@@ -224,7 +237,7 @@ def test_bad_rate_units_are_rejected(histories):
     units["SampleRate"] = "kilohertz"
     frame.attrs["geocsv"] = replace(frame.attrs["geocsv"], field_units=units)
     with pytest.raises(ValueError, match="SampleRate requires declared units hertz"):
-        associate(trace, [frame])
+        associate(trace, [frame], time_tolerance=0.001)
     assert "geocsv" not in trace.stats
 
 
@@ -232,5 +245,5 @@ def test_sac_option_is_explicitly_unimplemented(histories):
     trace = load_trace()
     before = deepcopy(trace.stats)
     with pytest.raises(NotImplementedError, match="SAC projection"):
-        associate(trace, histories[EXAMPLES[0]["geocsv"]], project_sac=True)
+        associate(trace, histories[EXAMPLES[0]["geocsv"]], project_sac=True, time_tolerance=0.001)
     assert trace.stats == before

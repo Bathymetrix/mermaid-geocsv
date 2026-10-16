@@ -1,0 +1,12 @@
+#dataset: GeoCSV
+#description: Invented unsorted candidate-selection data; no real source history used
+#field_type: string,datetime,string,string,string,string,string,float,float,float,integer
+#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,hertz,unitless
+MethodIdentifier,StartTime,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,SampleRate,SampleCount
+Algorithm(event):synthetic:v0,2025-01-01T00:00:00.000200001Z,MH,SYN01,00,BDH,Q,50,60,20,4
+Algorithm(event):synthetic:v0,2025-01-01T00:00:00.000Z,MH,SYN01,00,BDH,Q,10,20,20,4
+Measurement:GPS:synthetic,2025-01-01T00:00:00.000100Z,MH,SYN01,00,BDH,Q,30,40,20,4
+Algorithm(event):synthetic:v0,2024-12-31T23:59:59.999999999Z,MH,SYN01,00,BDH,Q,51,61,20,4
+Algorithm(event):synthetic:v0,2025-01-01T00:00:00.000100000Z,MH,SYN01,00,BDH,Q,52,62,20,8
+Algorithm(event):synthetic:v0,2025-01-01T00:00:00.000100000Z,MH,SYN02,00,BDH,Q,53,63,20,4
+Algorithm(event):synthetic:v0,nan,MH,SYN01,00,BDH,Q,54,64,20,4

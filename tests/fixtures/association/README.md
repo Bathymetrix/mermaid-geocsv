@@ -11,3 +11,10 @@ Source times deliberately mix three and nine fractional digits. Coordinates
 include complete pairs, either component missing, and both missing. This
 tracked fixture supplies reproducible CI unit coverage; full real histories
 remain unchanged, local integration fixtures.
+
+Two additional event rows provide contiguous six-sample continuations of the
+first two four-sample events. They exercise exact merged coverage and preserve
+the anchor coordinates separately from the continuation coordinates.
+`indexed.geocsv` is also entirely invented. Its unsorted competitors exercise
+both sides of the fixed time window, category and count filtering, missing time,
+and station identity; tests assert a predetermined source record and position.

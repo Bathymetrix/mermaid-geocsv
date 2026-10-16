@@ -51,7 +51,7 @@ The association workflow is in memory, with MiniSEED as waveform ground
 truth. Paired SAC fixtures are retained for later header comparisons. Existing SAC headers were examined as
 one possible attachment mechanism, not as a requirement to use SAC for the
 whole payload. Complete SNCL is required; the initial prototype compares UTC
-full UTC timestamps using the source GeoCSV resolution as the default
+full UTC timestamps using 100 microseconds as the default
 absolute matching tolerance, with an optional seconds-valued override.
 
 ## What ObsPy provides
@@ -212,7 +212,7 @@ or other format/analysis headers.
 | Attribute | Initial association responsibility |
 | --- | --- |
 | `network`, `station`, `location`, `channel` | Validate against the matched complete SNCL. Existing waveform codes are authoritative; do not silently relabel an input to make it match. |
-| `starttime` | Validate the acquisition time within source resolution or explicit `time_tolerance`; retain the waveform's `UTCDateTime` as received, without claiming hardware precision from its displayed digits. Do not reapply `TimeCorrection`. |
+| `starttime` | Validate the acquisition time within 100 microseconds by default or explicit `time_tolerance`; retain the waveform's `UTCDateTime` as received. Do not reapply `TimeCorrection`. |
 | `sampling_rate` | Require an absolute difference from GeoCSV `SampleRate` of at most 0.01 Hz under the provisional check below; preserve the downloaded waveform rate. |
 | `npts` | By default validate `SampleCount` against the waveform count and data length; do not use a header assignment to repair a mismatched array. |
 | `delta`, `endtime` | Leave calculation to ObsPy from the current core fields; do not assign independently. |
@@ -511,23 +511,28 @@ Proposed first matching policy:
    alone or hard-code one automaid version string.
 2. Require complete, matching station, network, channel, and location codes
    (SNCL). Missing values are not wildcards and do not silently become empty
-   codes. A valid explicitly empty location code is distinct from missing.
+   codes. The reader treats empty and quoted-empty fields as missing, including
+   `Location`. Association rejects missing identity fields; it does not replace
+   missing `Location` with an empty SEED location code. Empty location codes are
+   not representable separately from missing values through this reader.
 3. Compare full UTC nanosecond timestamps using absolute differences; neither
-   input is truncated. `time_tolerance=None` uses one unit of each candidate's
-   source timestamp resolution from reader metadata. For `.123Z` that is
-   0.001 seconds, for `.123456Z` it is 0.000001 seconds, and for nine fractional
-   digits it is one nanosecond. Trailing zeros count: `.120Z` and `.120000Z`
-   express different source resolutions despite representing the same instant.
-   Bounds are inclusive. An explicit finite, nonnegative `time_tolerance` in
-   seconds overrides this default; zero requires exact equality. Symmetric
-   tolerance accommodates the current writer's truncation and printing-rounding
-   boundary without inferring that the waveform's physical clock is that exact.
+   input is truncated. `time_tolerance=0.0001` is a fixed absolute tolerance
+   of 100 microseconds, independent of source timestamp spelling. Bounds are
+   inclusive. Pass finite nonnegative seconds to override it; zero requires
+   exact equality. `None` is not accepted. Source lexical resolution remains
+   preserved in reader metadata but does not control matching.
+   The miniSEED 2 fixed header represents 100-microsecond increments; Blockette
+   1001 can supply a microsecond offset ([SEED 2.4 manual](https://www.fdsn.org/seed_manual/SEEDManual_V2.4.pdf), p. 124). This encoding
+   resolution does not establish clock accuracy or bound GeoCSV formatting loss.
+   The current Automaid millisecond rendering can exceed the default tolerance.
+   Use an explicit tolerance such as `time_tolerance=0.001` for those histories.
    Require the full original sample count and loaded data length to agree
    exactly with GeoCSV `SampleCount` by default. The explicit `allow_merge=True`
    fallback below is the sole exception to original-count equality.
 4. Require present, finite, positive rates satisfying the provisional minimum
-   check `abs(obspy_sps - geocsv_sps) <= 0.01`, in Hz (samples per second).
-   A difference greater than 0.01 Hz fails this check; do not round either
+   check `obspy_sps - 0.01 <= geocsv_sps <= obspy_sps + 0.01`, in Hz (samples
+   per second). Bounds are calculated as floating-point endpoints, so decimal
+   boundary values such as 19.99 and 20.01 pass against 20 Hz. Do not round either
    value or overwrite waveform headers to force agreement. This is a necessary
    consistency check, not proof of a unique match. Count and coverage still
    require a rule for combined/split acquisitions. Keep GeoCSV and MiniSEED
@@ -644,8 +649,8 @@ remain open. The opt-in below adopts a location without resolving that provenanc
 from associate import associate  # sandbox/obspy_association on the import path
 
 records = geocsv.read("geo_DET_REQ.csv")
-associate(tr, records, project_sac=False, allow_merge=False)
-associate(st, records, allow_merge=True)  # Optional first-segment location fallback.
+associate(tr, records, project_sac=False, allow_merge=False, time_tolerance=0.001)
+associate(st, records, allow_merge=True, time_tolerance=0.001)  # Exact coverage required.
 ```
 
 `associate` accepts one `Trace` or a `Stream`, mutates supplied traces in place,
@@ -661,8 +666,8 @@ are validated before modifying any trace in the batch.
 matches retain that label. Only if no standard match exists may a trace use
 `"first_segment"`: require exactly one complete SNCL/start-time anchor under the
 same time tolerance, a compatible rate, positive integer anchor SampleCount,
-a strictly larger trace count, and trace duration `(npts - 1) / sampling_rate`
-at least as long as the anchor duration. Masked gaps raise in both modes.
+a strictly larger trace count, and exact gap-free source sample coverage after
+overlap removal on the waveform grid. Masked gaps raise in both modes.
 Ambiguous anchors, shorter traces, incompatible rates, missing coordinates,
 and destination conflicts still fail before batch mutation.
 

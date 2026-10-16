@@ -6,7 +6,8 @@ acquisitions; our guarantee ends at initial association.
 The [merged-trace policy](../../docs/OBSPY_MERGED_TRACES.md) documents the
 implemented `allow_merge=False` default and opt-in first-segment location
 fallback. `stats.geocsv.association` distinguishes `one_segment` from
-`first_segment`. Stronger coverage/provenance checks and the questions below
+`first_segment`. Exact gap-free count coverage after overlap removal is checked
+on the waveform grid. Acquisition provenance and the questions below
 remain open.
 
 1. **EarthScope aggregation and merging:** what does a month/year request
@@ -34,9 +35,10 @@ remain open.
    validation/disambiguation then loses that distinction. M alone proves no
    particular merge. Resolve this later; current association preserves quality
    separately and does not use equality as a hard match filter.
-4. **Timing:** the prototype compares full UTC nanosecond values using each
-   source timestamp's resolution by default, with a `time_tolerance` override
-   in seconds. The previous bins have been removed. Revisit other producers without treating stored
+4. **Timing:** the prototype compares full UTC nanosecond values using a fixed
+   100-microsecond default, with a `time_tolerance` override in seconds.
+   Source lexical resolution does not control matching. Millisecond-rendered
+   histories may require an explicit 1 ms tolerance. Revisit other producers without treating stored
    fractional digits as MERMAID clock accuracy. The user clarifies that the
    current waveform clock does not have millisecond timing precision;
    sub-millisecond GeoCSV fidelity is not a scientific requirement. Preserve
@@ -68,7 +70,7 @@ remain open.
    fixed outside this project. Preserve the parsed value and the downloaded
    rate; do not compensate by rounding or snapping either to a nominal rate.
    The agreed provisional minimum check is
-   `abs(obspy_sps - geocsv_sps) <= 0.01` Hz, potentially grossly relaxed.
+   `obspy_sps - 0.01 <= geocsv_sps <= obspy_sps + 0.01` Hz, potentially grossly relaxed.
    Revisit it: the user reports microsecond-precision sampling timing in raw
    MER files (trustworthiness and exact encoding unverified); earlier GeoCSV
    outputs used single-decimal rates. Compare raw MER, writer input/output,
@@ -81,7 +83,8 @@ indicators, rate differences, and a one-sample returned trace. See
 [OBSERVATIONS.md](OBSERVATIONS.md) and the user-supplied
 [quality mapping](MERMAID_DATA_QUALITY.md). The 0.01 Hz rate check is a
 implemented provisional check for original processed traces. Exact original
-count matching is implemented; transformed coverage matching remains open.
+count matching and exact source-grid union coverage are implemented; identifying
+the actual source of overlapping sample values remains open.
 
 Settled: preserve the source row/provenance in `stats.geocsv`; validate core
 waveform fields; populate coordinates with sea-level reference elevation 0;

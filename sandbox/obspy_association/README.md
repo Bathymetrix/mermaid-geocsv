@@ -96,7 +96,7 @@ from associate import associate
 
 st = read("/path/to/original.MER.DET.WLT5.mseed")
 records = geocsv.read("/path/to/geo_DET_REQ.csv")
-associate(st, records, project_sac=False, allow_merge=False)
+associate(st, records, project_sac=False, allow_merge=False, time_tolerance=0.001)
 tr = st[0]
 print(tr.stats.geocsv.Latitude)
 print(tr.stats.geocsv.source_record_index)
@@ -104,8 +104,9 @@ print(tr.stats.geocsv.metadata.source_path)
 print(tr.stats.coordinates)
 ```
 
+The example explicitly allows 1 ms for Automaid's millisecond-rendered history.
 The function mutates in place and returns `None`. It requires exactly one
-event-row match per trace: full SNCL, UTC time differences within GeoCSV source resolution by default, exact original
+event-row match per trace: full SNCL, UTC time differences within 100 microseconds by default, exact original
 sample count/data length, and measured rates within 0.01 Hz. Waveform core
 headers and processing history are preserved. Source quality is attached
 separately from MiniSEED quality. Latitude/longitude use their declared units;
@@ -128,7 +129,8 @@ uncertainty estimate, and is not recomputed after waveform changes.
 Standard matches are labeled
 `one_segment`. With `allow_merge=True`, a longer trace may instead receive
 `first_segment`: one unique SNCL/start-time anchor must have a compatible rate,
-a positive integer count, and duration fully covered by the trace. Masked gaps
+a positive integer count, and exact gap-free source sample coverage after overlap
+removal on the waveform grid. Masked gaps
 raise. The anchor location applies to the whole trace; other source fields
 still describe the anchor only. This neither merges waveforms nor reconstructs
 contributing acquisitions, and does not require MiniSEED quality M. See the
@@ -166,9 +168,12 @@ See the [source-based Stats reference](../../docs/OBSPY_STATS_REFERENCE.md):
 processing history is decorator-maintained optional metadata, not a mainline
 Stats default or an association projection.
 
-`time_tolerance=None` defaults to the source timestamp's recorded resolution;
+`time_tolerance=0.0001` defaults to a fixed 100 microseconds;
 pass a finite nonnegative number of seconds to override it, or zero for exact
 matching. Both source and waveform timestamps retain full nanosecond precision.
+`None` is not accepted. Source lexical resolution is preserved but does not
+control matching. Current Automaid millisecond-rendered histories may require
+an explicit `time_tolerance=0.001`; real-fixture integration tests use that value.
 The current MERMAID 0.01 s physical-resolution convention does not truncate
 generic GeoCSV input and does not define matching tolerance.
 

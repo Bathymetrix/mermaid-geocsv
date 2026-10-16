@@ -45,12 +45,71 @@ def _coordinates(trace, row, metadata):
     return AttribDict(projected)
 
 
-def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
+def _validate_merged_coverage(trace, datasets, tolerance_ns):
+    """Require exact, gap-free source sample coverage on the waveform grid."""
+    sncl = tuple(trace.stats[key] for key in IDENTITY.values())
+    rate = Decimal(str(trace.stats.sampling_rate))
+    intervals = []
+    for dataset_index, event_index, metadata in datasets:
+        indexed = event_index.get(sncl)
+        if indexed is None:
+            continue
+        events, timed_rows, timed_times, _ = indexed
+        first = bisect_left(timed_times, trace.stats.starttime.ns - tolerance_ns)
+        last = bisect_right(timed_times, trace.stats.endtime.ns + tolerance_ns)
+        for time_ns, record_index in timed_rows[first:last]:
+            row = events.loc[record_index]
+            context = (f"{trace.id}: merged coverage source {metadata.source_path}, "
+                       f"dataset {dataset_index}, record {record_index}")
+            count, source_rate = row['SampleCount'], row['SampleRate']
+            if (pd.isna(count) or not isfinite(float(count)) or count <= 0
+                    or not float(count).is_integer()):
+                raise ValueError(f"{context}: requires a positive integer SampleCount")
+            if (pd.isna(source_rate) or not isfinite(float(source_rate))
+                    or float(source_rate) <= 0
+                    or not trace.stats.sampling_rate - SAMPLE_RATE_TOLERANCE_HZ
+                    <= float(source_rate)
+                    <= trace.stats.sampling_rate + SAMPLE_RATE_TOLERANCE_HZ):
+                raise ValueError(f"{context}: incompatible SampleRate={source_rate}")
+            offset_ns = time_ns - trace.stats.starttime.ns
+            first_sample = round(Decimal(offset_ns) * rate / 1_000_000_000)
+            grid_start_ns = round(Decimal(first_sample) * 1_000_000_000 / rate)
+            if abs(offset_ns - grid_start_ns) > tolerance_ns:
+                raise ValueError(f"{context}: start time is off the waveform sample grid "
+                                 "beyond time_tolerance")
+            if any(abs(offset_ns - round(Decimal(index) * 1_000_000_000 / rate))
+                   <= tolerance_ns for index in (first_sample - 1, first_sample + 1)):
+                raise ValueError(f"{context}: time_tolerance permits multiple waveform "
+                                 "sample indices; merged coverage is ambiguous")
+            stop_sample = first_sample + int(count)
+            source_last_ns = offset_ns + round(
+                Decimal(int(count) - 1) * 1_000_000_000 / Decimal(str(source_rate)))
+            waveform_last_ns = round(Decimal(stop_sample - 1) * 1_000_000_000 / rate)
+            if abs(source_last_ns - waveform_last_ns) > tolerance_ns:
+                raise ValueError(f"{context}: source rate accumulates last-sample "
+                                 "misalignment beyond time_tolerance")
+            if first_sample < 0 or stop_sample > trace.stats.npts:
+                raise ValueError(f"{context}: source sample range "
+                                 f"[{first_sample}, {stop_sample}) exceeds waveform "
+                                 f"range [0, {trace.stats.npts})")
+            intervals.append((first_sample, stop_sample))
+    covered = 0
+    for first_sample, stop_sample in sorted(intervals):
+        if first_sample > covered:
+            raise ValueError(f"{trace.id}: merged coverage has a gap at sample {covered}; "
+                             f"next source range begins at {first_sample}")
+        covered = max(covered, stop_sample)
+    if covered != trace.stats.npts:
+        raise ValueError(f"{trace.id}: merged coverage contains {covered} unique samples "
+                         f"after overlap removal; requires exactly npts={trace.stats.npts}")
+
+
+def associate(waveforms, records, *, project_sac=False, time_tolerance=0.0001,
               allow_merge=False):
     """Associate a Trace or Stream with event rows returned by geocsv.read.
 
     Validate all matches before modifying any trace; return None. By default require exact
-    SNCL, UTC times within the source timestamp resolution by default, exact
+    SNCL, UTC times within 100 microseconds by default, exact
     sample count, and rate difference <= 0.01 Hz. Waveform core fields remain
     authoritative. Quality is retained separately and is not a match filter.
     Guarantees end at initial association. ``project_sac=True`` is reserved.
@@ -58,25 +117,23 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
     geocsv, coordinates, and sac when requested. Nothing is merged or overwritten.
     Source columns must not collide with association keys or attributes and
     methods of the ObsPy AttribDict used for stats.geocsv.
-    ``time_tolerance`` overrides the per-record default in seconds, including
+    ``time_tolerance`` is finite nonnegative seconds, including
     zero for exact matching. Comparisons preserve full nanosecond values.
     ``stats.geocsv.starttime_difference_seconds`` records waveform minus source
     start time, computed in integer nanoseconds before conversion to seconds.
-    ``allow_merge=True`` permits a longer, unmasked trace anchored to exactly
-    one SNCL/start-time row with compatible rate and full anchor duration.
+    ``allow_merge=True`` requires a unique SNCL/start-time anchor and exact,
+    gap-free source sample coverage after overlap removal on the waveform grid.
     No waveform merging is performed. ``stats.geocsv.association`` records
     ``one_segment`` for a standard match or ``first_segment`` for this fallback.
     In the latter case, source fields describe only the anchor; its location
     is adopted for the entire trace without reconstructing merge provenance.
     """
-    tolerance_ns = None
-    if time_tolerance is not None:
-        try:
-            tolerance_ns = Decimal(str(time_tolerance)) * 1_000_000_000
-        except InvalidOperation as exc:
-            raise ValueError("time_tolerance must be finite, nonnegative seconds") from exc
-        if not tolerance_ns.is_finite() or tolerance_ns < 0:
-            raise ValueError("time_tolerance must be finite, nonnegative seconds")
+    try:
+        tolerance_ns = Decimal(str(time_tolerance)) * 1_000_000_000
+    except InvalidOperation as exc:
+        raise ValueError("time_tolerance must be finite, nonnegative seconds") from exc
+    if not tolerance_ns.is_finite() or tolerance_ns < 0:
+        raise ValueError("time_tolerance must be finite, nonnegative seconds")
     if isinstance(waveforms, Trace):
         traces = [waveforms]
     elif isinstance(waveforms, Stream):
@@ -125,24 +182,16 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
         event_index = {}
         for sncl, group in events.groupby(list(IDENTITY), sort=False, dropna=False):
             timed_rows, incomplete_rows = [], []
-            max_resolution_ns = 0
             for record_index, row in group.iterrows():
                 time = row["StartTime"]
                 if pd.isna(time) or pd.Timestamp(time).tzinfo is None:
                     incomplete_rows.append((record_index,
                                             "missing or timezone-naive StartTime; row is ineligible"))
                     continue
-                resolution_ns = metadata.datetime_resolution_ns.get("StartTime", {}).get(record_index)
-                if resolution_ns is not None:
-                    max_resolution_ns = max(max_resolution_ns, resolution_ns)
-                elif time_tolerance is None:
-                    incomplete_rows.append((record_index,
-                                            "missing source time resolution; row is ineligible"))
                 timed_rows.append((pd.Timestamp(time).value, record_index))
             timed_rows.sort()
             timed_times = tuple(item[0] for item in timed_rows)
-            event_index[sncl] = (group, timed_rows, timed_times,
-                                 max_resolution_ns, incomplete_rows)
+            event_index[sncl] = (group, timed_rows, timed_times, incomplete_rows)
         datasets.append((dataset_index, event_index, metadata))
 
     plans = []
@@ -162,23 +211,17 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
             indexed = event_index.get(sncl)
             if indexed is None:
                 continue
-            events, timed_rows, timed_times, max_resolution_ns, incomplete_rows = indexed
+            events, timed_rows, timed_times, incomplete_rows = indexed
             incomplete_events.extend({
                 "source": str(metadata.source_path), "dataset": dataset_index,
                 "record": record_index, "reason": reason,
             } for record_index, reason in incomplete_rows)
-            window_ns = tolerance_ns if tolerance_ns is not None else max_resolution_ns
-            first = bisect_left(timed_times, trace_time_ns - window_ns)
-            last = bisect_right(timed_times, trace_time_ns + window_ns)
+            first = bisect_left(timed_times, trace_time_ns - tolerance_ns)
+            last = bisect_right(timed_times, trace_time_ns + tolerance_ns)
             for time_ns, record_index in timed_rows[first:last]:
                 row = events.loc[record_index]
-                allowed_ns = tolerance_ns
-                if allowed_ns is None:
-                    allowed_ns = metadata.datetime_resolution_ns.get("StartTime", {}).get(record_index)
-                    if allowed_ns is None:
-                        continue
                 difference_ns = abs(time_ns - trace_time_ns)
-                if difference_ns > allowed_ns:
+                if difference_ns > tolerance_ns:
                     continue
                 count, source_rate = row["SampleCount"], row["SampleRate"]
                 reasons = []
@@ -186,7 +229,8 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
                     reasons.append(f"SampleCount={count} differs from npts={trace.stats.npts}")
                 rate_ok = (not pd.isna(source_rate) and isfinite(float(source_rate))
                            and float(source_rate) > 0
-                           and abs(rate - float(source_rate)) <= SAMPLE_RATE_TOLERANCE_HZ)
+                           and rate - SAMPLE_RATE_TOLERANCE_HZ <= float(source_rate)
+                           <= rate + SAMPLE_RATE_TOLERANCE_HZ)
                 if not rate_ok:
                     reasons.append(f"SampleRate={source_rate} incompatible with {rate} Hz")
                 match = (dataset_index, record_index, row, metadata)
@@ -204,13 +248,13 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
             count, source_rate = row["SampleCount"], row["SampleRate"]
             if rate_ok:
                 if (not pd.isna(count) and isfinite(float(count)) and count > 0
-                        and float(count).is_integer() and trace.stats.npts > count
-                        and (trace.stats.npts - 1) / rate >= (count - 1) / float(source_rate)):
+                        and float(count).is_integer() and trace.stats.npts > count):
+                    _validate_merged_coverage(trace, datasets, tolerance_ns)
                     matches = [anchor]
                     association = "first_segment"
                 else:
                     candidates[0]["reasons"].append(
-                        "allow_merge requires a longer trace covering the full anchor duration "
+                        "allow_merge requires a longer trace "
                         "and a positive integer anchor SampleCount")
         if len(matches) != 1:
             outcome = "no match" if not matches else f"ambiguous ({len(matches)} matches)"

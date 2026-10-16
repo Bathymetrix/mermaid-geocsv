@@ -17,6 +17,10 @@ trace. `stats.geocsv.association` records `one_segment` or `first_segment`.
 `stats.geocsv.starttime_difference_seconds` records waveform minus matched
 GeoCSV start time in seconds. Batch lookup groups events by SNCL and sorts
 them by UTC start time.
+The default absolute time tolerance is 100 microseconds; use an explicit
+`time_tolerance=0.001` for millisecond-rendered Automaid histories when needed.
+Merged inputs require exact gap-free source sample coverage on the waveform
+grid after overlapping samples are counted once.
 The source-row attachment uses ObsPy's `AttribDict`; source columns colliding
 with its attributes or methods, or with association-owned keys, raise before
 any trace is modified.

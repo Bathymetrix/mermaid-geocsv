@@ -27,16 +27,16 @@ Neither operation substitutes for the other.
 | --- | --- | --- |
 | Inputs | Traces already in `self`. | `waveforms`: a Trace or Stream; `records`: frames from `geocsv.read`. |
 | Identity | Groups by `Trace.id` (network.station.location.channel). | Exact equality of all four identity columns; no missing-code wildcards. |
-| Time control | `misalignment_threshold=0.01`, passed through `**kwargs` to `_cleanup`. | `time_tolerance=None`, or explicit finite nonnegative seconds. |
+| Time control | `misalignment_threshold=0.01`, passed through `**kwargs` to `_cleanup`. | `time_tolerance=0.0001`, or explicit finite nonnegative seconds. |
 | Quantity compared | Sampling-grid phase residual, with adjacency/gap conditions. | Absolute difference between waveform and GeoCSV row start times. |
-| Default timing scale | Fraction of waveform sample interval. | Each source timestamp's lexical resolution from immutable GeoCSV metadata. |
+| Default timing scale | Fraction of waveform sample interval. | Fixed 100 microseconds, independent of source timestamp spelling. |
 | Time side effect | Cleanup can shift right-hand trace start times; full merge rounds separation to sample counts. | Preserves source and waveform times; compares UTC integer nanoseconds. |
 | Rate | Exact equality between traces of an ID. | Absolute waveform/source difference <= `SAMPLE_RATE_TOLERANCE_HZ = 0.01` Hz, a provisional internal constant. |
 | Count | Produces new sample coverage and count. | Requires source `SampleCount == stats.npts == len(data)` by default. |
 | Calibration/dtype | Must agree for full merge. | Neither is matched to a source replacement; native waveform calibration and data remain unchanged. |
 | Overlaps | `method=-1`, `0`, or `1` controls cleanup/conflict handling. | Does not join, compare, discard, or interpolate overlapping waveform samples. |
 | Gaps | Masked by default; `fill_value` can supply values. | Rejects masked missing samples; cannot detect every previous fill. |
-| Longer coverage | Constructed through merging, including overlap/gap policy. | `allow_merge=True` only permits a unique first-segment location anchor for an already longer trace. |
+| Longer coverage | Constructed through merging, including overlap/gap policy. | `allow_merge=True` requires a unique location anchor and exact gap-free source sample coverage after overlap removal on the waveform grid. |
 | Metadata | Generally inherits earlier trace headers; does not reconcile arbitrary namespaces. | Creates fresh `stats.geocsv` and complete `stats.coordinates`; existing destinations raise. |
 | Ambiguity/cardinality | Reduces compatible same-ID traces; it has no source-row matching contract. | Exactly one eligible row per trace; several traces may independently use that row. |
 | Quality | MiniSEED Q/D/M is not in the grouping ID. | Retains source `DataQuality` separately from waveform quality; neither is a match filter. |
@@ -51,13 +51,11 @@ The reader's `MethodIdentifier` is also unrelated to merge's integer `method`.
 
 ## Timing: similar motivation, different semantics
 
-For our default, a row written as `...03.139` has a resolution of 0.001 s.
-Association accepts an absolute start-time difference **up to and including**
-0.001 s, subject to identity, rate, count, and uniqueness checks. A row written
-as `...03.139000` instead has a 0.000001 s default tolerance despite the same
-timestamp value. This follows the current implementation; it does not imply
-a measured uncertainty, a half-bin rounding model, or an accuracy estimate.
-The MERMAID 0.01 s physical-resolution convention is not this default.
+Association defaults to a fixed absolute start-time tolerance of 0.0001 s
+(100 microseconds), inclusively. Source timestamp spelling does not change
+that tolerance. Reader metadata still preserves source lexical resolution.
+Current Automaid millisecond rendering can require an explicit tolerance of
+0.001 s. Neither value is a clock-accuracy estimate.
 
 For cleanup, let `delta = 1 / sampling_rate` and let `p` be
 `misalignment_threshold`. Its nominal timing scale is `p * delta` seconds.
@@ -94,8 +92,10 @@ of whole-trace sampling grids.
 
 Our flag does not perform a merge. With no standard match, it permits one
 unique SNCL/start-time anchor with compatible rate and positive integer
-count, strictly fewer samples than the trace, and an anchor duration no
-greater than the trace duration. Masked gaps still raise. It adopts the
+count, strictly fewer samples than the trace, and exact gap-free source
+sample coverage on the waveform grid after overlaps are counted once.
+Source start and last-sample alignment must lie within the time tolerance.
+Masked gaps still raise. It adopts the
 anchor's receiver position at the first sample for the entire trace and
 labels the result `first_segment`; all raw anchor fields stay unchanged.
 It does not verify contributing acquisitions or prefer rows by M/Q/D quality.
@@ -114,7 +114,8 @@ policy more directly. This report does not choose or introduce a replacement.
    `one_segment` label is not revalidated and does not become `first_segment`.
    Merge does not collect contributing rows or create association provenance.
 2. **Merge, then associate:** strict mode normally rejects the changed count.
-   The explicit fallback can accept an eligible first-segment anchor, but
+   The explicit fallback requires an eligible first-segment anchor and exact
+   gap-free source sample coverage after overlap removal. It
    cannot recover discarded overlaps, hidden fills, or acquisition identity.
    Masked gaps are rejected. Cleanup may also have changed timings used for
    matching, so association inspects the resulting waveform as supplied.

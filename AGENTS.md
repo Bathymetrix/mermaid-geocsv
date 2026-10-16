@@ -72,8 +72,11 @@ made. Do not average position over the waveform. This position convention
 does not relax sample-count validation: GeoCSV `SampleCount` already represents
 NPTS and remains an additional check against the original waveform. The
 explicit `allow_merge=True` option is the documented exception: a unique
-SNCL/start-time anchor may supply location for a longer trace covering its
-full duration. Label standard matches `stats.geocsv.association = "one_segment"`
+SNCL/start-time anchor may supply location for a longer trace only when source
+sample ranges cover the waveform grid exactly and without gaps after overlaps
+are counted once. Source start and last-sample alignment use the explicit
+tolerance; sample counts have no tolerance. Label standard matches
+`stats.geocsv.association = "one_segment"`
 and fallback matches `"first_segment"`; never change raw anchor row values.
 
 Retain DET Q and REQ D as useful lineage/validation evidence, independent of
