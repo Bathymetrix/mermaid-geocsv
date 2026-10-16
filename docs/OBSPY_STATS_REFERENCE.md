@@ -12,6 +12,14 @@ The installed ObsPy 1.5.1 defaults were checked against this list.
 Excerpts are ObsPy source, copyright the ObsPy Development Team, LGPLv3.
 The broader [metadata survey](OBSPY_STATS.md) covers other namespaces and consumers.
 
+Reverified 2026-10-16 against `/Users/jdsimon/programs/obspy/` at commit
+`50033e1daf95233cd4f30e95a49c37fd50be2ccd`: the ten defaults, refresh keys,
+read-only endtime, and processing-history distinction still agree. The
+relevant executable methods also match the separately installed ObsPy 1.5.1
+(ignoring docstrings). This checkout check supplements, rather than replaces,
+the supplied attachment provenance above. See [Stream merging](STREAM.md)
+for behavior that can leave attached metadata describing an earlier segment.
+
 ## The ten default Stats attributes
 
 ```python
@@ -48,6 +56,12 @@ These ten defaults are the mainline fields. `component` is a convenience view
 of channel, and `Trace.id` is assembled from identity codes, not extra stored
 core attributes. Assigning Trace.data updates npts; assigning stats.npts does
 not resize the sample array.
+
+For a nonempty positive-rate trace, `endtime` is
+`starttime + (npts - 1) * delta`, rounded to integer nanoseconds by Stats.
+For an empty trace it equals `starttime`. Zero sampling rate/delta is allowed
+by Stats with reciprocal zero; association rejects nonpositive rates. A zero
+calibration factor emits a warning, not a validation error.
 
 ## Processing history is not a core field or projection
 

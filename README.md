@@ -62,5 +62,7 @@ analysis remains in pandas or other tools.
   [Jupyter notebook](docs/TUTORIAL.ipynb).
 - [Installation guide](docs/INSTALLATION.md): environment and notebook setup.
 - [Open GeoCSV questions](docs/OPEN_QUESTIONS.md): unresolved format details.
+- ObsPy references: [Stats](docs/OBSPY_STATS.md), [Stream and merge](docs/STREAM.md),
+  and [comparison with association](docs/OBSPY_ASSOCIATION_COMPARISON.md).
 
 Developed and maintained by [Bathymetrix®](https://bathymetrix.com).

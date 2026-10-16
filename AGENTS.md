@@ -22,6 +22,22 @@ Before changing association or describing ObsPy's main Stats attributes, consult
 Keep the ten core defaults distinct from optional namespaces and processing
 history; `_add_processing_info` is a decorator, not a core Stats field.
 
+### ObsPy Source and Style Reference
+
+Use `/Users/jdsimon/programs/obspy/` as the local read-only source reference
+for ObsPy behavior and conventions. Reinspect relevant modules, nearby tests,
+`CONTRIBUTING.md`, and `misc/docs/source/coding_style.rst` occasionally,
+especially before substantial association/API work or after the checkout
+changes. Record the inspected commit in source-based reports, and distinguish
+checkout behavior from the ObsPy version installed in this repository's `.venv`.
+
+Keep this repository broadly consistent with ObsPy's naming, documentation,
+testing, and implementation style where appropriate: `geocsv` may eventually
+be proposed for inclusion there. Favor semantic consistency over mechanical
+renaming or unrelated style rewrites; possible upstream inclusion does not
+authorize API changes. Inspection is authorized; do not modify the ObsPy
+checkout unless separately and explicitly requested.
+
 ### Processed Data Reference
 
 `$MERMAID/processed/` is a canonical source of test examples. Its recursive
