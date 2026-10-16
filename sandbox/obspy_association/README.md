@@ -114,7 +114,14 @@ elevation is the explicit sea-level constant 0, with no geoid model.
 All matches and projections are validated before any batch mutation. Existing
 GeoCSV or coordinate containers raise `ValueError`, even if empty or equivalent. The mutable
 attachment keeps original columns plus dataset index, source record index,
-immutable dataset metadata, and `association`. Standard matches are labeled
+immutable dataset metadata, `association`, and `starttime_difference_seconds`.
+These attachment keys are reserved; colliding source columns raise.
+`starttime_difference_seconds` is waveform start time minus matched GeoCSV
+`StartTime`, computed from integer UTC nanoseconds before conversion to
+seconds. Positive values mean the waveform starts later; negative values mean
+it starts earlier. It records the initial match, is not a clock correction or
+uncertainty estimate, and is not recomputed after waveform changes.
+Standard matches are labeled
 `one_segment`. With `allow_merge=True`, a longer trace may instead receive
 `first_segment`: one unique SNCL/start-time anchor must have a compatible rate,
 a positive integer count, and duration fully covered by the trace. Masked gaps
@@ -122,8 +129,16 @@ raise. The anchor location applies to the whole trace; other source fields
 still describe the anchor only. This neither merges waveforms nor reconstructs
 contributing acquisitions, and does not require MiniSEED quality M. See the
 [merged-trace policy](../../docs/OBSPY_MERGED_TRACES.md).
+For `first_segment`, the start-time difference is relative to the anchor row.
 Guarantees end at initial association; arbitrary trimming/resampling and
 upstream gap filling remain outside this matching contract.
+
+Batch matching builds a lookup once per call, grouping event rows by complete
+SNCL and sorting them by UTC start time. Binary search narrows each trace's
+candidate window; each candidate still undergoes its own time-tolerance,
+count, and rate checks. Multiple eligible rows remain an error, while multiple
+traces may independently match the same row. Every trace receives fresh
+attachment and coordinate containers after the entire batch validates.
 
 `project_sac=True` currently raises `NotImplementedError` before any mutation.
 The future geographic projection is stla/stlo, stel=0, and approximately

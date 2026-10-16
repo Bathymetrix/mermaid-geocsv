@@ -58,6 +58,8 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
     geocsv, coordinates, and sac when requested. Nothing is merged or overwritten.
     ``time_tolerance`` overrides the per-record default in seconds, including
     zero for exact matching. Comparisons preserve full nanosecond values.
+    ``stats.geocsv.starttime_difference_seconds`` records waveform minus source
+    start time, computed in integer nanoseconds before conversion to seconds.
     ``allow_merge=True`` permits a longer, unmasked trace anchored to exactly
     one SNCL/start-time row with compatible rate and full anchor duration.
     No waveform merging is performed. ``stats.geocsv.association`` records
@@ -107,7 +109,8 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
             raise ValueError(f"dataset {dataset_index} lacks geocsv.read provenance")
         if metadata.field_units.get("SampleRate") != "hertz":
             raise ValueError(f"dataset {dataset_index}: SampleRate requires declared units hertz")
-        reserved = {"source_record_index", "dataset_index", "metadata", "association"} & set(frame.columns)
+        reserved = {"source_record_index", "dataset_index", "metadata", "association",
+                    "starttime_difference_seconds"} & set(frame.columns)
         if reserved:
             raise ValueError(f"event columns collide with attachment keys: {sorted(reserved)}")
         event_index = {}
@@ -213,9 +216,13 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
                              f"incomplete event rows (source, dataset, record, reason): "
                              f"{incomplete_events}")
         dataset_index, record_index, row, metadata = matches[0]
+        starttime_difference_seconds = (
+            trace_time_ns - pd.Timestamp(row["StartTime"]).value
+        ) / 1_000_000_000
         attachment = AttribDict({**row.to_dict(), "source_record_index": record_index,
                                  "dataset_index": dataset_index, "metadata": metadata,
-                                 "association": association})
+                                 "association": association,
+                                 "starttime_difference_seconds": starttime_difference_seconds})
         plans.append((trace, attachment, _coordinates(trace, row, metadata)))
 
     for trace, attachment, coordinates in plans:

@@ -303,7 +303,35 @@ def test_mixed_batch_labels_and_failure_atomicity(records):
     assert first.stats.geocsv is not second.stats.geocsv
 
 
-def test_association_column_is_reserved(records):
-    records[0]['association'] = 'source value'
-    with pytest.raises(ValueError, match='collide.*association'):
-        associate(trace(), records)
+@pytest.mark.parametrize('column', ['association', 'starttime_difference_seconds'])
+def test_association_columns_are_reserved(records, column):
+    records[0][column] = 'source value'
+    tr = trace()
+    before = deepcopy(tr.stats)
+    with pytest.raises(ValueError, match=f'collide.*{column}'):
+        associate(tr, records)
+    assert tr.stats == before
+
+
+@pytest.mark.parametrize('allow_merge', [False, True])
+def test_batch_starttime_differences_are_signed_and_independent(records, allow_merge):
+    offsets_ns = [1, -1, 0]  # Deliberately unsorted; all match the same source row.
+    st = obspy.Stream()
+    source_time = pd.Timestamp(TIMES['SYN01'])
+    for offset_ns in offsets_ns:
+        tr = trace()
+        if allow_merge:
+            tr.data = np.arange(10, dtype=np.float32)
+        tr.stats.starttime = obspy.UTCDateTime(ns=source_time.value + offset_ns)
+        st.append(tr)
+    before = [deepcopy(tr.stats) for tr in st]
+
+    associate(st, records, allow_merge=allow_merge)
+
+    for tr, offset_ns, original in zip(st, offsets_ns, before):
+        assert tr.stats.geocsv.starttime_difference_seconds == offset_ns / 1_000_000_000
+        assert tr.stats.geocsv.StartTime == source_time
+        assert tr.stats.geocsv.source_record_index == 1
+        assert tr.stats.geocsv.association == ('first_segment' if allow_merge else 'one_segment')
+        assert all(tr.stats[key] == value for key, value in original.items())
+    assert len({id(tr.stats.geocsv) for tr in st}) == len(st)

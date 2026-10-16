@@ -44,7 +44,12 @@ Use `first_segment` only when the fallback is needed and its conditions pass.
 These labels describe the matching performed, not proof of waveform provenance
 or sample integrity. They are not recomputed after later ObsPy manipulation.
 `association` is a reserved attachment key, alongside `source_record_index`,
-`dataset_index`, and `metadata`; a colliding GeoCSV column raises.
+`dataset_index`, `metadata`, and `starttime_difference_seconds`; a colliding
+GeoCSV column raises. The signed difference is waveform start time minus the
+matched row's start time, in seconds, computed from integer UTC nanoseconds.
+For `first_segment`, it compares against the anchor row. Positive means the
+waveform starts later. This initial-match diagnostic is not a clock correction
+and is not recomputed after later waveform changes.
 
 Do not reject or choose a policy solely because quality is M. Default failure
 diagnostics include the Stream index, SNCL, start/end times, waveform count

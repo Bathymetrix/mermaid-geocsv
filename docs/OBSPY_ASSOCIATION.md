@@ -186,9 +186,17 @@ alone is not the matched row. The sandbox stores the row's original columns dire
 `AttribDict` at `stats.geocsv`, with `source_record_index`, `dataset_index`
 (the index in the supplied records list), and `metadata` (the original
 immutable `GeoCSVMetadata`), plus `association` (`one_segment` or
-`first_segment`). These four names are reserved against source-column
-collisions. The row attachment is a mutable snapshot,
+`first_segment`) and `starttime_difference_seconds`. These five names are
+reserved against source-column collisions. The row attachment is a mutable snapshot,
 independent of the DataFrame. No scientific conversion belongs in it.
+
+`starttime_difference_seconds` records waveform start time minus matched
+GeoCSV `StartTime`, subtracting integer UTC nanoseconds before conversion to
+seconds. Positive values mean the waveform starts later; negative values mean
+it starts earlier. For `first_segment`, the source time is the anchor row's
+time. This derived diagnostic records the initial match; it is neither a clock
+correction nor an uncertainty estimate and is not recomputed after later
+waveform changes. Both original timestamps remain unchanged.
 
 Initial association is limited to the following existing waveform attributes
 and coordinate convention. The reserved optional SAC projection will populate the geographic headers

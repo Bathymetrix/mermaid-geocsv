@@ -14,6 +14,9 @@ waveform fixtures and full GeoCSV histories are documented in the
 not yet part of the package's public API. Strict association is the default;
 `allow_merge=True` permits adopting the first segment's location for a longer
 trace. `stats.geocsv.association` records `one_segment` or `first_segment`.
+`stats.geocsv.starttime_difference_seconds` records waveform minus matched
+GeoCSV start time in seconds. Batch lookup groups events by SNCL and sorts
+them by UTC start time.
 See the [merged-trace policy](docs/OBSPY_MERGED_TRACES.md) for checks and limits.
 
 Reader version 0.11.0 also preserves source datetime resolution in immutable
