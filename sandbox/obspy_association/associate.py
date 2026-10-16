@@ -56,6 +56,8 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
     Guarantees end at initial association. ``project_sac=True`` is reserved.
     Missing Latitude or Longitude fails. Destination containers must be absent:
     geocsv, coordinates, and sac when requested. Nothing is merged or overwritten.
+    Source columns must not collide with association keys or attributes and
+    methods of the ObsPy AttribDict used for stats.geocsv.
     ``time_tolerance`` overrides the per-record default in seconds, including
     zero for exact matching. Comparisons preserve full nanosecond values.
     ``stats.geocsv.starttime_difference_seconds`` records waveform minus source
@@ -113,6 +115,13 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=None,
                     "starttime_difference_seconds"} & set(frame.columns)
         if reserved:
             raise ValueError(f"event columns collide with attachment keys: {sorted(reserved)}")
+        container_conflicts = set(frame.columns) & set(dir(AttribDict))
+        if container_conflicts:
+            raise ValueError(
+                f"event dataset {dataset_index} ({metadata.source_path}): columns collide "
+                f"with reserved ObsPy AttribDict attributes or methods: "
+                f"{sorted(container_conflicts)}; stats.geocsv uses this container, "
+                "so source columns must not shadow its attributes or methods")
         event_index = {}
         for sncl, group in events.groupby(list(IDENTITY), sort=False, dropna=False):
             timed_rows, incomplete_rows = [], []

@@ -313,6 +313,46 @@ def test_association_columns_are_reserved(records, column):
     assert tr.stats == before
 
 
+@pytest.mark.parametrize('column', ['readonly', '_types', 'keys', '__dict__'])
+def test_attribdict_columns_fail_before_batch_mutation(tmp_path, column):
+    # A valid GeoCSV extension must not change the attachment's container behavior.
+    lines = FIXTURE.read_text().splitlines()
+    lines[2] += ',string'
+    lines[3] += ',unitless'
+    lines[4] += f',{column}'
+    for index in range(5, len(lines)):
+        lines[index] += ',association'
+    source = tmp_path / 'container_collision.geocsv'
+    source.write_text('\n'.join(lines) + '\n')
+    records = geocsv.read(source)
+    original_frame = records[0].copy(deep=True)
+    stream = obspy.Stream([trace(), trace('SYN02')])
+    original_traces = [tr.copy() for tr in stream]
+
+    with pytest.raises(ValueError, match='collide.*reserved ObsPy AttribDict') as exc:
+        associate(stream, records)
+
+    message = str(exc.value)
+    assert repr(column) in message
+    assert str(source.resolve()) in message
+    assert 'dataset 0' in message
+    assert 'attributes or methods' in message
+    for tr, original in zip(stream, original_traces):
+        assert tr.stats == original.stats
+        np.testing.assert_array_equal(tr.data, original.data)
+    pd.testing.assert_frame_equal(records[0], original_frame)
+
+
+def test_nonreserved_extension_column_is_preserved(records):
+    records[0]['ResearchNote'] = 'independent source value'
+    tr = trace()
+
+    associate(tr, records)
+
+    assert tr.stats.geocsv.ResearchNote == 'independent source value'
+    assert tr.stats.geocsv['ResearchNote'] == 'independent source value'
+
+
 @pytest.mark.parametrize('allow_merge', [False, True])
 def test_batch_starttime_differences_are_signed_and_independent(records, allow_merge):
     offsets_ns = [1, -1, 0]  # Deliberately unsorted; all match the same source row.

@@ -116,6 +116,10 @@ GeoCSV or coordinate containers raise `ValueError`, even if empty or equivalent.
 attachment keeps original columns plus dataset index, source record index,
 immutable dataset metadata, `association`, and `starttime_difference_seconds`.
 These attachment keys are reserved; colliding source columns raise.
+`stats.geocsv` is an ObsPy `AttribDict`: its attributes and methods, including
+inherited names, are also reserved against source-column collisions. Such a
+collision raises `ValueError` with the source, dataset, and conflicting names
+before any trace is modified. Source columns are never silently renamed or dropped.
 `starttime_difference_seconds` is waveform start time minus matched GeoCSV
 `StartTime`, computed from integer UTC nanoseconds before conversion to
 seconds. Positive values mean the waveform starts later; negative values mean

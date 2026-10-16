@@ -187,7 +187,12 @@ alone is not the matched row. The sandbox stores the row's original columns dire
 (the index in the supplied records list), and `metadata` (the original
 immutable `GeoCSVMetadata`), plus `association` (`one_segment` or
 `first_segment`) and `starttime_difference_seconds`. These five names are
-reserved against source-column collisions. The row attachment is a mutable snapshot,
+reserved against source-column collisions. All attribute and method names of
+the installed ObsPy `AttribDict`, including inherited names, are also reserved
+because `stats.geocsv` uses that container. A collision raises `ValueError`
+identifying the source, dataset, and conflicting container names before any
+trace is modified; columns are never silently renamed or dropped.
+The row attachment is a mutable snapshot,
 independent of the DataFrame. No scientific conversion belongs in it.
 
 `starttime_difference_seconds` records waveform start time minus matched
