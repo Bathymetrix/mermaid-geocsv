@@ -46,10 +46,14 @@ float directories contain paired SAC/MiniSEED waveforms and GeoCSV metadata
 repository is authorized. Never write, rename, delete, regenerate, or otherwise
 modify anything in that source tree without the user's express instruction.
 Document fixture provenance. Copy both waveform formats for each selected
-basename and copy the complete GeoCSV history for each sampled float, verbatim;
-do not subset those histories to the selected waveform rows.
-The complete association GeoCSV histories are local, Git-ignored copies;
+basename. Complete association GeoCSV histories are local, Git-ignored copies;
 retain their provenance/hashes in the tracked manifest. Do not stage them.
+As authorized on 2026-10-16, publish small association GeoCSV subsets for
+portable tests. Preserve original header and selected record bytes, retain
+nearby candidates and measurement context, and record the mapping from subset
+indices to original source-record indices. Subsets do not establish uniqueness
+across an entire source history. Keep complete local histories unchanged for
+separate corpus checks; ordinary tests must not depend on their availability.
 
 `$MERMAID/waveforms/mseed/` and `$MERMAID/waveforms/sac/` are additional
 authorized read-only references for the waveforms described by these GeoCSV

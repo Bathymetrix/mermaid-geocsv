@@ -85,6 +85,7 @@ The sandbox now implements `associate` for an original processed `Trace` or
 `Stream`. The public reader API is unchanged. `$MERMAID/processed/` is the
 canonical read-only source: never modify it without express instruction.
 Its float directories supply paired waveforms and complete GeoCSV histories.
+Tracked subsets make real-data tests independent of those full histories.
 See the [fixture inventory and audit](../../data/fixtures/association/README.md).
 
 From this sandbox directory (with the repository environment installed):
@@ -166,7 +167,9 @@ copies both waveform formats and complete GeoCSV files verbatim.
 Full association histories are ignored local files. On a fresh checkout,
 `restore_geocsv_histories.py` copies the manifest-listed complete histories
 from `$MERMAID/processed/` after checking their hashes. See the fixture README
-for instructions; association tests explicitly skip when histories are absent.
+for instructions. Tests instead require the tracked `association_subset.geocsv`
+files. `check_full_histories.py` separately verifies their verbatim extraction
+and all 18 sampled matches against complete local histories.
 
 Coordinate projection requires a complete source latitude/longitude pair.
 Missing either raises. `stats.geocsv` and `stats.coordinates` must be absent;
@@ -188,5 +191,7 @@ The current MERMAID 0.01 s physical-resolution convention does not truncate
 generic GeoCSV input and does not define matching tolerance.
 
 Tracked synthetic examples in `tests/fixtures/association/` exercise the
-adapter on CI without cutting any real history. Full local histories remain
-integration inputs. See the [saved adversarial audit](../../docs/OBSPY_ASSOCIATION_AUDIT.md).
+adapter's matching rules on CI. Small tracked real-data subsets also run on
+CI; full local histories remain optional corpus references. See the
+[current audit and Monday next steps](../../audits/05.md) and the
+[historical adversarial audit](../../docs/OBSPY_ASSOCIATION_AUDIT.md).

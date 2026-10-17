@@ -1,0 +1,20 @@
+#dataset: GeoCSV
+#created: 2026-10-13T20:48:01.378Z
+#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org
+#attribution: automaid v4.5.11 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])
+#matlab_reader: https://github.com/joelsimon/GeoCSV/blob/master/readGeoCSV.m
+#waterpressure2depth: 100 mbar is approximately equal to the pressure of 1 meter of water
+#frequency_response: http://ds.iris.edu/data/reports/MH/MH.Mermaids.Response.V3.pdf
+#lineterminator: '\n'
+#delimiter: ','
+#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
+#field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
+MethodIdentifier,StartTime,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,TimeDelay,TimeCorrection
+Measurement:GPS:u-blox_NEO-M8N,2018-08-10T11:15:10.000Z,MH,P0011,nan,nan,nan,-13.987650,-159.575470,nan,nan,MERMAIDHydrophone(452.020),nan,nan,-0.000000,nan
+Measurement:Pressure:KELLER_Series_6,2018-08-10T11:28:02.000Z,MH,P0011,nan,nan,nan,nan,nan,nan,670,MERMAIDHydrophone(452.020),nan,nan,nan,nan
+Algorithm(thermocline):automaid:v4.5.11,2018-08-10T11:35:10.219Z,MH,P0011,nan,nan,nan,-13.984336,-159.577896,nan,5000,MERMAIDHydrophone(452.020),nan,nan,nan,nan
+Measurement:Pressure:KELLER_Series_6,2018-09-27T15:46:55.000Z,MH,P0011,nan,nan,nan,nan,nan,nan,152520,MERMAIDHydrophone(452.020),nan,nan,nan,nan
+Algorithm(event):automaid:v4.5.11,2018-09-28T10:11:37.681Z,MH,P0011,00,BDH,D,-13.993083,-159.285873,nan,nan,MERMAIDHydrophone(452.020),20.007160,9696,nan,-0.296905
+Algorithm(event):automaid:v4.5.11,2018-09-28T10:32:46.675Z,MH,P0011,00,MDH,D,-13.993156,-159.285751,nan,nan,MERMAIDHydrophone(452.020),5.001790,6080,nan,-0.298426
+Algorithm(event):automaid:v4.5.11,2018-09-30T10:54:36.731Z,MH,P0011,00,BDH,Q,-14.003203,-159.269501,nan,151200,MERMAIDHydrophone(452.020),20.007160,5024,nan,-0.507118
+Measurement:Pressure:KELLER_Series_6,2018-09-30T11:00:55.000Z,MH,P0011,nan,nan,nan,nan,nan,nan,151200,MERMAIDHydrophone(452.020),nan,nan,nan,nan

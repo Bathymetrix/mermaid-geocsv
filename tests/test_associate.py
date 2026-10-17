@@ -24,13 +24,9 @@ CONFIGURATION = {
 
 
 @pytest.fixture(scope="module")
-def histories():
-    missing = [item["path"] for item in MANIFEST["geocsv"]
-               if not (FIXTURES / item["path"]).is_file()]
-    if missing:
-        pytest.skip("complete local GeoCSV histories unavailable; restore them "
-                    "with sandbox/obspy_association/restore_geocsv_histories.py")
-    return {item["path"]: geocsv.read(FIXTURES / item["path"])
+def subsets():
+    # These real-data subsets are tracked and required, including on CI.
+    return {item["path"]: geocsv.read(FIXTURES / item["subset"]["path"])
             for item in MANIFEST["geocsv"]}
 
 
@@ -39,27 +35,27 @@ def load_trace(example=EXAMPLES[0]):
     return trace
 
 
-def one_event(histories):
+def one_event(subsets):
     """Keep one known matching row for focused matching-policy tests."""
     example = EXAMPLES[0]
     trace = load_trace(example)
-    # P0030's first manifest example corresponds to full-history record 689.
-    source = histories[example["geocsv"]][0]
-    frame = source.loc[[689]].copy()
+    source = subsets[example["geocsv"]][0]
+    frame = source.loc[[example["subset_record_index"]]].copy()
     return trace, frame
 
 
-def test_default_rejects_real_writer_offset_beyond_100_microseconds(histories):
+def test_default_rejects_real_writer_offset_beyond_100_microseconds(subsets):
     trace = load_trace()
-    records = histories[EXAMPLES[0]['geocsv']]
-    assert trace.stats.starttime.ns - records[0].loc[689, 'StartTime'].value == 349_000
+    records = subsets[EXAMPLES[0]['geocsv']]
+    record_index = EXAMPLES[0]['subset_record_index']
+    assert trace.stats.starttime.ns - records[0].loc[record_index, 'StartTime'].value == 349_000
     before = trace.copy()
     with pytest.raises(ValueError, match='no match'):
         associate(trace, records)
     assert trace.stats == before.stats
     assert (trace.data == before.data).all()
     associate(trace, records, time_tolerance=0.001)
-    assert trace.stats.geocsv.source_record_index == 689
+    assert trace.stats.geocsv.source_record_index == record_index
 
 
 def test_sample_coverage_and_verbatim_copy_hashes():
@@ -73,10 +69,23 @@ def test_sample_coverage_and_verbatim_copy_hashes():
                 assert hashlib.file_digest(handle, "sha256").hexdigest() == example[f"{extension}_sha256"]
 
 
-def test_complete_history_hashes(histories):
+def test_tracked_subset_hashes_and_record_maps(subsets):
     for item in MANIFEST["geocsv"]:
-        with (FIXTURES / item["path"]).open("rb") as handle:
-            assert hashlib.file_digest(handle, "sha256").hexdigest() == item["sha256"]
+        subset = item["subset"]
+        path = FIXTURES / subset["path"]
+        with path.open("rb") as handle:
+            assert hashlib.file_digest(handle, "sha256").hexdigest() == subset["sha256"]
+        frame, = subsets[item["path"]]
+        original_indices = subset["source_record_indices"]
+        assert original_indices == sorted(set(original_indices))
+        assert 0 <= min(original_indices) <= max(original_indices) < subset["source_record_count"]
+        assert frame.index.equals(pd.RangeIndex(len(original_indices), name="source_record_index"))
+        assert frame.attrs["geocsv"].source_path == path.resolve()
+        assert frame["SampleCount"].dtype == pd.Int64Dtype()
+        assert frame["Location"].dtype == pd.StringDtype()
+        for example in EXAMPLES:
+            if example["geocsv"] == item["path"]:
+                assert original_indices[example["subset_record_index"]] == example["original_source_record_index"]
 
 
 @pytest.mark.parametrize("example", EXAMPLES, ids=lambda item: item["mseed"])
@@ -95,16 +104,18 @@ def test_sampled_sncl_and_quality(example):
 
 
 @pytest.mark.parametrize("example", EXAMPLES, ids=lambda item: item["mseed"])
-def test_sampled_association(example, histories):
+def test_sampled_association(example, subsets):
     trace = load_trace(example)
     stream_type = example["group"].split(".")[0]
     expected_quality = {"DET": "Q", "REQ": "D"}[stream_type]
     core = {key: deepcopy(trace.stats[key]) for key in trace.stats.defaults}
     samples = trace.data.copy()
-    records = histories[example["geocsv"]]
+    records = subsets[example["geocsv"]]
     assert associate(trace, records, time_tolerance=0.001) is None
     attachment = trace.stats.geocsv
     assert attachment.DataQuality == expected_quality
+    assert attachment.dataset_index == 0
+    assert attachment.source_record_index == example["subset_record_index"]
     row = records[attachment.dataset_index].loc[attachment.source_record_index]
     for field, value in row.items():
         actual = attachment[field]
@@ -118,59 +129,59 @@ def test_sampled_association(example, histories):
     assert "sac" not in trace.stats
 
 
-def test_full_history_event_quality_domain(histories):
-    for records in histories.values():
+def test_subset_event_quality_domain(subsets):
+    for records in subsets.values():
         for frame in records:
             events = frame.loc[frame["MethodIdentifier"].str.startswith("Algorithm(event):")]
             assert events["DataQuality"].notna().all()
             assert set(events["DataQuality"]) <= {"Q", "D"}
 
 
-def test_stream_supports_records_from_multiple_floats(histories):
+def test_stream_supports_records_from_multiple_floats(subsets):
     stream = obspy.Stream([load_trace(item) for item in EXAMPLES])
-    records = [frame for frames in histories.values() for frame in frames]
+    records = [frame for frames in subsets.values() for frame in frames]
     assert associate(stream, records, time_tolerance=0.001) is None
     assert all("geocsv" in trace.stats for trace in stream)
 
 
-def test_independent_traces_can_use_the_same_source_row(histories):
-    trace, frame = one_event(histories)
+def test_independent_traces_can_use_the_same_source_row(subsets):
+    trace, frame = one_event(subsets)
     stream = obspy.Stream([trace, trace.copy()])
     associate(stream, [frame], time_tolerance=0.001)
     assert stream[0].stats.geocsv.source_record_index == stream[1].stats.geocsv.source_record_index
     assert stream[0].stats.geocsv is not stream[1].stats.geocsv
 
 
-def test_ambiguous_records_are_rejected_without_mutation(histories):
-    trace, frame = one_event(histories)
+def test_ambiguous_records_are_rejected_without_mutation(subsets):
+    trace, frame = one_event(subsets)
     before = deepcopy(trace.stats)
     with pytest.raises(ValueError, match="ambiguous.*record"):
         associate(trace, [frame, frame], time_tolerance=0.001)
     assert trace.stats == before
 
 
-def test_stream_failure_does_not_partially_associate(histories):
+def test_stream_failure_does_not_partially_associate(subsets):
     good = load_trace()
     bad = good.copy()
     bad.stats.location = "99"
     stream = obspy.Stream([good, bad])
     before = [deepcopy(trace.stats) for trace in stream]
     with pytest.raises(ValueError, match="no match"):
-        associate(stream, histories[EXAMPLES[0]["geocsv"]], time_tolerance=0.001)
+        associate(stream, subsets[EXAMPLES[0]["geocsv"]], time_tolerance=0.001)
     assert [trace.stats for trace in stream] == before
 
 
 @pytest.mark.parametrize("field,value", [("SampleCount", 1), ("SampleRate", 99.0)])
-def test_count_and_rate_mismatches_fail(histories, field, value):
-    trace, frame = one_event(histories)
+def test_count_and_rate_mismatches_fail(subsets, field, value):
+    trace, frame = one_event(subsets)
     frame.loc[:, field] = value
     with pytest.raises(ValueError, match="no match"):
         associate(trace, [frame], time_tolerance=0.001)
     assert "geocsv" not in trace.stats
 
 
-def test_provisional_rate_check_and_waveform_authority(histories):
-    trace, frame = one_event(histories)
+def test_provisional_rate_check_and_waveform_authority(subsets):
+    trace, frame = one_event(subsets)
     original = trace.stats.sampling_rate
     frame.loc[:, "SampleRate"] = original + 0.00999
     associate(trace, [frame], time_tolerance=0.001)
@@ -181,8 +192,8 @@ def test_provisional_rate_check_and_waveform_authority(histories):
         associate(trace, [frame], time_tolerance=0.001)
 
 
-def test_equivalent_timezone_and_source_resolution(histories):
-    trace, frame = one_event(histories)
+def test_equivalent_timezone_and_source_resolution(subsets):
+    trace, frame = one_event(subsets)
     time = frame.iloc[0]["StartTime"].tz_convert("Pacific/Honolulu")
     frame.loc[:, "StartTime"] = time
     associate(trace, [frame], time_tolerance=0.001)
@@ -193,16 +204,16 @@ def test_equivalent_timezone_and_source_resolution(histories):
         associate(trace, [frame], time_tolerance=0.001)
 
 
-def test_quality_is_preserved_and_does_not_select_matches(histories):
-    trace, frame = one_event(histories)
+def test_quality_is_preserved_and_does_not_select_matches(subsets):
+    trace, frame = one_event(subsets)
     frame.loc[:, "DataQuality"] = "D"
     associate(trace, [frame], time_tolerance=0.001)
     assert trace.stats.mseed.dataquality == "Q"
     assert trace.stats.geocsv.DataQuality == "D"
 
 
-def test_missing_coordinate_pair_fails_without_attachment(histories):
-    trace, frame = one_event(histories)
+def test_missing_coordinate_pair_fails_without_attachment(subsets):
+    trace, frame = one_event(subsets)
     frame.loc[:, ["Latitude", "Longitude", "WaterPressure"]] = pd.NA
     before = deepcopy(trace.stats)
     with pytest.raises(ValueError, match="requires both Latitude and Longitude"):
@@ -210,8 +221,8 @@ def test_missing_coordinate_pair_fails_without_attachment(histories):
     assert trace.stats == before
 
 
-def test_coordinate_conflict_is_rejected_without_attachment(histories):
-    trace, frame = one_event(histories)
+def test_coordinate_conflict_is_rejected_without_attachment(subsets):
+    trace, frame = one_event(subsets)
     trace.stats.coordinates = {"latitude": 0.0}
     with pytest.raises(ValueError, match="stats.coordinates already exists"):
         associate(trace, [frame], time_tolerance=0.001)
@@ -219,9 +230,9 @@ def test_coordinate_conflict_is_rejected_without_attachment(histories):
     assert trace.stats.coordinates.latitude == 0
 
 
-def test_bad_coordinate_units_are_rejected(histories):
+def test_bad_coordinate_units_are_rejected(subsets):
     from dataclasses import replace
-    trace, frame = one_event(histories)
+    trace, frame = one_event(subsets)
     units = dict(frame.attrs["geocsv"].field_units)
     units["Latitude"] = "radians"
     frame.attrs["geocsv"] = replace(frame.attrs["geocsv"], field_units=units)
@@ -230,9 +241,9 @@ def test_bad_coordinate_units_are_rejected(histories):
     assert "geocsv" not in trace.stats
 
 
-def test_bad_rate_units_are_rejected(histories):
+def test_bad_rate_units_are_rejected(subsets):
     from dataclasses import replace
-    trace, frame = one_event(histories)
+    trace, frame = one_event(subsets)
     units = dict(frame.attrs["geocsv"].field_units)
     units["SampleRate"] = "kilohertz"
     frame.attrs["geocsv"] = replace(frame.attrs["geocsv"], field_units=units)
@@ -241,9 +252,9 @@ def test_bad_rate_units_are_rejected(histories):
     assert "geocsv" not in trace.stats
 
 
-def test_sac_option_is_explicitly_unimplemented(histories):
+def test_sac_option_is_explicitly_unimplemented(subsets):
     trace = load_trace()
     before = deepcopy(trace.stats)
     with pytest.raises(NotImplementedError, match="SAC projection"):
-        associate(trace, histories[EXAMPLES[0]["geocsv"]], project_sac=True, time_tolerance=0.001)
+        associate(trace, subsets[EXAMPLES[0]["geocsv"]], project_sac=True, time_tolerance=0.001)
     assert trace.stats == before

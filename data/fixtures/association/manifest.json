@@ -70,7 +70,9 @@
       "sac": "452.020-P-0030/0009_20210528-04h30m10s/20210528T053250.0030_60B08BB3.MER.DET.WLT2.sac",
       "sac_sha256": "42ce7afcdd7e0d03afc06f030a59e5c3b8a39a11b872b8ea6fbc8ecc5c9a20f5",
       "group": "DET.WLT2",
-      "geocsv": "452.020-P-0030/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-0030/geo_DET_REQ.csv",
+      "original_source_record_index": 689,
+      "subset_record_index": 18
     },
     {
       "mseed": "452.020-P-0030/0006_20210527-22h23m27s/20210527T234115.0030_60B038D0.MER.DET.WLT2.mseed",
@@ -78,7 +80,9 @@
       "sac": "452.020-P-0030/0006_20210527-22h23m27s/20210527T234115.0030_60B038D0.MER.DET.WLT2.sac",
       "sac_sha256": "528c4015df75f0f17ee19908575e626dd6c940e6f7737ca2b6cbb1a734966798",
       "group": "DET.WLT2",
-      "geocsv": "452.020-P-0030/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-0030/geo_DET_REQ.csv",
+      "original_source_record_index": 464,
+      "subset_record_index": 11
     },
     {
       "mseed": "452.020-P-0030/0002_20210527-14h28m09s/20210527T154441.0030_60AFC696.MER.DET.WLT2.mseed",
@@ -86,7 +90,9 @@
       "sac": "452.020-P-0030/0002_20210527-14h28m09s/20210527T154441.0030_60AFC696.MER.DET.WLT2.sac",
       "sac_sha256": "f3de66e2b1998d4c5b10fad03759e2e9569a006492e65856f05a06325cc72a01",
       "group": "DET.WLT2",
-      "geocsv": "452.020-P-0030/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-0030/geo_DET_REQ.csv",
+      "original_source_record_index": 146,
+      "subset_record_index": 5
     },
     {
       "mseed": "452.120-R-0071/0112_20220907-23h48m11s/20220909T172243.0071_631C61E8.MER.DET.WLT5.mseed",
@@ -94,7 +100,9 @@
       "sac": "452.120-R-0071/0112_20220907-23h48m11s/20220909T172243.0071_631C61E8.MER.DET.WLT5.sac",
       "sac_sha256": "055988370e61fafd0261355353b402d5359e92c4ab6ef1b2c71f26fb4bc12f4d",
       "group": "DET.WLT5",
-      "geocsv": "452.120-R-0071/geo_DET_REQ.csv"
+      "geocsv": "452.120-R-0071/geo_DET_REQ.csv",
+      "original_source_record_index": 13362,
+      "subset_record_index": 6
     },
     {
       "mseed": "452.020-P-0048/0220_20210727-00h41m44s/20210728T081626.0048_610E7E24.MER.DET.WLT5.mseed",
@@ -102,7 +110,9 @@
       "sac": "452.020-P-0048/0220_20210727-00h41m44s/20210728T081626.0048_610E7E24.MER.DET.WLT5.sac",
       "sac_sha256": "4a1ab7b506c02ada185d6d2d85d45e08f19357cfa37a209e932bc2ff9af02ff5",
       "group": "DET.WLT5",
-      "geocsv": "452.020-P-0048/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-0048/geo_DET_REQ.csv",
+      "original_source_record_index": 97681,
+      "subset_record_index": 5
     },
     {
       "mseed": "452.020-P-12/0065_20190717-06h17m27s/20190718T032615.12_5D35E242.MER.DET.WLT5.mseed",
@@ -110,7 +120,9 @@
       "sac": "452.020-P-12/0065_20190717-06h17m27s/20190718T032615.12_5D35E242.MER.DET.WLT5.sac",
       "sac_sha256": "03cc960aab7e281c49c2a75f607168759cb4fa9c97e3ba99215007ce7b9ce57c",
       "group": "DET.WLT5",
-      "geocsv": "452.020-P-12/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-12/geo_DET_REQ.csv",
+      "original_source_record_index": 4659,
+      "subset_record_index": 5
     },
     {
       "mseed": "452.020-P-08/0024_20181129-20h58m50s/20181205T042308.08_5D5F39E7.MER.REQ.WLT3.mseed",
@@ -118,7 +130,9 @@
       "sac": "452.020-P-08/0024_20181129-20h58m50s/20181205T042308.08_5D5F39E7.MER.REQ.WLT3.sac",
       "sac_sha256": "cb747674f084a165710ce13e667321cf92be3203120e89d99be4443adbc2ed73",
       "group": "REQ.WLT3",
-      "geocsv": "452.020-P-08/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-08/geo_DET_REQ.csv",
+      "original_source_record_index": 1643,
+      "subset_record_index": 5
     },
     {
       "mseed": "452.020-P-11/0009_20180925-13h09m01s/20180928T103246.11_5D7760BE.MER.REQ.WLT3.mseed",
@@ -126,7 +140,9 @@
       "sac": "452.020-P-11/0009_20180925-13h09m01s/20180928T103246.11_5D7760BE.MER.REQ.WLT3.sac",
       "sac_sha256": "6176ded696dbe8bd6f8c71f79eeec366b72bc18da775b0a8c0fff7ad0b400a04",
       "group": "REQ.WLT3",
-      "geocsv": "452.020-P-11/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-11/geo_DET_REQ.csv",
+      "original_source_record_index": 586,
+      "subset_record_index": 5
     },
     {
       "mseed": "452.020-P-18/0003_20180923-14h52m03s/20180928T104348.18_5D6C3AE8.MER.REQ.WLT3.mseed",
@@ -134,7 +150,9 @@
       "sac": "452.020-P-18/0003_20180923-14h52m03s/20180928T104348.18_5D6C3AE8.MER.REQ.WLT3.sac",
       "sac_sha256": "daba6e5f0ba499a2b6695f94bb6ef96a689530d34e7e9b9cb71bceae0c5fe70d",
       "group": "REQ.WLT3",
-      "geocsv": "452.020-P-18/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-18/geo_DET_REQ.csv",
+      "original_source_record_index": 176,
+      "subset_record_index": 5
     },
     {
       "mseed": "452.020-P-06/0283_20220909-03h08m36s/20220918T065407.06_64395124.MER.REQ.WLT4.mseed",
@@ -142,7 +160,9 @@
       "sac": "452.020-P-06/0283_20220909-03h08m36s/20220918T065407.06_64395124.MER.REQ.WLT4.sac",
       "sac_sha256": "0bdcbe428bd455e076d1b723671a4bf3924fedd8ad7cd47ed649c5dee5b0fdaa",
       "group": "REQ.WLT4",
-      "geocsv": "452.020-P-06/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-06/geo_DET_REQ.csv",
+      "original_source_record_index": 15545,
+      "subset_record_index": 5
     },
     {
       "mseed": "452.020-P-06/0283_20220909-03h08m36s/20220919T181625.06_64395124.MER.REQ.WLT4.mseed",
@@ -150,7 +170,9 @@
       "sac": "452.020-P-06/0283_20220909-03h08m36s/20220919T181625.06_64395124.MER.REQ.WLT4.sac",
       "sac_sha256": "83db75da73b43986a5e8a0da9e37bde7f6ce723555239d281a69f89ba2fcabb4",
       "group": "REQ.WLT4",
-      "geocsv": "452.020-P-06/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-06/geo_DET_REQ.csv",
+      "original_source_record_index": 15546,
+      "subset_record_index": 6
     },
     {
       "mseed": "452.020-P-06/0290_20221112-10h19m09s/20221118T134758.06_64395124.MER.REQ.WLT4.mseed",
@@ -158,7 +180,9 @@
       "sac": "452.020-P-06/0290_20221112-10h19m09s/20221118T134758.06_64395124.MER.REQ.WLT4.sac",
       "sac_sha256": "90ecc182eb17a87ddca0f5739fd935420249f3bd55c22e2907fdb4874a7bcc4f",
       "group": "REQ.WLT4",
-      "geocsv": "452.020-P-06/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-06/geo_DET_REQ.csv",
+      "original_source_record_index": 15825,
+      "subset_record_index": 11
     },
     {
       "mseed": "452.020-P-0050/0049_20200817-01h44m40s/20200818T002005.0050_5FC489DC.MER.REQ.WLT5.mseed",
@@ -166,7 +190,9 @@
       "sac": "452.020-P-0050/0049_20200817-01h44m40s/20200818T002005.0050_5FC489DC.MER.REQ.WLT5.sac",
       "sac_sha256": "a7ab4aefa2c4fb782b2cddc9333d2e002146271eb27d612e20f843231b1cb6e0",
       "group": "REQ.WLT5",
-      "geocsv": "452.020-P-0050/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-0050/geo_DET_REQ.csv",
+      "original_source_record_index": 392330,
+      "subset_record_index": 6
     },
     {
       "mseed": "467.174-W-0121/0004_20250307-08h35m30s/20250309T022030.0121_67D17CAB.MER.REQ.WLT5.mseed",
@@ -174,7 +200,9 @@
       "sac": "467.174-W-0121/0004_20250307-08h35m30s/20250309T022030.0121_67D17CAB.MER.REQ.WLT5.sac",
       "sac_sha256": "0ef132d8e6b4fec2971035e0fd2061632aafe74fb6eac7d844806662e1c5c062",
       "group": "REQ.WLT5",
-      "geocsv": "467.174-W-0121/geo_DET_REQ.csv"
+      "geocsv": "467.174-W-0121/geo_DET_REQ.csv",
+      "original_source_record_index": 890,
+      "subset_record_index": 5
     },
     {
       "mseed": "452.112-N-05/0050_20200124-11h22m34s/20200128T220223.05_5E7B35AB.MER.REQ.WLT5.mseed",
@@ -182,7 +210,9 @@
       "sac": "452.112-N-05/0050_20200124-11h22m34s/20200128T220223.05_5E7B35AB.MER.REQ.WLT5.sac",
       "sac_sha256": "0f6afcdbedc6ef1cba150dfc46add1474d161bb349c1ad04b1c93448dec5d709",
       "group": "REQ.WLT5",
-      "geocsv": "452.112-N-05/geo_DET_REQ.csv"
+      "geocsv": "452.112-N-05/geo_DET_REQ.csv",
+      "original_source_record_index": 3464,
+      "subset_record_index": 5
     },
     {
       "mseed": "452.020-P-17/0130_20210501-05h28m47s/20210507T051026.17_61CCE24C.MER.REQ.RAW.mseed",
@@ -190,7 +220,9 @@
       "sac": "452.020-P-17/0130_20210501-05h28m47s/20210507T051026.17_61CCE24C.MER.REQ.RAW.sac",
       "sac_sha256": "9a88ff33e8d66f4adcde648c58a9610e8747feef42103ee271f8bc94b6aefa58",
       "group": "REQ.RAW",
-      "geocsv": "452.020-P-17/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-17/geo_DET_REQ.csv",
+      "original_source_record_index": 8407,
+      "subset_record_index": 5
     },
     {
       "mseed": "467.174-T-0101/0003_20230621-12h25m15s/20230621T203959.0101_653E9FD7.MER.REQ.RAW.mseed",
@@ -198,7 +230,9 @@
       "sac": "467.174-T-0101/0003_20230621-12h25m15s/20230621T203959.0101_653E9FD7.MER.REQ.RAW.sac",
       "sac_sha256": "eb483f926def48da3c6e9853cce49595a55f961f8b5eb69d9b993482a8975d2a",
       "group": "REQ.RAW",
-      "geocsv": "467.174-T-0101/geo_DET_REQ.csv"
+      "geocsv": "467.174-T-0101/geo_DET_REQ.csv",
+      "original_source_record_index": 516,
+      "subset_record_index": 5
     },
     {
       "mseed": "452.020-P-10/0207_20210812-18h06m12s/20210814T120825.10_61AAFD7F.MER.REQ.RAW.mseed",
@@ -206,79 +240,350 @@
       "sac": "452.020-P-10/0207_20210812-18h06m12s/20210814T120825.10_61AAFD7F.MER.REQ.RAW.sac",
       "sac_sha256": "ab53d010081c64eb674d9a24c9b57816d3a22575b88402cc4c6e6b02a37e6cc0",
       "group": "REQ.RAW",
-      "geocsv": "452.020-P-10/geo_DET_REQ.csv"
+      "geocsv": "452.020-P-10/geo_DET_REQ.csv",
+      "original_source_record_index": 14955,
+      "subset_record_index": 6
     }
   ],
   "geocsv": [
     {
       "path": "452.020-P-0030/geo_DET_REQ.csv",
       "source_path": "452.020-P-0030/geo_DET_REQ.csv",
-      "sha256": "11bbdb2cb038ee9de32a5dd88812f38456285215f0ac64f536e4baac3c1f587e"
+      "sha256": "11bbdb2cb038ee9de32a5dd88812f38456285215f0ac64f536e4baac3c1f587e",
+      "subset": {
+        "path": "452.020-P-0030/association_subset.geocsv",
+        "sha256": "871d703109d941f80ec2fe6953763e8491dd07c4ff02978b516a91149c2980f6",
+        "source_size_bytes": 114638,
+        "source_record_count": 787,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          4,
+          5,
+          144,
+          145,
+          146,
+          147,
+          148,
+          449,
+          462,
+          463,
+          464,
+          465,
+          466,
+          535,
+          619,
+          687,
+          688,
+          689,
+          690,
+          691,
+          762
+        ]
+      }
     },
     {
       "path": "452.020-P-0048/geo_DET_REQ.csv",
       "source_path": "452.020-P-0048/geo_DET_REQ.csv",
-      "sha256": "c838acce74c3d7e75d21145fe3b57d322247fa6f3670d16fbc6ef97cda137926"
+      "sha256": "c838acce74c3d7e75d21145fe3b57d322247fa6f3670d16fbc6ef97cda137926",
+      "subset": {
+        "path": "452.020-P-0048/association_subset.geocsv",
+        "sha256": "ba0586549bf4620eaa07cb88744c0a12a0c3244c6f25fb61d03d83a0b44ef29e",
+        "source_size_bytes": 15622307,
+        "source_record_count": 107795,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          6,
+          117,
+          97679,
+          97680,
+          97681,
+          97682,
+          97683
+        ]
+      }
     },
     {
       "path": "452.020-P-0050/geo_DET_REQ.csv",
       "source_path": "452.020-P-0050/geo_DET_REQ.csv",
-      "sha256": "69b02669531f245333fb3017a52fba45c79097889455a9f36ab8ed55bf29e297"
+      "sha256": "69b02669531f245333fb3017a52fba45c79097889455a9f36ab8ed55bf29e297",
+      "subset": {
+        "path": "452.020-P-0050/association_subset.geocsv",
+        "sha256": "a120924bf958b7332acd729dd315658343fe529e60b2a9496966cb10056ab565",
+        "source_size_bytes": 110555320,
+        "source_record_count": 764169,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          2,
+          246,
+          385798,
+          392328,
+          392329,
+          392330,
+          392331,
+          392332,
+          392880
+        ]
+      }
     },
     {
       "path": "452.020-P-06/geo_DET_REQ.csv",
       "source_path": "452.020-P-06/geo_DET_REQ.csv",
-      "sha256": "7c91ee7964de0a006b832bf11641d8c193202f92a96a2db098d673896832b9e1"
+      "sha256": "7c91ee7964de0a006b832bf11641d8c193202f92a96a2db098d673896832b9e1",
+      "subset": {
+        "path": "452.020-P-06/association_subset.geocsv",
+        "sha256": "c405a7235addff8b28f02e2c69eaf5368abde67125c40b8c0e9e38f3ffbb347e",
+        "source_size_bytes": 3001323,
+        "source_record_count": 20345,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          4,
+          5,
+          15543,
+          15544,
+          15545,
+          15546,
+          15547,
+          15548,
+          15823,
+          15824,
+          15825,
+          15826,
+          15827
+        ]
+      }
     },
     {
       "path": "452.020-P-08/geo_DET_REQ.csv",
       "source_path": "452.020-P-08/geo_DET_REQ.csv",
-      "sha256": "df8babd957e0a841503b5f608ce358a2573874e0aae3569ce957ae0069f5535a"
+      "sha256": "df8babd957e0a841503b5f608ce358a2573874e0aae3569ce957ae0069f5535a",
+      "subset": {
+        "path": "452.020-P-08/association_subset.geocsv",
+        "sha256": "e461b3f92af80ac2a3fff55558822cbdf0e09c38c774dfdd5aaff67f87179a92",
+        "source_size_bytes": 3398543,
+        "source_record_count": 23087,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          4,
+          5,
+          1641,
+          1642,
+          1643,
+          1644,
+          1645
+        ]
+      }
     },
     {
       "path": "452.020-P-10/geo_DET_REQ.csv",
       "source_path": "452.020-P-10/geo_DET_REQ.csv",
-      "sha256": "98f4ae3735cf7b062cad8f7646d2271586cdc8a657cad5b8ea4fac63fd509191"
+      "sha256": "98f4ae3735cf7b062cad8f7646d2271586cdc8a657cad5b8ea4fac63fd509191",
+      "subset": {
+        "path": "452.020-P-10/association_subset.geocsv",
+        "sha256": "fe5f3b92c4aad3cb55a793216590172e5a04858af68b6566873f2bbdb107ff9f",
+        "source_size_bytes": 4480305,
+        "source_record_count": 30366,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          6,
+          7,
+          14752,
+          14953,
+          14954,
+          14955,
+          14956,
+          14957
+        ]
+      }
     },
     {
       "path": "452.020-P-11/geo_DET_REQ.csv",
       "source_path": "452.020-P-11/geo_DET_REQ.csv",
-      "sha256": "1810e00378a5ec52926c4d5843381836b4e555e967de490d3b19b4f0e3345c8c"
+      "sha256": "1810e00378a5ec52926c4d5843381836b4e555e967de490d3b19b4f0e3345c8c",
+      "subset": {
+        "path": "452.020-P-11/association_subset.geocsv",
+        "sha256": "c5982cde635c57906a2e8f51686dccef967b357aa911bda4b169a7a49c512aea",
+        "source_size_bytes": 3874816,
+        "source_record_count": 26327,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          4,
+          5,
+          584,
+          585,
+          586,
+          587,
+          588
+        ]
+      }
     },
     {
       "path": "452.020-P-12/geo_DET_REQ.csv",
       "source_path": "452.020-P-12/geo_DET_REQ.csv",
-      "sha256": "2d9b40aeea070abd8d621ef786703f28376b94e472e7d89b0043670911977b81"
+      "sha256": "2d9b40aeea070abd8d621ef786703f28376b94e472e7d89b0043670911977b81",
+      "subset": {
+        "path": "452.020-P-12/association_subset.geocsv",
+        "sha256": "8604746a3f79b57dd4d2257942d7fd93ae6cb96dad0df493e30120d41abccc0a",
+        "source_size_bytes": 3809685,
+        "source_record_count": 26014,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          6,
+          7,
+          4657,
+          4658,
+          4659,
+          4660,
+          4661
+        ]
+      }
     },
     {
       "path": "452.020-P-17/geo_DET_REQ.csv",
       "source_path": "452.020-P-17/geo_DET_REQ.csv",
-      "sha256": "8f10e17d8a7df7704c24c53e82144bf5e566da06b5a18b63020523483896c4c8"
+      "sha256": "8f10e17d8a7df7704c24c53e82144bf5e566da06b5a18b63020523483896c4c8",
+      "subset": {
+        "path": "452.020-P-17/association_subset.geocsv",
+        "sha256": "7237d88d97fefce6cc2ab9687f8675923b4319438fa57f8133a267f9ce44c6e6",
+        "source_size_bytes": 2782616,
+        "source_record_count": 18948,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          6,
+          7,
+          8405,
+          8406,
+          8407,
+          8408,
+          8409,
+          9024
+        ]
+      }
     },
     {
       "path": "452.020-P-18/geo_DET_REQ.csv",
       "source_path": "452.020-P-18/geo_DET_REQ.csv",
-      "sha256": "f199969c18cd09247bd3abf55a3844d4bb97ad5823a59c416aee0abe12bc91a1"
+      "sha256": "f199969c18cd09247bd3abf55a3844d4bb97ad5823a59c416aee0abe12bc91a1",
+      "subset": {
+        "path": "452.020-P-18/association_subset.geocsv",
+        "sha256": "9401d7a250e6c9967115fa8723ca7d782c8436f8be2cf7356c9522eb9da2590b",
+        "source_size_bytes": 2996828,
+        "source_record_count": 20438,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          8,
+          9,
+          174,
+          175,
+          176,
+          177,
+          178
+        ]
+      }
     },
     {
       "path": "452.112-N-05/geo_DET_REQ.csv",
       "source_path": "452.112-N-05/geo_DET_REQ.csv",
-      "sha256": "4c7ac42edc414cf999bd4da4ffcd715aef407b2671b0fa0bcf2e3c50b039c771"
+      "sha256": "4c7ac42edc414cf999bd4da4ffcd715aef407b2671b0fa0bcf2e3c50b039c771",
+      "subset": {
+        "path": "452.112-N-05/association_subset.geocsv",
+        "sha256": "fc45efdbdfcba5f7039d5bf7917b307960132e0b825c6bd91b82567c1b3c19df",
+        "source_size_bytes": 3596029,
+        "source_record_count": 24531,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          1,
+          17,
+          3462,
+          3463,
+          3464,
+          3465,
+          3466
+        ]
+      }
     },
     {
       "path": "452.120-R-0071/geo_DET_REQ.csv",
       "source_path": "452.120-R-0071/geo_DET_REQ.csv",
-      "sha256": "0eeb2ab74100d116790497586e01a4687fc7dd9ca4895cdb3aa37b9d44c38c95"
+      "sha256": "0eeb2ab74100d116790497586e01a4687fc7dd9ca4895cdb3aa37b9d44c38c95",
+      "subset": {
+        "path": "452.120-R-0071/association_subset.geocsv",
+        "sha256": "4dd379cb2f7e8be81f87edbafc3087f0a90aeb23ef8c0e13cb2d184a6c8fdb1e",
+        "source_size_bytes": 3628690,
+        "source_record_count": 24868,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          6,
+          72,
+          13294,
+          13360,
+          13361,
+          13362,
+          13363,
+          13364
+        ]
+      }
     },
     {
       "path": "467.174-T-0101/geo_DET_REQ.csv",
       "source_path": "467.174-T-0101/geo_DET_REQ.csv",
-      "sha256": "6710c8a7105acfa8545848652426a94b5baffe95192a9e8f586faff5df145cbd"
+      "sha256": "6710c8a7105acfa8545848652426a94b5baffe95192a9e8f586faff5df145cbd",
+      "subset": {
+        "path": "467.174-T-0101/association_subset.geocsv",
+        "sha256": "0f9deb3f913921bfb511477c16bfe19e77706a5531e801de8d8c41d3ceb3666c",
+        "source_size_bytes": 1731315,
+        "source_record_count": 11854,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          2,
+          84,
+          514,
+          515,
+          516,
+          517,
+          518
+        ]
+      }
     },
     {
       "path": "467.174-W-0121/geo_DET_REQ.csv",
       "source_path": "467.174-W-0121/geo_DET_REQ.csv",
-      "sha256": "16b750c9b94a0c0cdf8da2b5b83bdbd8fc43160bec8dc5bfee8f1d8e3140ce13"
+      "sha256": "16b750c9b94a0c0cdf8da2b5b83bdbd8fc43160bec8dc5bfee8f1d8e3140ce13",
+      "subset": {
+        "path": "467.174-W-0121/association_subset.geocsv",
+        "sha256": "91dd5bfd293b169f6295b5cb76c4649b668cdf403d71ca57c921eb6bf65541d0",
+        "source_size_bytes": 229101,
+        "source_record_count": 1557,
+        "source_header_line_count": 12,
+        "source_record_indices": [
+          0,
+          3,
+          48,
+          888,
+          889,
+          890,
+          891,
+          892
+        ]
+      }
     }
-  ]
+  ],
+  "subset_selection": {
+    "date": "2026-10-16",
+    "time_tolerance_seconds": 0.001,
+    "context_records_each_side": 2,
+    "policy": "Keep all same-SNCL event candidates within 1 ms of each sampled waveform start, two neighboring source records on either side, the preceding and following same-SNCL events in source-record order, and the first record of each non-event MethodIdentifier. Preserve original header and selected record bytes in source order."
+  }
 }

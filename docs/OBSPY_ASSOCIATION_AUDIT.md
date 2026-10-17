@@ -4,6 +4,16 @@ Audit performed 2026-10-14 against the sandbox `associate.py`. This records
 findings before remediation and their dispositions; the function remains an
 experimental sandbox interface, not an exposed package API.
 
+## Portable real-data verification update, 2026-10-16
+
+The [current repository audit](../audits/05.md) supersedes the historical
+verification counts below. Tracked GeoCSV subsets now supply every real-data
+association test: all 296 tests pass with ObsPy installed, including from a
+copy containing only files eligible for Git. Full histories remain ignored
+and unchanged. A separate full-history check verifies subset extraction and
+unique matches for the 18 sampled waveforms; see the
+[fixture provenance](../data/fixtures/association/README.md).
+
 ## Empty-location and preflight update, 2026-10-16
 
 Version 0.14.0 preserves known empty strings in string-valued `Location`, while

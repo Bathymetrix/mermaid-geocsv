@@ -9,8 +9,9 @@ and identity, exercising event-category selection.
 
 Source times deliberately mix three and nine fractional digits. Coordinates
 include complete pairs, either component missing, and both missing. This
-tracked fixture supplies reproducible CI unit coverage; full real histories
-remain unchanged, local integration fixtures.
+tracked fixture supplies reproducible CI unit coverage alongside the
+[tracked real-data subsets](../../../data/fixtures/association/README.md).
+Full real histories remain unchanged for separate local corpus checks.
 
 Two additional event rows provide contiguous six-sample continuations of the
 first two four-sample events. They exercise exact merged coverage and preserve
