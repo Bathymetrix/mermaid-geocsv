@@ -7,6 +7,10 @@ returning one table per dataset. It preserves source column names, record
 order, timestamps and their timezones, and GeoCSV metadata, including units,
 comments, and the source file path.
 
+Empty and quoted-empty cells in string-valued `Location` preserve the known
+empty SEED location code `""`; `nan` and declared missing markers remain missing.
+Other columns retain their existing missing-value rules.
+
 An experimental [ObsPy association sandbox](sandbox/obspy_association/README.md)
 attaches parsed event metadata to original processed traces. Its paired
 waveform fixtures and full GeoCSV histories are documented in the
@@ -24,6 +28,9 @@ grid after overlapping samples are counted once.
 The source-row attachment uses ObsPy's `AttribDict`; source columns colliding
 with its attributes or methods, or with association-owned keys, raise before
 any trace is modified.
+Source preflight rejects invalid event identities and duplicate full matching
+keys. Only Location may be empty; no SNCL field may be missing. All trace
+matches validate before projections or mutation.
 See the [merged-trace policy](docs/OBSPY_MERGED_TRACES.md) for checks and limits.
 
 Reader version 0.11.0 also preserves source datetime resolution in immutable

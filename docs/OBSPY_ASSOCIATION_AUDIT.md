@@ -4,7 +4,19 @@ Audit performed 2026-10-14 against the sandbox `associate.py`. This records
 findings before remediation and their dispositions; the function remains an
 experimental sandbox interface, not an exposed package API.
 
-## Current policy update, 2026-10-16
+## Empty-location and preflight update, 2026-10-16
+
+Version 0.14.0 preserves known empty strings in string-valued `Location`, while
+explicit missing markers remain missing. Only Location may be empty in a valid
+association identity. Source preflight rejects invalid event identities and
+duplicate complete SNCL/UTC-time/count/rate keys across datasets. All supplied
+trace matches validate before projections. Same SNCL/time with different counts
+can still be uniquely matched. These replace the former universal empty-cell
+missingness for Location; other columns keep their prior policy. See the
+[current reader rules](READER_SPEC.md#field-types-and-missing-values) and
+[association rules](OBSPY_ASSOCIATION.md#matching-original-traces).
+
+## Timing and coverage policy update, 2026-10-16
 
 Version 0.13.0 replaces the source-resolution default below with a fixed
 100-microsecond absolute tolerance (`time_tolerance=0.0001`). `None` is no

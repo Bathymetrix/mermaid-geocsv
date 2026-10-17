@@ -66,6 +66,16 @@ reserve a matched row exclusively for one trace. Conversely, one trace must
 not receive multiple source-row associations; multiple eligible rows are an
 error, not permission to combine their metadata.
 
+Known empty Location is valid and matches only waveform location `""`.
+Network, Station, and Channel must be nonempty; no identity field may be missing.
+The reader preserves empty cells specifically in string-valued `Location`;
+`nan` and nonempty declared missing markers still mean unknown. Other columns
+retain their existing missingness. Source preflight rejects invalid event
+identities and duplicate complete SNCL/UTC-time/count/rate matching keys before
+trace matching. Different counts may disambiguate the same SNCL/time. Resolve
+every trace match before building projections; validate all projections before
+mutating traces. DataQuality remains independent source evidence, not a filter.
+
 The assigned position is the interpolated receiver position at the first
 sample time, irrespective of waveform length or when a repeat request was
 made. Do not average position over the waveform. This position convention

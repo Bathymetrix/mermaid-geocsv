@@ -144,7 +144,9 @@ def read(
     ``GeoCSVError``. Conversion is performed by pandas. Duplicate times are
     retained.
     ``nan`` (case-insensitive) is missing for every field type, including
-    strings; a literal string ``nan`` cannot be represented. Numeric and
+    strings; a literal string ``nan`` cannot be represented. Empty cells in
+    the string-valued ``Location`` column remain empty strings (known empty
+    SEED location codes); other empty cells are missing. Numeric and
     datetime cells are trimmed; string cells
     retain their whitespace. A per-column ``field_missing`` sentinel also
     denotes missing data. In datetime columns, ``NaT`` (case-insensitive) also
@@ -543,7 +545,7 @@ def _read_datasets(
         for name, value, field_type, missing in zip(header, row, field_types, field_missing):
             effective_type = field_type.lower() or "string"
             try:
-                columns[name].append(_convert_value(value, effective_type, missing))
+                columns[name].append(_convert_value(value, effective_type, missing, name))
             except (ValueError, OverflowError) as exc:
                 raise GeoCSVError(
                     f"line {line_number}, field {name!r}: invalid {effective_type} "
@@ -557,13 +559,15 @@ def _read_datasets(
     return frames
 
 
-def _convert_value(value: str, field_type: str, missing: str) -> object:
+def _convert_value(value: str, field_type: str, missing: str, field_name: str) -> object:
     if value and not value.strip():
         raise ValueError(
             "whitespace-only values are not missing; use an empty field or nan"
         )
     if field_type != "string":
         value = value.strip()
+    if field_name == "Location" and field_type == "string" and value == "":
+        return ""  # Known empty SEED code; nan/declared sentinels remain missing.
     if value == "" or value.lower() == "nan" or (missing and value == missing):
         return pd.NaT if field_type == "datetime" else pd.NA
     if field_type == "datetime" and value.lower() == "nat":

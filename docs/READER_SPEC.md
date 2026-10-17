@@ -163,13 +163,22 @@ omitted or empty `field_type` entry is represented as a string column; its
 declare the type. An omitted or empty `field_unit` entry remains empty in
 `metadata.field_units`; the reader never invents a unit. Unknown nonempty type
 names raise an error.
-Empty CSV fields, including quoted empty fields, case-insensitive `nan`, and
-nonempty per-column `field_missing` sentinels become `pd.NA` or `pd.NaT`
-according to the declared type. **`nan` is always missing, including in string
+Empty CSV fields, including quoted empty fields, become typed missing values
+except in a string-valued column named exactly `Location`. There, both `,,`
+and `,"",` preserve the empty string `""`, representing a known empty SEED
+location code. This also applies when `Location` has an undeclared type and
+therefore defaults to string; numeric/datetime `Location` columns retain
+their usual typed missingness. No other column gets this exception.
+Case-insensitive `nan` and nonempty per-column `field_missing` sentinels become
+`pd.NA` or `pd.NaT` according to the declared type, including in `Location`.
+**`nan` is always missing, including in string
 columns and when `field_missing` declares a different sentinel.** Literal
 `nan` and quoted `"nan"` cannot be represented as string values; quoted empty
-strings are missing too. This universal rule is a MERMAID policy, not a
-requirement of GeoCSV v2.0.4. A record must contain exactly as many cells as
+strings are missing outside string-valued `Location`. These missing-value and
+empty-Location conventions are MERMAID policies, not requirements of GeoCSV
+v2.0.4. The FDSN [SEED 2.4 mapping](https://docs.fdsn.org/projects/source-identifiers/en/latest/definition.html#mapping-of-seed-2-4-codes)
+allows zero-character locations; it does not prescribe their CSV representation.
+A record must contain exactly as many cells as
 the header; a blank line is not expanded into an all-missing record. A
 nonempty whitespace-only cell is an error for every type. Leading and trailing
 whitespace is trimmed from numeric and datetime cells before checking missing

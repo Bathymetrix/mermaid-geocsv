@@ -714,6 +714,43 @@ def test_empty_fields_become_typed_missing_values(
     assert frame.attrs["geocsv"].source_path == source.resolve()
 
 
+@pytest.mark.parametrize('field_type', ['string', ''])
+def test_location_empty_strings_are_distinct_from_missing_codes(tmp_path, field_type):
+    source = tmp_path / 'identity_codes.geocsv'
+    source.write_text(
+        '#dataset: GeoCSV\n'
+        f'#field_type: string,string,{field_type},string,string\n'
+        '#field_missing: ,,unknown,,\n'
+        'Network,Station,Location,Channel,DataQuality\n'
+        'MH,SYN01,,BDH,Q\n'
+        'MH,SYN01,"",BDH,Q\n'
+        'MH,SYN01,nan,BDH,nan\n'
+        'MH,SYN01,unknown,BDH,Q\n'
+        ',,,,\n', encoding='utf-8')
+
+    frame = read_one(source)
+
+    assert frame['Location'].iloc[:2].tolist() == ['', '']
+    assert frame['Location'].iloc[2] is pd.NA
+    assert frame['Location'].iloc[3] is pd.NA
+    assert frame['Location'].iloc[4] == ''
+    assert frame.loc[4, ['Network', 'Station', 'Channel', 'DataQuality']].isna().all()
+    assert frame.loc[2, 'DataQuality'] is pd.NA
+    assert all(isinstance(dtype, pd.StringDtype) for dtype in frame.dtypes)
+    assert frame.index.equals(pd.RangeIndex(5, name='source_record_index'))
+    assert frame.attrs['geocsv'].source_path == source.resolve()
+    assert frame.attrs['geocsv'].field_missing['Location'] == 'unknown'
+
+
+def test_numeric_location_keeps_numeric_missingness(tmp_path):
+    source = tmp_path / 'numeric_location.geocsv'
+    source.write_text('#dataset: GeoCSV\n#field_type: integer,string\n'
+                      'Location,Label\n,example\n', encoding='utf-8')
+    frame = read_one(source)
+    assert frame.loc[0, 'Location'] is pd.NA
+    assert frame['Location'].dtype == 'Int64'
+
+
 @pytest.mark.parametrize(
     "values, expected, expected_timezone",
     [

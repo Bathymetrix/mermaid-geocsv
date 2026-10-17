@@ -105,6 +105,16 @@ print(tr.stats.coordinates)
 ```
 
 The example explicitly allows 1 ms for Automaid's millisecond-rendered history.
+Network, Station, and Channel require nonempty strings. A string-valued source
+`Location` cell written empty or quoted-empty is the known code `""`, matching
+only waveform `location=""`. `nan`, declared missing markers, and absent identity
+columns do not supply an empty code. Missing DataQuality remains separate from
+waveform quality and is not a match filter.
+Source preflight rejects invalid event identities and duplicate complete
+SNCL/UTC-time/count/rate keys across datasets, including unrelated rows. It
+reports source paths and dataset/record indices. Distinct counts can
+disambiguate same-SNCL/time rows. All supplied traces must then match uniquely
+under the actual tolerance/count/rate rules before projections are built.
 The function mutates in place and returns `None`. It requires exactly one
 event-row match per trace: full SNCL, UTC time differences within 100 microseconds by default, exact original
 sample count/data length, and measured rates within 0.01 Hz. Waveform core

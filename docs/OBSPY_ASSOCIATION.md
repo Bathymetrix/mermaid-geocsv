@@ -509,12 +509,17 @@ Proposed first matching policy:
 1. Search waveform metadata rows, distinguishing `Algorithm(event)` records
    from GPS, pressure, and thermocline observations. Do not select by time
    alone or hard-code one automaid version string.
-2. Require complete, matching station, network, channel, and location codes
-   (SNCL). Missing values are not wildcards and do not silently become empty
-   codes. The reader treats empty and quoted-empty fields as missing, including
-   `Location`. Association rejects missing identity fields; it does not replace
-   missing `Location` with an empty SEED location code. Empty location codes are
-   not representable separately from missing values through this reader.
+2. Require known, exactly matching station, network, channel, and location codes
+   (SNCL). Network, Station, and Channel must be nonempty strings. Location may
+   be the known empty string `""`, which matches only waveform Location `""`.
+   The reader preserves empty and quoted-empty cells in string-valued `Location`;
+   `nan` and declared missing markers remain missing. Missing identity fields
+   are invalid, never wildcards or instructions to fill a code from the waveform.
+   Whitespace-only codes are invalid; codes are never trimmed or relabeled here.
+   This agrees with the online FDSN [SEED 2.4 mapping](https://docs.fdsn.org/projects/source-identifiers/en/latest/definition.html#mapping-of-seed-2-4-codes),
+   checked 2026-10-16: Network has 1–2 characters, Station 1–5, Location 0–2,
+   and Channel 3. Association enforces the presence/empty-code rules, not a
+   complete SEED character-set or length validator.
 3. Compare full UTC nanosecond timestamps using absolute differences; neither
    input is truncated. `time_tolerance=0.0001` is a fixed absolute tolerance
    of 100 microseconds, independent of source timestamp spelling. Bounds are
@@ -545,6 +550,25 @@ Proposed first matching policy:
 5. Attach only when one candidate remains. Zero matches and multiple matches
    need distinct, informative outcomes, including candidate record indices.
    Do not silently choose the nearest, first, or last record.
+
+Before matching traces, a source preflight validates every event row's identity,
+including rows unrelated to the supplied traces. Missing/invalid event identities
+raise with source path, dataset, record indices, and field names. It also rejects
+duplicate full matching keys across all supplied datasets: complete SNCL, UTC
+nanosecond StartTime, positive integer SampleCount, and finite positive SampleRate.
+The error identifies both source records. Empty Location participates as a real
+code. Missing or timezone-naive start times remain ineligible, as before.
+
+Same SNCL/time alone is not a duplicate full matching key: different sample counts
+can identify different original acquisitions. Quality and coordinates never
+disambiguate matching keys. Missing DataQuality remains missing source evidence
+and is not copied from waveform quality or made a matching wildcard/filter.
+
+After source preflight, every supplied trace must resolve to exactly one row under
+the actual time, count, and rate rules. These rules can expose further ambiguity
+between different keys within tolerance. All trace matches and merged-coverage
+checks finish before building any coordinate projection or attachment; all
+projections then validate before any trace is modified.
 
 **Revisit the sampling-rate threshold:** 0.01 Hz is explicitly provisional
 and potentially grossly relaxed. The user reports that raw MER files quote

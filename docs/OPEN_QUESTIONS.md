@@ -74,11 +74,14 @@ fields, quoted empty strings, `nan`, or `NaT` have default missing meanings.
 How can a string field represent a literal `nan` or empty string when those
 tokens also denote missing data?
 
-**Current reader behavior:** Empty fields, including `""`, and case-insensitive
-`nan` are **always missing**, including for string fields and even with a
+**Current reader behavior:** Empty fields, including `""`, are missing except
+in a string-valued column named exactly `Location`, where they represent the
+known empty SEED location code. Case-insensitive `nan` is **always missing**,
+including for string fields and even with a
 different declared `field_missing` value; a declared `field_missing` value is
-also missing. Literal `nan`, quoted `"nan"`, and quoted empty strings cannot be
-represented as string values. Datetime fields additionally treat
+also missing. Literal `nan` and quoted `"nan"` cannot be represented as string
+values; empty strings can be represented only in string-valued `Location`.
+Datetime fields additionally treat
 case-insensitive `NaT` as missing. Universal `nan` handling is an explicit
 MERMAID policy, not a v2.0.4 requirement. See
 [Audit 04, finding 3](../audits/04.md#3-universal-nan-handling-can-erase-literal-string-data)

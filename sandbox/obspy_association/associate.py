@@ -24,6 +24,13 @@ def _project_sac():
     raise NotImplementedError("SAC projection is reserved but not implemented")
 
 
+def _invalid_identity_fields(codes):
+    """Only Location may be a known empty string; missing codes are invalid."""
+    return [field for field, code in zip(IDENTITY, codes)
+            if not isinstance(code, str)
+            or (not code.strip() and not (field == "Location" and code == ""))]
+
+
 def _coordinates(trace, row, metadata):
     missing = [field for field in ("Latitude", "Longitude")
                if pd.isna(row.get(field, pd.NA))]
@@ -117,6 +124,9 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=0.0001,
     geocsv, coordinates, and sac when requested. Nothing is merged or overwritten.
     Source columns must not collide with association keys or attributes and
     methods of the ObsPy AttribDict used for stats.geocsv.
+    Only Location may be a known empty string; no SNCL field may be missing.
+    Source preflight rejects invalid event identities and duplicate complete
+    SNCL/UTC-time/count/rate keys. All trace matches resolve before projections.
     ``time_tolerance`` is finite nonnegative seconds, including
     zero for exact matching. Comparisons preserve full nanosecond values.
     ``stats.geocsv.starttime_difference_seconds`` records waveform minus source
@@ -151,6 +161,7 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=0.0001,
         _project_sac()
 
     datasets = []
+    seen_events = {}
     required = set(IDENTITY) | {"MethodIdentifier", "StartTime", "SampleRate",
                                 "SampleCount"}
     for dataset_index, frame in enumerate(records):
@@ -181,6 +192,13 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=0.0001,
                 "so source columns must not shadow its attributes or methods")
         event_index = {}
         for sncl, group in events.groupby(list(IDENTITY), sort=False, dropna=False):
+            invalid = _invalid_identity_fields(sncl)
+            if invalid:
+                raise ValueError(
+                    f"{metadata.source_path}, dataset {dataset_index}, records "
+                    f"{list(group.index)}: invalid event identity fields {invalid}; "
+                    "Network, Station, Channel require nonempty strings; Location "
+                    "may be an empty string but must not be missing")
             timed_rows, incomplete_rows = [], []
             for record_index, row in group.iterrows():
                 time = row["StartTime"]
@@ -188,14 +206,35 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=0.0001,
                     incomplete_rows.append((record_index,
                                             "missing or timezone-naive StartTime; row is ineligible"))
                     continue
-                timed_rows.append((pd.Timestamp(time).value, record_index))
+                time_ns = pd.Timestamp(time).value
+                count, source_rate = row['SampleCount'], row['SampleRate']
+                if (not pd.isna(count) and isfinite(float(count)) and count > 0
+                        and float(count).is_integer() and not pd.isna(source_rate)
+                        and isfinite(float(source_rate)) and source_rate > 0):
+                    key = (sncl, time_ns, int(count), float(source_rate))
+                    source = (str(metadata.source_path), dataset_index, record_index)
+                    if key in seen_events:
+                        raise ValueError(
+                            f"ambiguous duplicate GeoCSV event rows for SNCL {sncl}, "
+                            f"UTC StartTime={pd.Timestamp(time).tz_convert('UTC').isoformat()}, "
+                            f"SampleCount={count}, SampleRate={source_rate}: "
+                            f"(source, dataset, record) {seen_events[key]} and {source}; "
+                            "quality and coordinates do not disambiguate matching keys")
+                    seen_events[key] = source
+                timed_rows.append((time_ns, record_index))
             timed_rows.sort()
             timed_times = tuple(item[0] for item in timed_rows)
             event_index[sncl] = (group, timed_rows, timed_times, incomplete_rows)
         datasets.append((dataset_index, event_index, metadata))
 
-    plans = []
+    associations = []
     for trace_index, trace in enumerate(traces):
+        sncl = tuple(trace.stats[key] for key in IDENTITY.values())
+        invalid = _invalid_identity_fields(sncl)
+        if invalid:
+            raise ValueError(f"trace {trace_index} {trace.id}: invalid waveform identity "
+                             f"fields {invalid}; only Location may be an empty string; "
+                             "no identity field may be missing")
         if trace.stats.npts != len(trace.data):
             raise ValueError(f"{trace.id}: npts differs from data length; load the samples")
         rate = trace.stats.sampling_rate
@@ -205,7 +244,6 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=0.0001,
             raise ValueError(f"trace {trace_index} {trace.id}: masked gaps prevent "
                              "contiguous segment association")
         matches, anchors, candidates, incomplete_events = [], [], [], []
-        sncl = tuple(trace.stats[key] for key in IDENTITY.values())
         trace_time_ns = trace.stats.starttime.ns
         for dataset_index, event_index, metadata in datasets:
             indexed = event_index.get(sncl)
@@ -268,9 +306,12 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=0.0001,
                              f"SNCL/time candidates (source, dataset, record, reasons): {candidates}; "
                              f"incomplete event rows (source, dataset, record, reason): "
                              f"{incomplete_events}")
-        dataset_index, record_index, row, metadata = matches[0]
+        associations.append((trace, matches[0], association))
+
+    plans = []
+    for trace, (dataset_index, record_index, row, metadata), association in associations:
         starttime_difference_seconds = (
-            trace_time_ns - pd.Timestamp(row["StartTime"]).value
+            trace.stats.starttime.ns - pd.Timestamp(row["StartTime"]).value
         ) / 1_000_000_000
         attachment = AttribDict({**row.to_dict(), "source_record_index": record_index,
                                  "dataset_index": dataset_index, "metadata": metadata,

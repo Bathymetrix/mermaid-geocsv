@@ -112,16 +112,104 @@ def test_sncl_mismatch_is_not_repaired_from_geocsv(records):
 
 
 @pytest.mark.parametrize('location', ['', '""'])
-def test_empty_source_location_is_missing_not_a_blank_seed_code(tmp_path, location):
-    source = tmp_path / 'missing_location.geocsv'
+@pytest.mark.parametrize('allow_merge', [False, True])
+def test_known_empty_location_associates_exactly(tmp_path, location, allow_merge):
+    source = tmp_path / 'empty_location.geocsv'
     source.write_text(FIXTURE.read_text().replace(',00,BDH,', f',{location},BDH,'))
     records = geocsv.read(source)
-    assert pd.isna(records[0].loc[1, 'Location'])
+    assert records[0].loc[1, 'Location'] == ''
     tr = trace()
     tr.stats.location = ''
+    if allow_merge:
+        tr.data = np.arange(10, dtype=np.float32)
+    before = tr.copy()
+    associate(tr, records, allow_merge=allow_merge)
+    assert tr.stats.geocsv.Location == ''
+    assert tr.stats.geocsv.source_record_index == 1
+    assert tr.stats.geocsv.association == ('first_segment' if allow_merge else 'one_segment')
+    assert all(tr.stats[key] == value for key, value in before.stats.items())
+    np.testing.assert_array_equal(tr.data, before.data)
+
+    tr = trace()  # Populated Location is not a match for a known empty code.
     with pytest.raises(ValueError, match='no match'):
         associate(tr, records)
     assert 'geocsv' not in tr.stats
+
+
+@pytest.mark.parametrize('field', ['Network', 'Station', 'Channel', 'Location'])
+def test_missing_source_identity_fails_preflight_without_mutation(records, field):
+    records[0].loc[1, field] = pd.NA
+    tr = trace()
+    if field == 'Location':
+        tr.stats.location = ''
+    before = tr.copy()
+    with pytest.raises(ValueError, match=f'invalid event identity fields.*{field}') as exc:
+        associate(tr, records)
+    assert str(FIXTURE.resolve()) in str(exc.value)
+    assert 'dataset 0' in str(exc.value) and 'records [1]' in str(exc.value)
+    assert tr.stats == before.stats
+    np.testing.assert_array_equal(tr.data, before.data)
+
+
+@pytest.mark.parametrize('field', ['Network', 'Station', 'Channel'])
+def test_empty_source_and_waveform_required_codes_are_rejected(records, field):
+    records[0].loc[1, field] = ''
+    tr = trace()
+    tr.stats[field.lower()] = ''
+    with pytest.raises(ValueError, match=f'invalid event identity fields.*{field}'):
+        associate(tr, records)
+    assert 'geocsv' not in tr.stats
+
+    records[0].loc[1, field] = {'Network': 'MH', 'Station': 'SYN01', 'Channel': 'BDH'}[field]
+    with pytest.raises(ValueError, match=f'invalid waveform identity fields.*{field}'):
+        associate(tr, records)
+    assert 'geocsv' not in tr.stats
+
+
+def test_absent_source_location_column_is_not_an_empty_code(records):
+    tr = trace()
+    tr.stats.location = ''
+    with pytest.raises(ValueError, match='lacks columns.*Location'):
+        associate(tr, [records[0].drop(columns='Location')])
+    assert 'geocsv' not in tr.stats
+
+
+def test_duplicate_empty_location_rows_fail_source_preflight(records):
+    records[0]['Location'] = ''
+    duplicate = records[0].loc[[1]].copy()
+    duplicate.loc[1, 'DataQuality'] = 'D'  # Quality cannot rescue duplicate keys.
+    tr = trace('SYN02')  # The ambiguous source row is unrelated to this trace.
+    tr.stats.location = ''
+    with pytest.raises(ValueError, match='ambiguous duplicate GeoCSV event rows') as exc:
+        associate(tr, records + [duplicate])
+    assert "('MH', 'SYN01', '', 'BDH')" in str(exc.value)
+    assert '(source, dataset, record)' in str(exc.value)
+    assert 'geocsv' not in tr.stats
+
+
+def test_same_identity_and_time_with_different_counts_can_be_unique(records):
+    records[0].loc[9] = records[0].loc[1]
+    records[0].loc[9, 'SampleCount'] = 8
+    tr = trace()
+    associate(tr, records)
+    assert tr.stats.geocsv.source_record_index == 1
+    tr = trace()
+    tr.data = np.arange(8, dtype=np.float32)
+    associate(tr, records)
+    assert tr.stats.geocsv.source_record_index == 9
+
+
+def test_all_matches_preflight_before_coordinate_projection(records):
+    records[0].loc[1, 'Latitude'] = pd.NA
+    records[0].loc[9] = records[0].loc[2]
+    records[0].loc[9, 'StartTime'] += pd.Timedelta(nanoseconds=1)
+    stream = obspy.Stream([trace(), trace('SYN02')])
+    before = [tr.copy() for tr in stream]
+    with pytest.raises(ValueError, match=r'ambiguous \(2 matches\)'):
+        associate(stream, records)
+    for tr, original in zip(stream, before):
+        assert tr.stats == original.stats
+        np.testing.assert_array_equal(tr.data, original.data)
 
 
 def test_unrequested_sac_projection_does_not_touch_existing_headers(records):
@@ -139,6 +227,35 @@ def test_multiple_traces_and_quality_preservation(records):
     assert st[0].stats.mseed.dataquality == 'D'
     assert st[0].stats.geocsv.DataQuality == 'Q'
     assert st[1].stats.geocsv.DataQuality == 'D'
+
+
+def test_missing_quality_remains_source_missingness(records):
+    records[0].loc[1, 'DataQuality'] = pd.NA
+    tr = trace()
+    tr.stats.mseed = {'dataquality': 'Q'}
+    associate(tr, records)
+    assert pd.isna(tr.stats.geocsv.DataQuality)
+    assert tr.stats.mseed.dataquality == 'Q'
+
+
+def test_known_empty_location_on_independently_read_miniseed(tmp_path):
+    source = tmp_path / 'empty_location.geocsv'
+    source.write_text(FIXTURE.read_text().replace(',00,BDH,', ',,BDH,'))
+    records = geocsv.read(source)
+    original = trace()
+    original.stats.location = ''
+    waveform = tmp_path / 'empty_location.mseed'
+    original.write(str(waveform), format='MSEED', reclen=512)
+    tr, = obspy.read(str(waveform))
+    before = tr.copy()
+    assert tr.stats.location == ''
+
+    associate(tr, records)
+
+    assert tr.stats.geocsv.Location == ''
+    assert tr.stats.geocsv.source_record_index == 1
+    assert all(tr.stats[key] == value for key, value in before.stats.items())
+    np.testing.assert_array_equal(tr.data, before.data)
 
 
 def test_ambiguous_and_absent_matches(records):
