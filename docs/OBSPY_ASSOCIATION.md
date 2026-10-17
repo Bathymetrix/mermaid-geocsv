@@ -204,10 +204,10 @@ correction nor an uncertainty estimate and is not recomputed after later
 waveform changes. Both original timestamps remain unchanged.
 
 Initial association is limited to the following existing waveform attributes
-and coordinate convention. The reserved optional SAC projection will populate the geographic headers
-specified below; the prototype currently raises `NotImplementedError` when
-`project_sac=True`. It does not fill response, rotation,
-or other format/analysis headers.
+and coordinate convention. SAC projection is deferred; there is no SAC
+keyword or placeholder in the current associator. The geographic mapping
+below is retained for future implementation. The associator does not fill
+response, rotation, or other format/analysis headers.
 
 | Attribute | Initial association responsibility |
 | --- | --- |
@@ -241,9 +241,9 @@ and expressed in compatible declared units. Missing either raises. No partial
 or elevation-only operational container is created. Source missingness in
 other fields remains faithfully attached under `stats.geocsv`.
 
-Every requested destination container must be absent: `stats.geocsv` and
-`stats.coordinates`, plus `stats.sac` when SAC projection is requested. Even
-an empty or apparently equivalent container raises. Nothing is merged,
+Both destination containers must be absent: `stats.geocsv` and
+`stats.coordinates`. Even an empty or apparently equivalent destination
+container raises. Existing `stats.sac` headers are left untouched. Nothing is merged,
 overwritten, or deleted. All requested projections start fresh and use only
 the matched record, provenance, and documented conventions. There are no
 per-field missing-data options; the former `missing_coordinates` argument has
@@ -257,8 +257,8 @@ GeoCSV values to repair a mismatch. All checks finish before any batch mutation.
 ### Adopted vertical reference and approximate depth
 
 For the initial marine MERMAID workflow, use a constant sea-level reference:
-`stats.coordinates.elevation = 0.0` and, when SAC projection is requested,
-`stats.sac.stel = 0.0`. This is an explicit application convention consistent
+`stats.coordinates.elevation = 0.0` and, for the deferred SAC projection,
+plan `stats.sac.stel = 0.0`. This is an explicit application convention consistent
 with automaid, not an elevation observation or an inference from a missing
 GeoCSV `Elevation`. It refers to the sea surface, not the submerged sensor's
 physical elevation. No geoid model, ellipsoid transformation, tidal correction,
@@ -307,19 +307,18 @@ Receiver depth belongs in `stdp`, not seismic-source depth `evdp`.
 
 Until further instruction, MiniSEED-derived traces are the only development
 target for association. The paired SAC files are independent output references,
-not association inputs. The intended promoted workflow is:
+not association inputs. Projection remains future work; its eventual interface
+has not been chosen. The intended sequence is:
 
-```python
-records = geocsv.read(geocsv_path)
-tr = obspy.read(mseed_path)[0]
-geocsv.associate(tr, records, project_sac=True)  # Planned package API.
-reference = obspy.read(sac_path)[0]
-# Compare agreed projected keys: tr.stats.sac[key] vs reference.stats.sac[key].
+```text
+read MiniSEED -> associate GeoCSV -> project approved SAC fields (future)
+-> compare those keys against a separately read paired SAC reference
 ```
 
-The current sandbox still reserves `project_sac=True` with NotImplementedError;
-this clarification does not implement it or expose the package API. Reference
-SAC headers are consulted only after association/projection and never used
+The unused `project_sac` keyword and placeholder were removed on 2026-10-16;
+this does not implement projection or expose the package API. See the
+[future-work reminder](FUTURE.md#project-associated-metadata-into-sac-headers).
+Reference SAC headers are consulted only after association/projection and never used
 as fallback source metadata or matching hints. Define the comparison's field
 coverage, units, missingness, and float32/formatting precision. GeoCSV does not
 describe every inherited SAC header, so key-by-key comparison covers approved
@@ -395,7 +394,7 @@ and [SAC format](https://ds.iris.edu/files/sac-manual/manual/file_format.html).
 The geographic projection above is agreed; remaining entries are candidate
 destinations, not an approved slot allocation. Core waveform fields are
 checked during association, rather than overwritten. SAC projection is
-optional, not a default attachment destination.
+deferred and is not an attachment destination of the current associator.
 
 | GeoCSV field | Existing destination | Fit and qualification |
 | --- | --- | --- |
@@ -673,7 +672,7 @@ remain open. The opt-in below adopts a location without resolving that provenanc
 from associate import associate  # sandbox/obspy_association on the import path
 
 records = geocsv.read("geo_DET_REQ.csv")
-associate(tr, records, project_sac=False, allow_merge=False, time_tolerance=0.001)
+associate(tr, records, allow_merge=False, time_tolerance=0.001)
 associate(st, records, allow_merge=True, time_tolerance=0.001)  # Exact coverage required.
 ```
 
@@ -707,13 +706,14 @@ they are not recomputed after subsequent ObsPy operations. See the
 The prototype preserves the ten native core Stats fields, MiniSEED format
 metadata, waveform samples, and any existing processing history. It adds no
 processing entry. It requires absent destination containers and complete source
-coordinates, with no warning/skip/overwrite switches. Optional SAC projection
-is reserved and explicitly unimplemented. See the
+coordinates, with no warning/skip/overwrite switches. SAC projection is
+deferred without a placeholder argument. See the
 [Stats reference](OBSPY_STATS_REFERENCE.md) for core defaults versus extras.
 
 The [rebuilt fixture audit](../data/fixtures/association/README.md) covers 18
-paired examples from the six observed naming combinations and their 14 full
-GeoCSV histories. Tests exercise multi-float streams, ambiguity, atomic batch
+paired examples from the six observed naming combinations and their 14 tracked
+GeoCSV subsets; complete histories remain optional corpus references.
+Tests exercise multi-float streams, ambiguity, atomic batch
 failure, count/rate mismatches, timezone equivalence, missing coordinates,
 unit validation, and quality preservation.
 
@@ -753,7 +753,7 @@ Related metadata must be interpreted together:
 | Waveform identity | Network, station, location, channel; missing codes are not wildcards. |
 | Sample timing/coverage | Start time, sample count, sample rate (or delta), and endpoint convention; endtime is derived. |
 | Orientation | Azimuth plus dip/incidence, units, and SEED versus SAC angle convention. No orientation projection is implemented. |
-| Pressure-derived depth | Pressure, pressure units, and adopted pressure/depth and vertical-reference conventions; optional SAC projection remains reserved. |
+| Pressure-derived depth | Pressure, pressure units, and adopted pressure/depth and vertical-reference conventions; SAC projection remains deferred without a placeholder argument. |
 | Calibration/response | Scaling or response values plus input/output units and the relevant response definition; a URL alone supplies no ObsPy Response. |
 | Clock correction | Correction value, seconds units, and whether it was already applied; association never applies it again. |
 | Provenance | Source path, record index, and dataset metadata together; an index alone does not identify a source row. |

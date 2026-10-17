@@ -13,7 +13,7 @@ references only: read them separately with ObsPy, then compare their inherited
 `stats.sac` values key-by-key against approved SAC fields projected onto the
 MiniSEED traces after GeoCSV association. Never use SAC reference headers to
 fill or match association metadata. SAC-input association is outside scope
-until further instruction; the optional output projection remains reserved.
+until further instruction; SAC output projection remains deferred without a placeholder argument.
 
 Complete `geo_DET_REQ.csv` histories remain unchanged, local, and Git-ignored.
 They are optional corpus references, not test prerequisites. To restore and

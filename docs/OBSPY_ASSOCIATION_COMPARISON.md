@@ -42,7 +42,7 @@ Neither operation substitutes for the other.
 | Quality | MiniSEED Q/D/M is not in the grouping ID. | Retains source `DataQuality` separately from waveform quality; neither is a match filter. |
 | Mutation/result | Changes Stream/traces; returns `self`; no transaction guarantee. | Validates the full batch before attaching metadata; returns `None`. |
 | History | Merge itself appends no `stats.processing` entry. | Preserves existing processing history; records initial association provenance separately. |
-| SAC | Existing headers can be inherited without general reconciliation. | `project_sac=False`; `True` is reserved and raises before mutation. SAC inputs remain outside development scope. |
+| SAC | Existing headers can be inherited without general reconciliation. | SAC projection is deferred with no placeholder argument; existing SAC headers remain untouched. SAC inputs remain outside development scope. |
 
 The source row's names (`StartTime`, `SampleRate`, `SampleCount`, etc.) remain
 raw GeoCSV column names under `stats.geocsv`. Differences from core Stats
@@ -135,13 +135,13 @@ focused examples/tests, and reStructuredText API parameter documentation.
 Its reference semantics and method return values must be inspected per
 operation; even `merge`'s prose disagrees with its return statement.
 
-| Candidate | Recommendation; no change made |
+| Candidate | Recommendation and current status |
 | --- | --- |
 | `time_tolerance` | Keep the seconds meaning explicit. `starttime_tolerance` could make its scope clearer if later renamed; do not borrow `misalignment_threshold` for the present semantics. |
 | `allow_merge` | Discuss a name reflecting permission to use the first segment's metadata, rather than waveform manipulation. |
 | `SAMPLE_RATE_TOLERANCE_HZ` | Its unit is explicit. There is no matching merge parameter to imitate; the provisional scientific criterion needs review before any public exposure. |
 | `waveforms`, `records` | Reasonable descriptive standalone-function names. Moving into a method or ObsPy package is a separate ownership/API decision. |
-| `project_sac` | An explicit projection boundary, with no equivalent merge option. Keep its reserved status visible. |
+| SAC projection | The unused `project_sac` option was removed on 2026-10-16. Keep the projection plan in future-work notes until implemented. |
 | Return `None` versus `self` | ObsPy merge supports chaining. Changing our return contract could be considered separately; a name cleanup does not justify it automatically. |
 | Raw source names versus Stats names | Preserve raw columns and deliberate projections; never mechanically rename source metadata to resemble Stats. |
 

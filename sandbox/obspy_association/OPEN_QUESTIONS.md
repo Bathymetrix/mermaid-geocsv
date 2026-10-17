@@ -54,7 +54,7 @@ remain open.
    `stats.geocsv`, plus immutable dataset metadata, source record index, and
    dataset index. It requires every requested destination container to be absent;
    it preserves processing history without adding an entry. Package promotion
-   and the reserved SAC projection remain open.
+   and the deferred SAC projection remain open; no SAC placeholder argument is kept.
 8. **Verify the rebuilt processed dataset:** a newly added DET.WLT2 fixture
    reads as 2.5 Hz, location 10, quality Q, so DET is not limited to WLT5 / 20
    Hz. Automaid's quality assignment is stream-based: DET Q, REQ D, independent

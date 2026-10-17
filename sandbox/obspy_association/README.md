@@ -79,7 +79,7 @@ Develop association for MiniSEED-derived traces only until further instruction.
 Paired SAC files are read separately as output references for later key-by-key
 checks of `stats.sac` projected onto associated MiniSEED traces. Their inherited
 headers never supply association inputs or defaults. SAC-input association
-is outside scope; optional SAC output projection remains reserved.
+is outside scope; SAC output projection remains deferred.
 
 The sandbox now implements `associate` for an original processed `Trace` or
 `Stream`. The public reader API is unchanged. `$MERMAID/processed/` is the
@@ -97,7 +97,7 @@ from associate import associate
 
 st = read("/path/to/original.MER.DET.WLT5.mseed")
 records = geocsv.read("/path/to/geo_DET_REQ.csv")
-associate(st, records, project_sac=False, allow_merge=False, time_tolerance=0.001)
+associate(st, records, allow_merge=False, time_tolerance=0.001)
 tr = st[0]
 print(tr.stats.geocsv.Latitude)
 print(tr.stats.geocsv.source_record_index)
@@ -157,9 +157,9 @@ count, and rate checks. Multiple eligible rows remain an error, while multiple
 traces may independently match the same row. Every trace receives fresh
 attachment and coordinate containers after the entire batch validates.
 
-`project_sac=True` currently raises `NotImplementedError` before any mutation.
-The future geographic projection is stla/stlo, stel=0, and approximately
-stdp=WaterPressure[mbar]/100, as described in the architecture notes.
+SAC projection is deferred; no SAC keyword or placeholder is accepted.
+The [future-work reminder](../../docs/FUTURE.md#project-associated-metadata-into-sac-headers)
+retains the planned geographic mapping and independent SAC comparison workflow.
 
 `collect_processed_examples.py` is the reproducible sampling script; it writes
 only a new repository fixture directory and refuses to overwrite one. It
@@ -172,8 +172,8 @@ files. `check_full_histories.py` separately verifies their verbatim extraction
 and all 18 sampled matches against complete local histories.
 
 Coordinate projection requires a complete source latitude/longitude pair.
-Missing either raises. `stats.geocsv` and `stats.coordinates` must be absent;
-when SAC projection is requested, `stats.sac` must also be absent. No merge,
+Missing either raises. `stats.geocsv` and `stats.coordinates` must be absent.
+Existing `stats.sac` headers are left untouched. No merge,
 overwrite, deletion, or per-field missing-data options are provided. Reference
 elevation 0 is supplied only with a valid source pair. Native waveform fields
 are validated and preserved, never filled or relabeled from GeoCSV.

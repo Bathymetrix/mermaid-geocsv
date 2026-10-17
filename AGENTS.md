@@ -114,7 +114,10 @@ SAC trace read separately by ObsPy. Define field coverage, units, missing-value
 conventions, and numeric precision for the comparisons. Do not promise whole
 SAC-header equivalence for fields without a GeoCSV source or agreed mapping.
 Supporting association of SAC-derived input traces is outside current scope;
-creating SAC headers on associated MiniSEED traces is in scope.
+creating SAC headers on associated MiniSEED traces is deferred planned work.
+The unused `project_sac` option was removed on 2026-10-16 before package
+exposure. Keep the mapping and comparison plan in `docs/FUTURE.md`; do not
+reserve an unimplemented argument in the current associator.
 
 ### Automaid Source Reference
 
@@ -135,8 +138,9 @@ Populate association metadata only from that trace's uniquely matched source
 record, its dataset provenance, and explicitly documented projection rules
 (such as the adopted sea-level reference). Never use an earlier match or
 pre-existing trace metadata to fill missing source values. Requested destination
-containers (`stats.geocsv`, `stats.coordinates`, and `stats.sac` when requested)
-must be absent, even if empty or apparently equivalent; otherwise raise. Never
+containers (`stats.geocsv` and `stats.coordinates`) must be absent, even if
+empty or apparently equivalent; otherwise raise. Future `stats.sac`
+projections must follow the same rule. Never
 merge, overwrite, or delete existing destinations. Required groups, including
 latitude/longitude pairs, must be complete or raise; do not introduce per-field
 missing-data policy switches. Apply this rule to all association-owned fields,

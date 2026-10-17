@@ -31,6 +31,8 @@ any trace is modified.
 Source preflight rejects invalid event identities and duplicate full matching
 keys. Only Location may be empty; no SNCL field may be missing. All trace
 matches validate before projections or mutation.
+SAC projection is deferred and has no placeholder argument; its planned scope
+is recorded in [future workflows](docs/FUTURE.md#project-associated-metadata-into-sac-headers).
 See the [merged-trace policy](docs/OBSPY_MERGED_TRACES.md) for checks and limits.
 Real-data association tests run from tracked files without restoring full
 histories. See the [current audit and next steps](audits/05.md) for the

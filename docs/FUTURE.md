@@ -20,9 +20,10 @@ incidental structure from the legacy script.
 
 ## Fetch the latest GeoCSV
 
-Add a way to retrieve the latest GeoCSV metadata for an instrument from the
-EarthScope MDA using its instrument identifier, such as `P0006`. A possible
-interface is `geocsv.fetch(instrument_id)`. Decide whether it returns downloaded
+Initially, keep fetching simple: retrieve GeoCSV metadata for an instrument
+from the author's website, [bathymetrix.com](https://bathymetrix.com), at a
+location TBD. A possible interface is `geocsv.fetch(instrument_id)`, using an
+identifier such as `P0006`. Decide whether it returns downloaded
 content, a local path, parsed tables, or supports more than one of these; also
 decide whether fetching and parsing can be combined with `geocsv.read`.
 
@@ -48,3 +49,19 @@ ambiguous matches visible rather than silently choosing a row.
 The intended workflow may connect fetching, reading, and association, but each
 step should remain usable on its own. These notes do not change the current
 `geocsv.read` interface or behavior.
+
+## Project associated metadata into SAC headers
+
+SAC projection remains planned work. The unused `project_sac` keyword and its
+`NotImplementedError` placeholder were removed from the sandbox associator on
+2026-10-16 before package exposure; no SAC option is currently accepted.
+
+Retain the intended sequence: read MiniSEED, associate GeoCSV, project approved
+fields into fresh `stats.sac`, then compare those keys with the paired SAC file
+read independently. The planned geographic mapping is `stla`/`stlo` from
+receiver coordinates, `stel=0` for the adopted sea-level reference, and
+approximate `stdp=WaterPressure[mbar]/100`. Confirm field coverage, missing
+pressure handling, units, comparison precision, and first-segment scope before
+implementing it. SAC references must never supply matching inputs or fill
+missing source metadata. See the [SAC projection notes](OBSPY_ASSOCIATION.md#optional-sac-projection)
+and [merged-trace qualifications](OBSPY_MERGED_TRACES.md#source-metadata-remains-anchor-metadata).

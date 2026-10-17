@@ -250,11 +250,3 @@ def test_bad_rate_units_are_rejected(subsets):
     with pytest.raises(ValueError, match="SampleRate requires declared units hertz"):
         associate(trace, [frame], time_tolerance=0.001)
     assert "geocsv" not in trace.stats
-
-
-def test_sac_option_is_explicitly_unimplemented(subsets):
-    trace = load_trace()
-    before = deepcopy(trace.stats)
-    with pytest.raises(NotImplementedError, match="SAC projection"):
-        associate(trace, subsets[EXAMPLES[0]["geocsv"]], project_sac=True, time_tolerance=0.001)
-    assert trace.stats == before

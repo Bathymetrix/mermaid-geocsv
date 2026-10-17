@@ -167,7 +167,9 @@ mutation, retains a row/provenance snapshot under `stats.geocsv`, and preserves
 waveform core fields. Its time criterion is equal UTC millisecond bins, its
 original sample count criterion is exact, and the provisional rate criterion
 is 0.01 Hz. Quality is retained separately rather than used to select matches.
-Optional SAC projection is an explicit `NotImplementedError` placeholder.
+At that stage, optional SAC projection was an explicit `NotImplementedError`
+placeholder. The unused keyword and placeholder were removed on 2026-10-16;
+projection remains in the [future-work plan](../../docs/FUTURE.md#project-associated-metadata-into-sac-headers).
 
 ## Original July 13 waveforms, 2026-10-15
 

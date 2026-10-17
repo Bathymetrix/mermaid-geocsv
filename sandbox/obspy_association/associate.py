@@ -20,10 +20,6 @@ IDENTITY = {"Network": "network", "Station": "station",
 SAMPLE_RATE_TOLERANCE_HZ = 0.01  # Provisional; revisit against MER timing precision.
 
 
-def _project_sac():
-    raise NotImplementedError("SAC projection is reserved but not implemented")
-
-
 def _invalid_identity_fields(codes):
     """Only Location may be a known empty string; missing codes are invalid."""
     return [field for field, code in zip(IDENTITY, codes)
@@ -111,17 +107,16 @@ def _validate_merged_coverage(trace, datasets, tolerance_ns):
                          f"after overlap removal; requires exactly npts={trace.stats.npts}")
 
 
-def associate(waveforms, records, *, project_sac=False, time_tolerance=0.0001,
-              allow_merge=False):
+def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
     """Associate a Trace or Stream with event rows returned by geocsv.read.
 
     Validate all matches before modifying any trace; return None. By default require exact
     SNCL, UTC times within 100 microseconds by default, exact
     sample count, and rate difference <= 0.01 Hz. Waveform core fields remain
     authoritative. Quality is retained separately and is not a match filter.
-    Guarantees end at initial association. ``project_sac=True`` is reserved.
+    Guarantees end at initial association. SAC projection is deferred.
     Missing Latitude or Longitude fails. Destination containers must be absent:
-    geocsv, coordinates, and sac when requested. Nothing is merged or overwritten.
+    geocsv and coordinates. Nothing is merged or overwritten.
     Source columns must not collide with association keys or attributes and
     methods of the ObsPy AttribDict used for stats.geocsv.
     Only Location may be a known empty string; no SNCL field may be missing.
@@ -151,15 +146,11 @@ def associate(waveforms, records, *, project_sac=False, time_tolerance=0.0001,
     else:
         raise TypeError("waveforms must be an ObsPy Trace or Stream")
 
-    destinations = ("geocsv", "coordinates", "sac") if project_sac else ("geocsv", "coordinates")
     for trace in traces:
-        for key in destinations:
+        for key in ("geocsv", "coordinates"):
             if key in trace.stats:
                 raise ValueError(f"{trace.id}: stats.{key} already exists; "
                                  "association requires absent destination containers")
-    if project_sac:
-        _project_sac()
-
     datasets = []
     seen_events = {}
     required = set(IDENTITY) | {"MethodIdentifier", "StartTime", "SampleRate",

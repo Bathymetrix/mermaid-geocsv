@@ -4,6 +4,15 @@ Audit performed 2026-10-14 against the sandbox `associate.py`. This records
 findings before remediation and their dispositions; the function remains an
 experimental sandbox interface, not an exposed package API.
 
+## SAC placeholder removal, 2026-10-16
+
+Version 0.14.1 removes the unused `project_sac` argument and its
+`NotImplementedError` placeholder from the sandbox associator. The historical
+sections below describe the former option. SAC projection remains deferred
+work, recorded in [future workflows](FUTURE.md#project-associated-metadata-into-sac-headers);
+the mapping and independent comparison plan are retained. No package API is
+exposed by this removal.
+
 ## Portable real-data verification update, 2026-10-16
 
 The [current repository audit](../audits/05.md) supersedes the historical

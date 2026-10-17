@@ -62,19 +62,18 @@ def test_missing_pair_does_not_partially_modify_stream(records):
     assert [tr.stats for tr in st] == before
 
 
-@pytest.mark.parametrize('key,value,project_sac', [
-    ('geocsv', {}, False), ('geocsv', None, False),
-    ('coordinates', {}, False),
-    ('coordinates', {'latitude': 10., 'longitude': 20., 'elevation': 0.}, False),
-    ('coordinates', {'latitude': -80.}, False),
-    ('sac', {}, True),
+@pytest.mark.parametrize('key,value', [
+    ('geocsv', {}), ('geocsv', None),
+    ('coordinates', {}),
+    ('coordinates', {'latitude': 10., 'longitude': 20., 'elevation': 0.}),
+    ('coordinates', {'latitude': -80.}),
 ])
-def test_existing_destinations_fail_without_mutation(key, value, project_sac, records):
+def test_existing_destinations_fail_without_mutation(key, value, records):
     tr = trace()
     tr.stats[key] = value
     before = deepcopy(tr.stats)
     with pytest.raises(ValueError, match=f'stats.{key} already exists'):
-        associate(tr, records, project_sac=project_sac)
+        associate(tr, records)
     assert tr.stats == before
 
 
@@ -212,7 +211,7 @@ def test_all_matches_preflight_before_coordinate_projection(records):
         np.testing.assert_array_equal(tr.data, original.data)
 
 
-def test_unrequested_sac_projection_does_not_touch_existing_headers(records):
+def test_association_does_not_touch_existing_sac_headers(records):
     tr = trace()
     tr.stats.sac = {'unrelated': 'leave untouched'}
     before = deepcopy(tr.stats.sac)
