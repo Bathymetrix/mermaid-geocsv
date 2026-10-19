@@ -1,7 +1,7 @@
 # ObsPy association sandbox
 
-Retrieval examples and an experimental association prototype. The reader
-package API remains unchanged; the prototype contract is described below.
+Retrieval examples and source-corpus checks for `geocsv.associate`, exposed in
+version 0.15.0. The public association contract is described below.
 Run from the repository root with an environment containing this package and
 ObsPy. Downloaded responses go under ignored `downloads/`.
 
@@ -81,23 +81,24 @@ checks of `stats.sac` projected onto associated MiniSEED traces. Their inherited
 headers never supply association inputs or defaults. SAC-input association
 is outside scope; SAC output projection remains deferred.
 
-The sandbox now implements `associate` for an original processed `Trace` or
-`Stream`. The public reader API is unchanged. `$MERMAID/processed/` is the
+The package exposes `geocsv.associate` for an original processed `Trace` or
+`Stream`; its implementation has moved out of this sandbox. See the public
+[association tutorial](../../docs/ASSOCIATION_TUTORIAL.md) and its
+[notebook](../../docs/ASSOCIATION_TUTORIAL.ipynb). `$MERMAID/processed/` is the
 canonical read-only source: never modify it without express instruction.
 Its float directories supply paired waveforms and complete GeoCSV histories.
 Tracked subsets make real-data tests independent of those full histories.
 See the [fixture inventory and audit](../../data/fixtures/association/README.md).
 
-From this sandbox directory (with the repository environment installed):
+With the package and its ObsPy extra installed:
 
 ```python
 from obspy import read
 from mermaid import geocsv
-from associate import associate
 
 st = read("/path/to/original.MER.DET.WLT5.mseed")
 records = geocsv.read("/path/to/geo_DET_REQ.csv")
-associate(st, records, allow_merge=False, time_tolerance=0.001)
+geocsv.associate(st, records, allow_merge=False, time_tolerance=0.001)
 tr = st[0]
 print(tr.stats.geocsv.Latitude)
 print(tr.stats.geocsv.source_record_index)
@@ -193,5 +194,5 @@ generic GeoCSV input and does not define matching tolerance.
 Tracked synthetic examples in `tests/fixtures/association/` exercise the
 adapter's matching rules on CI. Small tracked real-data subsets also run on
 CI; full local histories remain optional corpus references. See the
-[current audit and Monday next steps](../../audits/05.md) and the
+[pre-promotion audit](../../audits/05.md) and the
 [historical adversarial audit](../../docs/OBSPY_ASSOCIATION_AUDIT.md).

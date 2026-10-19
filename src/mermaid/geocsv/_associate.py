@@ -1,7 +1,4 @@
-"""Experimental in-memory association for original processed MERMAID traces.
-
-This sandbox interface is not yet part of ``mermaid.geocsv``'s public API.
-"""
+"""In-memory association for original processed MERMAID traces."""
 
 from bisect import bisect_left, bisect_right
 from decimal import Decimal, InvalidOperation
@@ -12,7 +9,7 @@ from obspy.core.util import AttribDict
 import numpy as np
 import pandas as pd
 
-from mermaid.geocsv import GeoCSVMetadata
+from .read import GeoCSVMetadata
 
 
 IDENTITY = {"Network": "network", "Station": "station",

@@ -1,7 +1,9 @@
 # Associating GeoCSV records with ObsPy traces
 
-Architecture notes, updated 2026-10-15. A sandbox prototype now implements
-the initial association contract below; it is not a committed package API.
+Architecture notes, initially updated 2026-10-15. Version 0.15.0 promotes the
+implemented contract to `geocsv.associate`; see the
+[association tutorial](ASSOCIATION_TUTORIAL.md) for the public API. Earlier
+proposals below remain design history where explicitly marked as such.
 
 ## Starting point
 
@@ -168,7 +170,8 @@ not an independent check. This association does not recalculate sampling rates.
 ## Agreed boundary: initial association
 
 The agreed design boundary is: **our guarantee ends at initial association;
-subsequent behavior is governed by ObsPy**. This is implemented in the sandbox, without establishing a public package API.
+subsequent behavior is governed by ObsPy**. This is the public
+`geocsv.associate` contract as of version 0.15.0.
 
 An associated original downloaded trace receives `stats.geocsv` from the
 matched row returned by `geocsv.read`. The initial eligible category is
@@ -182,7 +185,8 @@ first association scope. Do not hard-code one producer version.
 The attachment retains the parsed row's source names, values, and missingness.
 It also needs the row's `source_record_index` and dataset metadata from
 `frame.attrs["geocsv"]`, including units and source path. Dataset metadata
-alone is not the matched row. The sandbox stores the row's original columns directly under an ObsPy
+alone is not the matched row. Association stores the row's original columns
+directly under an ObsPy
 `AttribDict` at `stats.geocsv`, with `source_record_index`, `dataset_index`
 (the index in the supplied records list), and `metadata` (the original
 immutable `GeoCSVMetadata`), plus `association` (`one_segment` or
@@ -247,7 +251,7 @@ container raises. Existing `stats.sac` headers are left untouched. Nothing is me
 overwritten, or deleted. All requested projections start fresh and use only
 the matched record, provenance, and documented conventions. There are no
 per-field missing-data options; the former `missing_coordinates` argument has
-been removed from this experimental sandbox interface.
+been removed before public package exposure.
 
 This strict destination rule is separate from validation of native waveform
 fields. Existing MiniSEED SNCL, timing, rate, count, and calibration remain
@@ -316,7 +320,8 @@ read MiniSEED -> associate GeoCSV -> project approved SAC fields (future)
 ```
 
 The unused `project_sac` keyword and placeholder were removed on 2026-10-16;
-this does not implement projection or expose the package API. See the
+that removal did not implement projection. Package exposure in 0.15.0 keeps
+SAC projection deferred. See the
 [future-work reminder](FUTURE.md#project-associated-metadata-into-sac-headers).
 Reference SAC headers are consulted only after association/projection and never used
 as fallback source metadata or matching hints. Define the comparison's field
@@ -433,7 +438,8 @@ Putting them in `userN` does not remove the custom semantics. Decide whether
 to retain their exact parsed values as well, especially if SAC round-trip
 precision matters. Retaining the complete matched record is the simplest
 self-contained option; retaining only residual fields is the smaller option
-when callers keep the original tables. The sandbox retains the complete matched record as described above.
+when callers keep the original tables. The public associator retains the
+complete matched record as described above.
 
 ### Reviewing the automaid example
 
@@ -643,7 +649,7 @@ not justified solely by this small operation.
 Keep ObsPy optional if the adapter lives here, so GeoCSV parsing remains
 lightweight. Do not add a dependency or change `read` during planning.
 
-## Implemented sandbox API
+## Implemented public API
 
 ### Source identity, repeated requests, and location
 
@@ -669,11 +675,11 @@ remain open. The opt-in below adopts a location without resolving that provenanc
 ### Call contract
 
 ```python
-from associate import associate  # sandbox/obspy_association on the import path
+from mermaid import geocsv
 
 records = geocsv.read("geo_DET_REQ.csv")
-associate(tr, records, allow_merge=False, time_tolerance=0.001)
-associate(st, records, allow_merge=True, time_tolerance=0.001)  # Exact coverage required.
+geocsv.associate(tr, records, allow_merge=False, time_tolerance=0.001)
+geocsv.associate(st, records, allow_merge=True, time_tolerance=0.001)  # Exact coverage required.
 ```
 
 `associate` accepts one `Trace` or a `Stream`, mutates supplied traces in place,
@@ -703,7 +709,7 @@ performs no waveform merge. These labels describe the initial association;
 they are not recomputed after subsequent ObsPy operations. See the
 [merged-trace policy](OBSPY_MERGED_TRACES.md) for evidence and limitations.
 
-The prototype preserves the ten native core Stats fields, MiniSEED format
+The associator preserves the ten native core Stats fields, MiniSEED format
 metadata, waveform samples, and any existing processing history. It adds no
 processing entry. It requires absent destination containers and complete source
 coordinates, with no warning/skip/overwrite switches. SAC projection is
@@ -717,8 +723,8 @@ Tests exercise multi-float streams, ambiguity, atomic batch
 failure, count/rate mismatches, timezone equivalence, missing coordinates,
 unit validation, and quality preservation.
 
-Remaining decisions: promote this sandbox interface into the package or keep
-it downstream; implement the optional SAC projection; revisit timing and rate
+Remaining decisions: define and implement the optional SAC projection;
+revisit timing and rate
 criteria against more source data; establish policies for trimmed, split,
 or resampled traces and stronger validation of merged coverage. The opt-in
 first-segment policy does not establish full merge provenance.

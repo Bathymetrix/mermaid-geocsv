@@ -10,7 +10,6 @@ from pathlib import Path
 
 from obspy import read
 
-from associate import associate
 from mermaid import geocsv
 
 
@@ -45,7 +44,7 @@ def check():
             if example["geocsv"] != item["path"]:
                 continue
             trace, = read(str(fixtures / example["mseed"]))
-            associate(trace, records, time_tolerance=0.001)
+            geocsv.associate(trace, records, time_tolerance=0.001)
             if (trace.stats.geocsv.dataset_index != 0
                     or trace.stats.geocsv.source_record_index
                     != example["original_source_record_index"]):

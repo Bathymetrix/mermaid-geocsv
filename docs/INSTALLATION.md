@@ -52,14 +52,20 @@ python -m jupyterlab docs/TUTORIAL.ipynb
 
 ## Optional ObsPy support
 
-The optional ObsPy dependency supports the experimental
-[waveform-association sandbox](../sandbox/obspy_association/README.md):
+The optional ObsPy dependency enables `geocsv.associate` for MiniSEED-derived
+traces and streams:
 
 ```bash
 python -m pip install '.[obspy]'
 ```
 
-This adds ObsPy 1.5.1 or newer; it does not introduce an association API.
+This adds ObsPy 1.5.1 or newer. Reader import and use remain independent of
+ObsPy. To run the association notebook, also install the notebook tools above:
 
-See the [pandas tutorial](TUTORIAL.md) for examples and the
+```bash
+python -m jupyterlab docs/ASSOCIATION_TUTORIAL.ipynb
+```
+
+See the [pandas tutorial](TUTORIAL.md), the
+[association tutorial](ASSOCIATION_TUTORIAL.md), and the
 [reader specification](READER_SPEC.md) for API and format details.

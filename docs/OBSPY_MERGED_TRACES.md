@@ -1,6 +1,6 @@
 # Merged EarthScope traces: first-segment location and sample-coverage validation
 
-Implemented in the sandbox, 2026-10-15; not exposed as a public package API.
+Implemented in the sandbox, 2026-10-15; exposed as `geocsv.associate` in 0.15.0.
 The other open questions and audit findings remain open.
 
 ## Motivation and observed example
@@ -127,8 +127,9 @@ references, never association inputs.
 The original many-traces-to-one-row rule remains. The opt-in still chooses
 one location anchor, not several competing source rows. Incomplete-event
 handling and per-call SNCL/time indexing address audit findings 4 and 5;
-package exposure and SAC projection implementation remain separate unfinished
-work.
+Version 0.15.0 exposes the same matching behavior through `geocsv.associate`;
+see the [association tutorial](ASSOCIATION_TUTORIAL.md). SAC projection remains
+unfinished work.
 
 ## Verification
 

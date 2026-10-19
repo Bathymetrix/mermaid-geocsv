@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mermaid-geocsv"
 dynamic = ["version"]
-description = "Read MERMAID GeoCSV files into typed pandas DataFrames."
+description = "Read MERMAID GeoCSV tables and associate event metadata with ObsPy traces."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
@@ -41,5 +41,5 @@ namespaces = true
 version = { attr = "mermaid.geocsv.__version__" }
 
 [tool.pytest.ini_options]
-pythonpath = ["src", "sandbox/obspy_association"]
+pythonpath = ["src"]
 testpaths = ["tests"]

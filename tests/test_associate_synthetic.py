@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 obspy = pytest.importorskip('obspy')
-from associate import associate
+from mermaid.geocsv import associate
 from mermaid import geocsv
 
 FIXTURE = Path(__file__).parent / 'fixtures/association/synthetic.geocsv'

@@ -2,20 +2,21 @@
 
 [![Tests](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml/badge.svg?branch=main&event=push)](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml)
 
-`mermaid-geocsv` reads MERMAID GeoCSV files into typed pandas DataFrames,
-returning one table per dataset. It preserves source column names, record
-order, timestamps and their timezones, and GeoCSV metadata, including units,
-comments, and the source file path.
+`mermaid-geocsv` reads MERMAID GeoCSV files into typed pandas DataFrames and
+associates event metadata with ObsPy waveforms. The reader returns one table
+per dataset and preserves source column names, record order, timestamps and
+their timezones, and GeoCSV metadata, including units, comments, and the source
+file path.
 
 Empty and quoted-empty cells in string-valued `Location` preserve the known
 empty SEED location code `""`; `nan` and declared missing markers remain missing.
 Other columns retain their existing missing-value rules.
 
-An experimental [ObsPy association sandbox](sandbox/obspy_association/README.md)
-attaches parsed event metadata to original processed traces. Its paired
-waveform fixtures and tracked GeoCSV subsets are documented in the
-[rebuilt-source audit](data/fixtures/association/README.md); the adapter is
-not yet part of the package's public API. Strict association is the default;
+`geocsv.associate` attaches parsed event metadata to original MiniSEED-derived
+ObsPy traces in place and returns `None`. Paired waveform fixtures and tracked
+GeoCSV subsets are documented in the
+[fixture inventory](data/fixtures/association/README.md). Strict association is
+the default;
 `allow_merge=True` permits adopting the first segment's location for a longer
 trace. `stats.geocsv.association` records `one_segment` or `first_segment`.
 `stats.geocsv.starttime_difference_seconds` records waveform minus matched
@@ -35,8 +36,11 @@ SAC projection is deferred and has no placeholder argument; its planned scope
 is recorded in [future workflows](docs/FUTURE.md#project-associated-metadata-into-sac-headers).
 See the [merged-trace policy](docs/OBSPY_MERGED_TRACES.md) for checks and limits.
 Real-data association tests run from tracked files without restoring full
-histories. See the [current audit and next steps](audits/05.md) for the
-package-exposure handoff.
+histories. Association requires complete source latitude/longitude in declared
+degrees_north/degrees_east and creates fresh `stats.geocsv` and
+`stats.coordinates` containers, including the adopted sea-level elevation zero.
+Both destinations must be absent. Waveform samples and native headers remain
+unchanged; later waveform processing does not refresh the attachment.
 
 Reader version 0.11.0 also preserves source datetime resolution in immutable
 `frame.attrs["geocsv"].datetime_resolution_ns[column][source_record_index]`
@@ -59,6 +63,14 @@ If `.venv` already exists, activate it and skip the creation step. See the
 [installation guide](docs/INSTALLATION.md) for notebook setup and optional
 ObsPy support.
 
+For association, install the optional ObsPy 1.5.1 or newer dependency:
+
+```bash
+python -m pip install '.[obspy]'
+```
+
+Reader import and use do not load or require ObsPy.
+
 ## Use
 
 ```python
@@ -73,12 +85,37 @@ metadata = records.attrs["geocsv"]
 The reader parses and preserves GeoCSV information; downstream scientific
 analysis remains in pandas or other tools.
 
+Associate an original MiniSEED Trace or Stream with its GeoCSV tables:
+
+```python
+from obspy import read as read_waveforms
+from mermaid import geocsv
+
+stream = read_waveforms("/path/to/original.mseed")
+tables = geocsv.read("/path/to/geo_DET_REQ.csv")
+geocsv.associate(stream, tables, time_tolerance=0.001)
+print(stream[0].stats.coordinates)
+print(stream[0].stats.geocsv.metadata.source_path)
+```
+
+The public signature is `associate(waveforms, records, *,
+time_tolerance=0.0001, allow_merge=False)`. The example explicitly allows 1 ms
+for millisecond-rendered Automaid histories; the default remains 100
+microseconds. Exact SNCL, original sample count, and rates within 0.01 Hz are
+required for a standard match. That rate threshold remains provisional
+scientific policy. No unique match or an invalid projection raises
+`ValueError` before any trace in the batch is modified. Unsupported waveform
+argument types raise `TypeError`; missing ObsPy raises an actionable
+`ImportError`. See the association tutorial for provenance and fallback details.
+
 ## Documentation
 
 - [Reader specification](docs/READER_SPEC.md): Python API, metadata, and
   detailed parsing rules.
 - Pandas tutorial: [Markdown](docs/TUTORIAL.md) or
   [Jupyter notebook](docs/TUTORIAL.ipynb).
+- Association tutorial and API contract: [Markdown](docs/ASSOCIATION_TUTORIAL.md)
+  or [Jupyter notebook](docs/ASSOCIATION_TUTORIAL.ipynb).
 - [Installation guide](docs/INSTALLATION.md): environment and notebook setup.
 - [Open GeoCSV questions](docs/OPEN_QUESTIONS.md): unresolved format details.
 - ObsPy references: [Stats](docs/OBSPY_STATS.md), [Stream and merge](docs/STREAM.md),

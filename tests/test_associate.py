@@ -1,4 +1,4 @@
-"""Verify the sandbox associator with rebuilt, paired waveform fixtures."""
+"""Verify public association with rebuilt, paired waveform fixtures."""
 
 from copy import deepcopy
 import hashlib
@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 obspy = pytest.importorskip("obspy")
-from associate import associate
+from mermaid.geocsv import associate
 from mermaid import geocsv
 
 

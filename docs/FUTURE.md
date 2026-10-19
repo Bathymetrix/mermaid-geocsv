@@ -29,26 +29,16 @@ decide whether fetching and parsing can be combined with `geocsv.read`.
 
 ## Associate GeoCSV metadata with ObsPy traces
 
-See the [ObsPy association discussion](OBSPY_ASSOCIATION.md) for the initial
-architecture proposal, ObsPy conventions, MERMAID matching evidence, and open
-decisions. Its first target is original downloaded traces.
+Implemented in version 0.15.0 as `geocsv.associate(waveforms, records, *,
+time_tolerance=0.0001, allow_merge=False)`, with optional ObsPy support. It
+attaches uniquely matched event metadata and coordinates in place and returns
+`None`. See the [association tutorial](ASSOCIATION_TUTORIAL.md) for the public
+contract and executable examples; the [original discussion](OBSPY_ASSOCIATION.md)
+retains architectural evidence and unresolved archive-lineage questions.
 
-Support users who have downloaded MERMAID waveform data as in-memory ObsPy
-`Trace` or `Stream` objects, but whose traces lack station locations. They
-could fetch the instrument's GeoCSV metadata, parse it with `geocsv.read`, and
-associate the relevant metadata with their traces so downstream tools can use
-location and other station fields.
-
-The association operation might be named `associate`, `tag`, or `map`; settle
-the name and public interface when designing the feature. Important choices
-include how to match traces to metadata, how to handle multiple metadata rows
-or time ranges, and whether to store results in `trace.stats` or return a
-separate mapping or dict-like object. Preserve the source metadata and make
-ambiguous matches visible rather than silently choosing a row.
-
-The intended workflow may connect fetching, reading, and association, but each
-step should remain usable on its own. These notes do not change the current
-`geocsv.read` interface or behavior.
+Fetching may later connect to reading and association, while each step remains
+usable independently. SAC projection and archive reconstruction remain future
+work; package exposure does not add either.
 
 ## Project associated metadata into SAC headers
 

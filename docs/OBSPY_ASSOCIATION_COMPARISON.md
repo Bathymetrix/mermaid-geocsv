@@ -1,9 +1,11 @@
 # ObsPy merging versus the association prototype
 
 Report, 2026-10-16. This is a comparison and API design discussion, not an
-implemented rename or policy change. The association interface remains in
-[`sandbox/obspy_association/associate.py`](../sandbox/obspy_association/associate.py),
-outside the public reader API. ObsPy evidence comes from the local checkout
+implemented rename or policy change. Version 0.15.0 subsequently exposes the
+same behavior as `geocsv.associate`, with its implementation in
+[`_associate.py`](../src/mermaid/geocsv/_associate.py). See the
+[association tutorial](ASSOCIATION_TUTORIAL.md) for the public API.
+ObsPy evidence comes from the local checkout
 at `50033e1daf95233cd4f30e95a49c37fd50be2ccd`; see
 [Stream and merge](STREAM.md) and the verified [Stats survey](OBSPY_STATS.md).
 

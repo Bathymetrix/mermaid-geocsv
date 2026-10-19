@@ -20,6 +20,12 @@ relevant executable methods also match the separately installed ObsPy 1.5.1
 the supplied attachment provenance above. See [Stream merging](STREAM.md)
 for behavior that can leave attached metadata describing an earlier segment.
 
+Rechecked 2026-10-19 for public association exposure against the same checkout
+commit `50033e1daf95233cd4f30e95a49c37fd50be2ccd`, including Stats/AttribDict,
+nearby Stats tests, contribution instructions, and coding style. The
+repository `.venv` separately uses ObsPy 1.5.1. Promotion retains the existing
+matching and projection behavior; it does not add native Stats fields.
+
 ## The ten default Stats attributes
 
 ```python

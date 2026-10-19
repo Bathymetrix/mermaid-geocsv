@@ -190,6 +190,11 @@ immediate public interface, not premature shared cross-repository namespace
 infrastructure.
 
 The intended public Python API is deliberately small and must be documented.
+`geocsv.associate(waveforms, records, *, time_tolerance=0.0001,
+allow_merge=False)` attaches uniquely matched event metadata to an ObsPy Trace
+or Stream in place and returns `None`. ObsPy remains an optional dependency,
+loaded only when association is called. Keep the matching implementation
+private and preserve the scientific contract above.
 `geocsv.read(...)` returns a list of typed pandas `DataFrame` objects, one per
 dataset, including for a single-dataset file. Preserve GeoCSV-specific
 metadata under the single key `frame.attrs["geocsv"]` on each table as one
@@ -237,9 +242,11 @@ do not authorize commits, tags, pushes, or publication.
 
 ## Development and Verification
 
-Keep `docs/TUTORIAL.md` and `docs/TUTORIAL.ipynb` synchronized. Any change to
-explanations, examples, scientific assumptions, or setup instructions in either
-file must be reflected in the other in the same change. Markdown Python blocks
+Keep both tutorial pairs synchronized: `docs/TUTORIAL.md` with
+`docs/TUTORIAL.ipynb` for reading, and `docs/ASSOCIATION_TUTORIAL.md` with
+`docs/ASSOCIATION_TUTORIAL.ipynb` for association. Any change to explanations,
+examples, scientific assumptions, or setup instructions in either file of a
+pair must be reflected in its companion in the same change. Markdown Python blocks
 become executable notebook cells; shell commands remain Markdown instructions.
 Cell boundaries may differ for readable interactive output, but preserve the
 same prose and Python source in the same order. Keep the committed notebook's
