@@ -1,7 +1,18 @@
 # Retrieval observations
 
-Execution evidence will be recorded here, including failures. Do not infer
-EarthScope merging behavior from source inspection alone.
+This document preserves dated execution evidence, including failures,
+originally recorded under `sandbox/obspy_association/OBSERVATIONS.md`. Counts,
+versions, timing rules, and references below describe their recorded runs;
+they are not a statement of today's service behavior or package defaults.
+Do not infer EarthScope merging behavior from source inspection alone.
+
+As of 2026-10-19, `geocsv.associate` is public, uses an explicit fixed time
+tolerance rather than the historical millisecond bins, and has no SAC
+projection placeholder. See the [public tutorial](ASSOCIATION_TUTORIAL.md),
+[open scientific questions](OPEN_QUESTIONS.md#association-scientific-questions),
+and [SAC plan](FUTURE.md#project-associated-metadata-into-sac-headers).
+The [retrieval scripts](../sandbox/obspy_association/README.md) remain in the
+sandbox; their saved responses and logs remain under its ignored `downloads/`.
 
 ## Fixture verification
 
@@ -149,7 +160,7 @@ Editable installation metadata confirms version 0.10.3 and the `obspy` extra.
 43,337 acoustic event MiniSEED files across six naming combinations. We copied
 three random paired SAC/MiniSEED examples for each present combination (18
 pairs), plus verbatim full combined GeoCSV histories for their 14 floats.
-The [fixture inventory](../../data/fixtures/association/README.md) and manifest
+The [fixture inventory](../data/fixtures/association/README.md) and manifest
 record the seed, missing combinations, original source paths, and file hashes.
 
 A read-only audit of all 43,337 source MiniSEED files found no SNCL or
@@ -169,7 +180,7 @@ original sample count criterion is exact, and the provisional rate criterion
 is 0.01 Hz. Quality is retained separately rather than used to select matches.
 At that stage, optional SAC projection was an explicit `NotImplementedError`
 placeholder. The unused keyword and placeholder were removed on 2026-10-16;
-projection remains in the [future-work plan](../../docs/FUTURE.md#project-associated-metadata-into-sac-headers).
+projection remains in the [future-work plan](FUTURE.md#project-associated-metadata-into-sac-headers).
 
 ## Original July 13 waveforms, 2026-10-15
 

@@ -117,7 +117,12 @@ argument types raise `TypeError`; missing ObsPy raises an actionable
 - Association tutorial and API contract: [Markdown](docs/ASSOCIATION_TUTORIAL.md)
   or [Jupyter notebook](docs/ASSOCIATION_TUTORIAL.ipynb).
 - [Installation guide](docs/INSTALLATION.md): environment and notebook setup.
-- [Open GeoCSV questions](docs/OPEN_QUESTIONS.md): unresolved format details.
+- [Open questions](docs/OPEN_QUESTIONS.md): unresolved format and association
+  details; [future workflows](docs/FUTURE.md) tracks planned functionality.
+- [Fixture maintenance](scripts/fixtures/README.md): optional complete-history
+  restoration/checks and initial collection provenance.
+- Scientific context: [MERMAID data quality](docs/MERMAID_DATA_QUALITY.md) and
+  [dated retrieval observations](docs/OBSPY_RETRIEVAL_OBSERVATIONS.md).
 - ObsPy references: [Stats](docs/OBSPY_STATS.md), [Stream and merge](docs/STREAM.md),
   and [comparison with association](docs/OBSPY_ASSOCIATION_COMPARISON.md).
 

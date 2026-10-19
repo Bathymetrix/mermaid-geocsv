@@ -20,8 +20,8 @@ They are optional corpus references, not test prerequisites. To restore and
 check them against the same processed snapshot, from the repository root:
 
 ```bash
-.venv/bin/python sandbox/obspy_association/restore_geocsv_histories.py
-.venv/bin/python sandbox/obspy_association/check_full_histories.py
+.venv/bin/python scripts/fixtures/restore_geocsv_histories.py
+.venv/bin/python scripts/fixtures/check_full_histories.py
 ```
 
 Restoration checks recorded hashes and refuses to replace a different local
@@ -33,12 +33,20 @@ fixture/provenance update.
 
 ## Sampling and provenance
 
-`collect_processed_examples.py` selects up to three paired basenames per
+The initial collection script,
+[`collect_processed_examples.py`](../../../scripts/fixtures/collect_processed_examples.py),
+selects up to three paired basenames per
 DET/REQ × WLT1–WLT5/RAW combination using seed 20261013 and a sorted source
 file inventory. Missing combinations remain explicit zeros. The sampled
 MiniSEED and SAC files preserve the original float/cycle directory layout.
 `manifest.json` records every waveform file, source-relative paths, population
 counts, the seed, and SHA-256 hashes of both waveforms and complete histories.
+
+The script preserves the original sampling procedure, but is not a complete
+regeneration tool: the GeoCSV subsets, expected association indices, and
+header audit below were subsequent additions. It refuses an existing fixture
+destination. See the [maintenance notes](../../../scripts/fixtures/README.md)
+for its historical scope and the current restore/check commands.
 
 For each sampled waveform, the GeoCSV subset retains all same-SNCL event
 rows within 1 ms of its start, irrespective of count or rate, two surrounding

@@ -16,7 +16,7 @@ acquisition (4768 samples, start 09:48:03.139Z); row 238 describes the overlappi
 REQ acquisition (9600 samples, start 09:48:31.908Z). The original files retain
 Q/D distinctions, but the served trace has M. These observations do not prove
 how every served sample was selected or which layer combined the coverage.
-See the [inspection evidence](../sandbox/obspy_association/OBSERVATIONS.md).
+See the [inspection evidence](OBSPY_RETRIEVAL_OBSERVATIONS.md).
 
 The user supplies this practical MERMAID convention: drift over the merged
 waveform is sufficiently small that a new start/end-based position

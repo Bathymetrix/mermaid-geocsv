@@ -1,4 +1,9 @@
-"""Copy a small, reproducible fixture sample from the read-only processed tree."""
+"""Initial 2026-10-13 collection from the read-only processed tree.
+
+Creates the original paired-waveform/full-history snapshot only, not the later
+GeoCSV subsets, expected association indices, or corpus audit. See README.md.
+Refuses an existing fixture destination; never use it to refresh fixtures.
+"""
 
 import hashlib
 import json

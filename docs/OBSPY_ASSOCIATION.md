@@ -22,9 +22,10 @@ The motivating workflow is to attach record-specific station location and
 other metadata to an existing ObsPy `Trace` or `Stream`. The first downstream
 consumer has not yet been selected.
 
-The [retrieval sandbox](../sandbox/obspy_association/README.md) now contains
-live examples and a running TBD list. Its
-[observations](../sandbox/obspy_association/OBSERVATIONS.md) show that service
+The [retrieval sandbox](../sandbox/obspy_association/README.md) contains live
+examples; unresolved work is tracked in the
+[association questions](OPEN_QUESTIONS.md#association-scientific-questions).
+The dated [observations](OBSPY_RETRIEVAL_OBSERVATIONS.md) show that service
 downloaded traces and GeoCSV rows can differ in segmentation, reported
 sampling rates, and quality flags. This does not establish which layer caused
 each difference. The user identifies integer-valued GeoCSV rates in place of
@@ -547,8 +548,8 @@ Proposed first matching policy:
    consistency check, not proof of a unique match. Count and coverage still
    require a rule for combined/split acquisitions. Keep GeoCSV and MiniSEED
    quality indicators separately as stream/archive metadata; they may differ
-   and are not a hard association filter. See the sandbox's
-   [user-supplied data-quality mapping](../sandbox/obspy_association/MERMAID_DATA_QUALITY.md).
+   and are not a hard association filter. See the
+   [user-supplied data-quality mapping](MERMAID_DATA_QUALITY.md).
    ObsPy reads the returned MiniSEED quality flag into
    `stats.mseed.dataquality`; see
    [MiniSEED source](https://docs.obspy.org/_modules/obspy/io/mseed/core.html).
@@ -587,7 +588,8 @@ Determine whether ObsPy changes the value slightly rather than assuming it
 does. GeoCSV rounding alone can obscure differences; the present threshold
 is not a general guarantee that all single-decimal representations will pass.
 Track this in the [reader follow-up](OPEN_QUESTIONS.md#mermaid-sampling-rate-follow-up)
-and the sandbox TBD list. No reader or writer normalization is authorized.
+and the [association questions](OPEN_QUESTIONS.md#association-scientific-questions).
+No reader or writer normalization is authorized.
 
 Inspect all supplied datasets without losing their provenance. Do not require
 a one-to-one relationship: repeated copies of the same waveform may each
@@ -670,7 +672,7 @@ DET Q / REQ D may help distinguish original overlapping streams. That evidence
 can be lost in legacy EarthScope M responses, including when coverage has been
 combined. Quality-based validation and recovery of original contributions
 remain open. The opt-in below adopts a location without resolving that provenance. See the
-[open questions](../sandbox/obspy_association/OPEN_QUESTIONS.md).
+[open questions](OPEN_QUESTIONS.md#association-scientific-questions).
 
 ### Call contract
 

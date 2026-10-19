@@ -40,6 +40,22 @@ Fetching may later connect to reading and association, while each step remains
 usable independently. SAC projection and archive reconstruction remain future
 work; package exposure does not add either.
 
+## Associate transformed archive waveforms
+
+Before extending association to trimmed, split, resampled, or archive-combined
+waveforms, establish how original acquisitions and overlapping sample values
+can be identified. The current `allow_merge=True` option validates exact
+source-grid coverage and adopts a unique first segment's location; it does
+not reconstruct contributions or acquisition lineage. Keep its existing
+contract while investigating stronger evidence.
+
+Use the [open association questions](OPEN_QUESTIONS.md#association-scientific-questions)
+to guide further retrieval comparisons. Decide the supported transformations,
+required provenance, and failure behavior before adding APIs or changing
+matching rules. Quality M alone cannot identify a particular merge. The
+[retrieval sandbox](../sandbox/obspy_association/README.md) remains exploratory,
+separate from the public association implementation.
+
 ## Project associated metadata into SAC headers
 
 SAC projection remains planned work. The unused `project_sac` keyword and its

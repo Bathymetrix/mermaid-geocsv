@@ -90,7 +90,7 @@ particular WLT scale. The rebuilt processed inventory contains DET.WLT2 and
 DET.WLT5. DET.WLT1, DET.WLT3, DET.WLT4, and DET.RAW are code-permitted but
 absent from that inventory. REQ.WLT3, REQ.WLT4, REQ.WLT5, and REQ.RAW are
 present; REQ.WLT1 and REQ.WLT2 are absent. See the
-[rebuilt fixture audit](../../data/fixtures/association/README.md). The local
+[rebuilt fixture audit](../data/fixtures/association/README.md). The local
 `.REQ.RAW` examples are requested event products, not the continuous
 raw-buffer stream. Preliminary-position products may insert `.prelim` before
 `.mseed` or `.sac`.
@@ -160,7 +160,7 @@ quality indicators to `M` when records may have been modified by facility
 processing; old `M` records remain M. `M` does not prove a specific trace
 was combined from multiple source files. See
 [EarthScope archive changes](https://www.earthscope.org/news/miniseed-archiving-and-distribution-changes/)
-and the [sandbox retrieval observations](OBSERVATIONS.md).
+and the [dated retrieval observations](OBSPY_RETRIEVAL_OBSERVATIONS.md).
 
 ## Items to verify before treating this as a formal specification
 

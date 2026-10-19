@@ -197,7 +197,7 @@ multiple rows for the core metadata considered here. Repeated identical REQ
 files were inspected and successfully mapped to the same rebuilt GeoCSV row.
 Position is interpolated at the first sample time, regardless of request date
 or sample length. `SampleCount` already supplies the proposed NPTS check.
-See the [original-file evidence](../sandbox/obspy_association/OBSERVATIONS.md#original-july-13-waveforms-2026-10-15).
+See the [original-file evidence](OBSPY_RETRIEVAL_OBSERVATIONS.md#original-july-13-waveforms-2026-10-15).
 
 These clarifications do not finish this audit or resolve findings 4 and 5.
 In particular, legacy EarthScope M responses may lose DET Q / REQ D evidence

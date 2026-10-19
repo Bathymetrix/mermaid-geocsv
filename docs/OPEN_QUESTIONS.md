@@ -1,10 +1,13 @@
-# Open GeoCSV questions
+# Open GeoCSV and association questions
 
-Reviewed 2026-10-07 with reader version 0.10.2. All questions below are open.
+Format questions reviewed 2026-10-07 with reader version 0.10.2. Association
+questions consolidated from the sandbox notes on 2026-10-19. The questions
+remain open; descriptions of settled behavior provide context.
 
-This document collects format questions raised while implementing the reader.
+This document collects format questions raised while implementing the reader
+and separate scientific questions about waveform association.
 The [reader specification](READER_SPEC.md) describes what this package does
-today; the behavior below is provisional where the
+today; the format behavior below is provisional where the
 [GeoCSV v2.0.4 specification](references/GeoCSV_v2.0.4.pdf) is silent or does
 not settle interoperability. An open question here is not a claim that the
 current reader is correct for every GeoCSV producer.
@@ -146,9 +149,17 @@ Added 2026-10-08 during ObsPy association planning. This is a scientific-data
 follow-up, separate from the GeoCSV specification questions above.
 
 The user reports that raw MER files quote sampling timing at microsecond
-precision, but its trustworthiness is uncertain. The current GeoCSV writer
-emits single-decimal sampling rates. Establish the precise raw quantity,
-units, and encoding before treating that precision as reliable.
+precision, but its trustworthiness is uncertain. At the start of association
+planning, the supplied GeoCSV output used single-decimal sampling rates,
+including integer-valued rates where measured rates were intended. Establish
+the precise raw quantity, units, and encoding before treating that precision
+as reliable.
+
+The rebuilt processed snapshot later supplied measured rates to six decimal
+places; differences from MiniSEED are below 0.000002 Hz in the 18 sampled
+waveforms. This addresses the formatting concern for those outputs, not the
+broader raw-MER/writer/ObsPy precision question. See the
+[fixture audit](../data/fixtures/association/README.md).
 
 Compare raw MER sampling information, the writer's input and serialized
 GeoCSV output, encoded MiniSEED rates, and ObsPy reader output. In particular,
@@ -156,7 +167,7 @@ verify whether ObsPy changes the rate slightly or simply exposes an already
 different encoded rate. Separate upstream formatting loss from reader
 conversion and from nominal-versus-measured sampling.
 
-For now the association design requires
+For now the public associator requires
 `abs(obspy_sps - geocsv_sps) <= 0.01` Hz. This is a minimum consistency check,
 explicitly provisional and potentially grossly relaxed. Return to the
 threshold after the comparison; do not treat it as established instrument
@@ -167,4 +178,102 @@ differences larger than this threshold.
 writer corrections are outside this project; neither rounding downloaded
 rates nor silently normalizing parsed rates is authorized. See the
 [association discussion](OBSPY_ASSOCIATION.md#matching-original-traces) and
-[sandbox TBD list](../sandbox/obspy_association/OPEN_QUESTIONS.md).
+[association questions below](#association-scientific-questions).
+
+## Association scientific questions
+
+These questions replace the former `sandbox/obspy_association/OPEN_QUESTIONS.md`
+TBD list. Preserve the distinction between dated evidence, current matching
+rules, and unresolved interpretation. The public API and initial attachment
+rules are settled in the [association tutorial](ASSOCIATION_TUTORIAL.md);
+SAC projection and broader transformed-waveform support remain
+[planned work](FUTURE.md#associate-transformed-archive-waveforms).
+
+### Archive segmentation and request boundaries
+
+When original acquisitions share SNCL, which boundaries survive a month/year
+request? Can a service split an acquisition, combine several, omit edge
+samples, or include neighboring acquisitions? Does partitioning a long window
+into short requests change the returned samples or trace boundaries?
+
+Distinguish archive/server operations, MiniSEED record assembly, and ObsPy's
+client-side trimming. An individual MiniSEED record's start time does not by
+itself define a contiguous acquisition. The dated month probe includes a
+one-sample trace and apparently combined coverage; it does not establish a
+general service policy or completeness. The year-long probe has not been
+executed in the recorded observations. See the
+[retrieval evidence](OBSPY_RETRIEVAL_OBSERVATIONS.md#month-request) and the
+[exploratory scripts](../sandbox/obspy_association/README.md).
+
+### Overlapping sample values and acquisition lineage
+
+Which source samples survive overlapping acquisitions, and can original
+contributions be recovered after archive transformations? Exact source-grid
+coverage does not identify the source of each sample value or detect gaps
+already filled upstream. The implemented first-segment fallback adopts one
+location anchor without claiming that reconstruction. See the
+[merged-trace policy](OBSPY_MERGED_TRACES.md).
+
+DET Q and REQ D are useful lineage evidence independent of sampling rate.
+The recorded P0006 service responses expose M for both; M alone does not
+prove that a trace combines acquisitions. The dated
+[quality/archive discussion](OBSPY_RETRIEVAL_OBSERVATIONS.md#short-requests)
+records the then-consulted service documentation. Recheck returned indicators
+and overlap selection if MERMAID data are reingested or service behavior
+changes, before proposing quality-based validation or precedence rules.
+The current associator retains GeoCSV and waveform quality independently
+and does not filter matches by equality.
+
+### Timing across producers and instrument generations
+
+How do raw timing, serialized GeoCSV starts, waveform headers, and physical
+clock accuracy relate across producers and instrument generations? The user
+clarifies that the current waveform clock does not have millisecond timing
+precision; stored fractional digits do not establish physical accuracy.
+Preserve the downloaded timing and measured rate. A rate calculated from
+ObsPy's rate-derived endtime would not provide independent timing evidence.
+
+The public default is a fixed 100-microsecond tolerance, with an explicit
+seconds override; source lexical resolution never enlarges it. Some
+millisecond-rendered histories need an explicit 1 ms tolerance. The retrieval
+scripts' one-second margin is unrelated to this matching tolerance. Revisit
+other producers using independent evidence, including the separate
+[sampling-rate investigation](#mermaid-sampling-rate-follow-up), rather than
+rounding, snapping, or overriding scientific metadata.
+
+### Original product classification and raw-buffer distinctions
+
+The rebuilt processed inventory and 18 paired fixtures establish DET Q / REQ D
+consistency with the documented SNCL mapping. The remaining source-MER check
+is to verify the DET.WLT2 event classification and scale before processing;
+the inventory audit did not independently inspect every raw MER header.
+Historical location codes, including an older WLT2 location 01 versus current
+helper location 10, must remain source evidence rather than be relabeled.
+
+Keep `.REQ.RAW` event products (quality D, roughly 40 Hz) distinct from the
+physically recovered continuous buffer stream (quality R, location 20 in the
+supplied mapping). The filename token RAW alone establishes neither R nor
+location 20. Instrument-generation timing claims, raw-buffer rates, and
+citations still need the verification listed in the
+[data-quality reference](MERMAID_DATA_QUALITY.md#items-to-verify-before-treating-this-as-a-formal-specification).
+
+### Partial and transformed acquisitions
+
+How should trimmed, split, or resampled inputs be recognized and related to
+their original acquisitions without guessing? The current public associator
+targets original MiniSEED-derived segments plus the explicit longer-trace
+fallback. It rejects zero/multiple eligible matches; it does not use quality
+to select a candidate or combine competing metadata rows.
+
+The [original July 13 inspection](OBSPY_RETRIEVAL_OBSERVATIONS.md#original-july-13-waveforms-2026-10-15)
+established that three repeated REQ waveforms have equal sample arrays,
+starts, rates, and counts and share one source row. This supports multiple
+traces independently using one row; it does not establish a transformed-input
+or archive-reconstruction policy. GeoCSV SampleCount already represents NPTS;
+no extra count column is required. Position remains the interpolated receiver
+position at the first sample time, independent of duration or request date.
+
+Package promotion, fresh destinations, source preflight, batch validation,
+and per-call SNCL/time indexing are implemented rather than pending research
+questions. No future reconstruction policy should silently change those
+rules. Planned functionality belongs in [future workflows](FUTURE.md).
