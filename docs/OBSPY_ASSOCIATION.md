@@ -92,7 +92,7 @@ Geographic metadata has consumer-specific conventions:
 | `Inventory` channel coordinates | Standard station metadata, StationXML, response workflows | Coordinates belong to channel epochs; elevation and depth use metres. |
 | `stats.coordinates.latitude` and `.longitude` | Some waveform analysis and plotting functions | Record-section plotting can use these two fields alone. |
 | `stats.coordinates.elevation` | ObsPy array analysis | Array processing expects kilometres. |
-| `stats.sac.stla`, `.stlo`, `.stel`, `.stdp` | SAC geographic headers | Optional projection at association, using the conventions below. |
+| SAC `stla`, `stlo`, `stel`, `stdp` | Geographic headers written by `write_sac` | Separate export using the conventions below; existing `stats.sac` is untouched. |
 | Proposed `stats.geocsv` | Source record and provenance | Preserve GeoCSV names, declared units, method, and source identity. |
 
 Sources: [Channel](https://docs.obspy.org/packages/autogen/obspy.core.inventory.channel.Channel.html),
@@ -209,9 +209,9 @@ correction nor an uncertainty estimate and is not recomputed after later
 waveform changes. Both original timestamps remain unchanged.
 
 Initial association is limited to the following existing waveform attributes
-and coordinate convention. SAC projection is deferred; there is no SAC
-keyword or placeholder in the current associator. The geographic mapping
-below is retained for future implementation. The associator does not fill
+and coordinate convention. There is no SAC keyword or placeholder in the
+associator; the separate `geocsv.write_sac` operation implements the
+geographic export mapping below. The associator does not fill
 response, rotation, or other format/analysis headers.
 
 | Attribute | Initial association responsibility |
@@ -281,7 +281,7 @@ this reference convention. See
 [array processing](https://docs.obspy.org/packages/autogen/obspy.signal.array_analysis.array_processing.html)
 and [record-section plotting](https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.plot.html).
 
-For optional SAC `stdp` projection, adopt the user's automaid approximation:
+For SAC export, adopt the user's automaid approximation for `stdp`:
 
 ```text
 1 dbar = 100 mbar ≈ 1 m of water depth
@@ -304,42 +304,42 @@ pressure-to-depth formula or an additional atmospheric-pressure correction.
 This is not an exact oceanographic depth calculation.
 
 Project `stdp` only when pressure is present, finite, and declared in the
-expected mbar units. Missing pressure means no new `stdp` value; do not
-substitute zero. Preserve original pressure and units in `stats.geocsv`.
+expected mbar units. Missing REQ pressure (source DataQuality D) leaves `stdp`
+undefined; missing DET pressure raises. Never substitute zero. Preserve
+original pressure and units in `stats.geocsv`.
 Receiver depth belongs in `stdp`, not seismic-source depth `evdp`.
 
-### Optional SAC projection
+### Separate SAC export
 
-Until further instruction, MiniSEED-derived traces are the only development
-target for association. The paired SAC files are independent output references,
-not association inputs. Projection remains future work; its eventual interface
-has not been chosen. The intended sequence is:
+Version 0.17.0 adds `geocsv.write_sac(trace, path)` for an already-associated
+original MiniSEED segment. Paired SAC files remain independent output
+references, never association inputs. The implemented sequence is:
 
 ```text
-read MiniSEED -> associate GeoCSV -> project approved SAC fields (future)
--> compare those keys against a separately read paired SAC reference
+read MiniSEED -> associate GeoCSV -> write_sac -> read generated SAC
+-> compare geographic headers against a separately read paired SAC reference
 ```
 
-The unused `project_sac` keyword and placeholder were removed on 2026-10-16;
-that removal did not implement projection. Package exposure in 0.15.0 keeps
-SAC projection deferred. See the
-[future-work reminder](FUTURE.md#project-associated-metadata-into-sac-headers).
-Reference SAC headers are consulted only after association/projection and never used
-as fallback source metadata or matching hints. Define the comparison's field
-coverage, units, missingness, and float32/formatting precision. GeoCSV does not
-describe every inherited SAC header, so key-by-key comparison covers approved
-mappings rather than an unconditional whole-header equivalence promise.
+The unused `project_sac` keyword was removed on 2026-10-16 and remains absent.
+The writer constructs a fresh SACTrace using native waveform headers and the
+attached GeoCSV source row and declared units; it never reopens GeoCSV or
+uses `stats.coordinates` or existing `stats.sac` values. It leaves the input
+trace untouched and refuses to overwrite files.
 
-When requested, populate `stla` and `stlo` from receiver latitude/longitude,
-`stel = 0.0` from the adopted sea-level convention, and `stdp` from the
-approximation above when pressure is available. Do not populate `evla` or
-`evlo`: the waveform row does not locate a seismic source. Require the output `stats.sac` container to be absent and build it fresh;
-never merge with or overwrite inherited headers. Custom user-header slot allocation remains
-outside this first projection.
+It writes `stla`/`stlo` from receiver latitude/longitude, `stel=0` metres for
+the sea-level reference, and approximate `stdp=WaterPressure[mbar]/100`
+metres following automaid's dbar-as-metres convention. Missing pressure for
+REQ source records (DataQuality D) leaves stdp undefined; missing DET pressure
+fails. It does not populate earthquake coordinates or custom user slots.
+`first_segment` associations are rejected: an anchor row does not represent
+the longer waveform's receiver trajectory. Export original segments before
+processing; consistency checks do not establish an unmodified sample history.
 
-This projection carries the same initial-association guarantee as the core
-and coordinate attachment. It adds no later synchronization or persistence
-guarantee.
+The [SAC writing tutorial](tutorials/WRITE_SAC.md) and
+[notebook](tutorials/WRITE_SAC.ipynb) define field coverage, units, missingness,
+and float32/decimal-formatting precision. Comparisons cover the four geographic
+headers and waveform round trips, not whole-header equivalence. GeoCSV
+provenance is retained in memory and is not serialized into SAC.
 
 ## Subsequent behavior belongs to ObsPy
 
@@ -761,7 +761,7 @@ Related metadata must be interpreted together:
 | Waveform identity | Network, station, location, channel; missing codes are not wildcards. |
 | Sample timing/coverage | Start time, sample count, sample rate (or delta), and endpoint convention; endtime is derived. |
 | Orientation | Azimuth plus dip/incidence, units, and SEED versus SAC angle convention. No orientation projection is implemented. |
-| Pressure-derived depth | Pressure, pressure units, and adopted pressure/depth and vertical-reference conventions; SAC projection remains deferred without a placeholder argument. |
+| Pressure-derived depth | Pressure, pressure units, and adopted pressure/depth and vertical-reference conventions; separate SAC export uses the documented automaid approximation. |
 | Calibration/response | Scaling or response values plus input/output units and the relevant response definition; a URL alone supplies no ObsPy Response. |
 | Clock correction | Correction value, seconds units, and whether it was already applied; association never applies it again. |
 | Provenance | Source path, record index, and dataset metadata together; an index alone does not identify a source row. |

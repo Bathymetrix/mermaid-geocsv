@@ -100,9 +100,10 @@ create, reconstruct, append to, or clear it. Existing history remains unchanged.
 
 The current adapter adds only `stats.geocsv` (source row, provenance, and association label) and
 `stats.coordinates` (complete source latitude/longitude plus the adopted
-sea-level reference elevation). `stats.sac` output projection is deferred
-for later comparison against independently read SAC fixtures; no SAC option
-is currently accepted. Existing `stats.sac` is left untouched.
+sea-level reference elevation). The separate `geocsv.write_sac` operation
+writes geographic SAC headers on a fresh SACTrace for comparison against independently read SAC fixtures. No SAC
+option is accepted by association, and existing `stats.sac` is left untouched
+by both operations. See the [SAC writing tutorial](tutorials/WRITE_SAC.md).
 `stats.mseed` is inherited MiniSEED format metadata and remains untouched.
 Response, paz, distance, rotation metadata, and other sensor-specific entries
 are not implicitly inferred or projected.

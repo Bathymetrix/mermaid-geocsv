@@ -12,7 +12,7 @@ from mermaid import geocsv
 
 
 def test_fetch_public_api():
-    assert geocsv.__version__ == "0.16.0"
+    assert geocsv.__version__ == "0.17.0"
     assert {"fetch", "GeoCSVFetchResult", "GeoCSVDownload", "GeoCSVFetchError"} <= set(geocsv.__all__)
     parameters = inspect.signature(geocsv.fetch).parameters
     assert parameters["instrument_ids"].default is None
@@ -28,8 +28,14 @@ def test_associate_public_signature():
     )
 
 
+def test_write_sac_public_signature():
+    assert "write_sac" in geocsv.__all__
+    assert str(inspect.signature(geocsv.write_sac)) == "(trace, path)"
+
+
+@pytest.mark.parametrize("operation", ["associate", "write_sac"])
 @pytest.mark.parametrize("missing_module", ["obspy", "unrelated_dependency"])
-def test_optional_obspy_imports(missing_module):
+def test_optional_obspy_imports(missing_module, operation):
     # A fresh interpreter also exercises installations where ObsPy is absent.
     script = dedent('''
         import importlib.abc
@@ -48,13 +54,17 @@ def test_optional_obspy_imports(missing_module):
 
         assert "obspy" not in sys.modules
         assert "mermaid.geocsv._associate" not in sys.modules
+        assert "mermaid.geocsv._write_sac" not in sys.modules
         frame, = geocsv.read(sys.argv[2])
         assert len(frame) == 2
         assert frame.index.name == "source_record_index"
         assert str(frame["Latitude"].dtype) == "Float64"
         assert frame.attrs["geocsv"].source_path.is_absolute()
         try:
-            geocsv.associate(None, [frame])
+            if sys.argv[3] == "associate":
+                geocsv.associate(None, [frame])
+            else:
+                geocsv.write_sac(None, "unused.sac")
         except ImportError as exc:
             if missing_module == "obspy":
                 assert "mermaid-geocsv[obspy]" in str(exc)
@@ -68,7 +78,7 @@ def test_optional_obspy_imports(missing_module):
     ''')
     fixture = Path(__file__).parent / "fixtures" / "typed.geocsv"
     result = subprocess.run(
-        [sys.executable, "-c", script, missing_module, str(fixture.resolve())],
+        [sys.executable, "-c", script, missing_module, str(fixture.resolve()), operation],
         capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr

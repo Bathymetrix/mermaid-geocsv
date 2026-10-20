@@ -52,7 +52,7 @@ def test_markdown_notebook_parity(name):
 @pytest.mark.parametrize("name", NAMES)
 @pytest.mark.parametrize("working_directory", [ROOT, ROOT / "docs", TUTORIALS])
 def test_tutorial_examples(name, working_directory, monkeypatch):
-    if name == "ASSOCIATE":
+    if name in {"ASSOCIATE", "WRITE_SAC"}:
         pytest.importorskip("obspy")
     if name == "PLOTTING":
         matplotlib = pytest.importorskip("matplotlib")
@@ -66,3 +66,9 @@ def test_tutorial_examples(name, working_directory, monkeypatch):
              namespace)
     if name == "PLOTTING":
         namespace["plt"].close("all")
+    if name == "WRITE_SAC":
+        assert namespace["trace"].stats.geocsv.association == "one_segment"
+        assert namespace["written"].stdp is not None
+        assert namespace["request_sac"].stdp is None
+        assert namespace["merged"].stats.geocsv.association == "first_segment"
+        assert not namespace["rejected_path"].exists()

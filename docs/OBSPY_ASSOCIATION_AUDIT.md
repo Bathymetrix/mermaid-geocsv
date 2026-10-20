@@ -9,10 +9,10 @@ promotes the implemented behavior to `geocsv.associate`; see the
 
 Version 0.14.1 removes the unused `project_sac` argument and its
 `NotImplementedError` placeholder from the sandbox associator. The historical
-sections below describe the former option. SAC projection remains deferred
-work, recorded in [future workflows](FUTURE.md#project-associated-metadata-into-sac-headers);
-the mapping and independent comparison plan are retained. No package API is
-exposed by this removal.
+sections below describe the former option. No package API was exposed by this
+removal. Version 0.17.0 later implements separate SAC export as
+`geocsv.write_sac`; see the [SAC writing tutorial](tutorials/WRITE_SAC.md) for
+the current mapping and independent comparison contract.
 
 ## Portable real-data verification update, 2026-10-16
 

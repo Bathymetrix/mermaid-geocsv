@@ -53,7 +53,7 @@ python -m jupyterlab docs/tutorials/READ.ipynb
 ## Optional ObsPy support
 
 The optional ObsPy dependency enables `geocsv.associate` for MiniSEED-derived
-traces and streams:
+traces and streams, and `geocsv.write_sac` for exporting associated segments:
 
 ```bash
 python -m pip install '.[obspy]'
@@ -65,6 +65,10 @@ ObsPy. To run the association notebook, also install the notebook tools above:
 ```bash
 python -m jupyterlab docs/tutorials/ASSOCIATE.ipynb
 ```
+
+The [SAC writing tutorial](tutorials/WRITE_SAC.md) and
+[notebook](tutorials/WRITE_SAC.ipynb) demonstrate export and comparison with
+independent automaid SAC references.
 
 Each tutorial is standalone and has a synchronized Markdown companion.
 Start with the [read tutorial](tutorials/READ.md), then explore

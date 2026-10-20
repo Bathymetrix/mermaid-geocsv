@@ -153,7 +153,9 @@ units for a future nonzero elevation projection. This is the interpolated
 receiver position at the first sample time, rather than an average position
 over the waveform. Elevation does not
 represent receiver depth or infer a pressure conversion. Missing either
-coordinate fails the association. SAC header projection remains future work.
+coordinate fails the association. To export an associated original segment
+with geographic SAC headers, use the separate [SAC writing tutorial](WRITE_SAC.md).
+Association itself does not create or modify `stats.sac`.
 
 The attachment also has five association-owned keys:
 

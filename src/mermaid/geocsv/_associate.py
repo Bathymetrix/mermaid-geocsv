@@ -117,7 +117,7 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
     SNCL, UTC times within 100 microseconds by default, exact
     sample count, and rate difference <= 0.01 Hz. Waveform core fields remain
     authoritative. Quality is retained separately and is not a match filter.
-    Guarantees end at initial association. SAC projection is deferred.
+    Guarantees end at initial association. SAC export is a separate operation.
     Missing Latitude or Longitude fails. Destination containers must be absent:
     geocsv and coordinates. Nothing is merged or overwritten.
     Source columns must not collide with association keys or attributes and

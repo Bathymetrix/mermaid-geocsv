@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mermaid-geocsv"
 dynamic = ["version"]
-description = "Fetch and read MERMAID GeoCSV, and associate event metadata with ObsPy traces."
+description = "Fetch and read MERMAID GeoCSV, associate waveforms, and write located SAC files."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }

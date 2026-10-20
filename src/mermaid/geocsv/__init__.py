@@ -4,7 +4,7 @@
 # Author: Joel D. Simon <jdsimon@bathymetrix.com>
 # SPDX-License-Identifier: MIT
 
-"""Fetch and read MERMAID GeoCSV, and associate event metadata with ObsPy traces."""
+"""Fetch and read MERMAID GeoCSV, associate waveforms, and write located SAC files."""
 
 from ._fetch import GeoCSVDownload, GeoCSVFetchError, GeoCSVFetchResult, fetch
 from .read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
@@ -12,13 +12,14 @@ from .read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.16.0"
+__version__ = "0.17.0"
 
 __all__ = [
     "__version__",
     "read",
     "fetch",
     "associate",
+    "write_sac",
     "GeoCSVError",
     "GeoCSVComment",
     "GeoCSVMetadata",
@@ -88,7 +89,8 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
     the first sample, not an average over the trace. For first_segment, raw
     fields still describe only
     the anchor row. Association guarantees end at initial attachment; later
-    waveform processing does not refresh it. SAC projection is deferred.
+    waveform processing does not refresh it. Use :func:`write_sac` separately
+    to export an associated original segment with geographic SAC headers.
     """
     try:
         from ._associate import associate as _associate
@@ -101,3 +103,67 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
         ) from exc
     return _associate(waveforms, records, time_tolerance=time_tolerance,
                       allow_merge=allow_merge)
+
+
+def write_sac(trace, path):
+    """Write one associated original segment to a new binary SAC file.
+
+    Parameters
+    ----------
+    trace : obspy.Trace
+        Original MiniSEED-derived trace with loaded, unmasked samples and a
+        ``one_segment`` attachment from :func:`associate`. Export before
+        waveform processing; ``first_segment`` associations are rejected.
+    path : str or os.PathLike
+        Explicit output filename in an existing directory. Must not exist.
+
+    Returns
+    -------
+    None
+        The input trace, including any existing ``stats.sac``, is unchanged.
+
+    Raises
+    ------
+    ImportError
+        ObsPy is unavailable; install ``mermaid-geocsv[obspy]``.
+    TypeError
+        The waveform argument is not one ObsPy Trace.
+    ValueError
+        Association, waveform consistency, required coordinates, pressure,
+        or declared units are invalid. Missing pressure is allowed only for
+        REQ source records, identified by source ``DataQuality="D"``.
+    FileExistsError
+        The output path already exists; it is never overwritten.
+    OSError
+        The output cannot be created or written. An I/O failure can leave a
+        partial output file.
+
+    Notes
+    -----
+    Fresh SAC headers are constructed using ObsPy's SACTrace, ignoring any
+    existing SAC headers and ``stats.coordinates``. ``stla``/``stlo`` come
+    from attached GeoCSV Latitude/Longitude in degrees_north/degrees_east;
+    ``stel=0`` adopts sea level. ``stdp=WaterPressure/100`` requires mbar and
+    reproduces automaid's approximate convention of 1 dbar as 1 metre, not a
+    physical pressure-to-depth calculation. Missing REQ pressure leaves stdp
+    undefined (SAC -12345). No GeoCSV source file is reopened.
+
+    ObsPy supplies waveform identity, timing, sampling and default headers.
+    Binary SAC stores samples and floating headers at float32 precision;
+    export does not apply calibration. Other automaid headers are not
+    reconstructed, and GeoCSV provenance is not serialized into SAC.
+    Identity, start, sample count and source rate agreement are checked, but
+    these checks cannot establish an unmodified sample history. This is not
+    an exporter for processed or merged traces. Each call writes one file;
+    loop over a Stream with explicit distinct paths for multiple traces.
+    """
+    try:
+        from ._write_sac import write_sac as _write_sac
+    except ModuleNotFoundError as exc:
+        if exc.name != "obspy":
+            raise
+        raise ImportError(
+            "GeoCSV SAC writing requires ObsPy; install it with "
+            "pip install 'mermaid-geocsv[obspy]'"
+        ) from exc
+    return _write_sac(trace, path)

@@ -38,8 +38,8 @@ contract and executable examples; the [original discussion](OBSPY_ASSOCIATION.md
 retains architectural evidence and unresolved archive-lineage questions.
 
 Fetching, reading, and association connect through their results while each
-step remains usable independently. SAC projection and archive reconstruction
-remain future work; package exposure does not add either.
+step remains usable independently. SAC export is implemented separately in
+version 0.17.0; archive reconstruction remains future work.
 
 ## Associate transformed archive waveforms
 
@@ -59,16 +59,19 @@ separate from the public association implementation.
 
 ## Project associated metadata into SAC headers
 
-SAC projection remains planned work. The unused `project_sac` keyword and its
-`NotImplementedError` placeholder were removed from the sandbox associator on
-2026-10-16 before package exposure; no SAC option is currently accepted.
+Implemented in version 0.17.0 as `geocsv.write_sac(trace, path)`. The unused
+`project_sac` keyword was removed on 2026-10-16; association still has no SAC
+option and does not mutate `stats.sac`. Export constructs a fresh ObsPy
+`SACTrace` from an associated original MiniSEED segment and writes a new file.
 
-Retain the intended sequence: read MiniSEED, associate GeoCSV, project approved
-fields into fresh `stats.sac`, then compare those keys with the paired SAC file
-read independently. The planned geographic mapping is `stla`/`stlo` from
-receiver coordinates, `stel=0` for the adopted sea-level reference, and
-approximate `stdp=WaterPressure[mbar]/100`. Confirm field coverage, missing
-pressure handling, units, comparison precision, and first-segment scope before
-implementing it. SAC references must never supply matching inputs or fill
-missing source metadata. See the [SAC projection notes](OBSPY_ASSOCIATION.md#optional-sac-projection)
-and [merged-trace qualifications](OBSPY_MERGED_TRACES.md#source-metadata-remains-anchor-metadata).
+The mapping is `stla`/`stlo` from attached receiver coordinates in declared
+degrees, `stel=0` metres for the adopted sea-level reference, and approximate
+`stdp=WaterPressure[mbar]/100` metres, reproducing automaid's dbar-as-metres
+convention. Missing REQ pressure (source DataQuality D) leaves stdp undefined;
+missing DET pressure fails. SAC references never supply source values.
+`first_segment` associations are rejected because anchor metadata does not
+represent a longer waveform's trajectory. No averaging or trajectory
+reconstruction is attempted. Supporting merged or processed exports remains
+undecided. See the [SAC writing tutorial](tutorials/WRITE_SAC.md) and
+[notebook](tutorials/WRITE_SAC.ipynb) for the implemented contract and
+key-by-key comparison precision.

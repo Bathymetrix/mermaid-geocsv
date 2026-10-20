@@ -3,8 +3,9 @@
 [![Tests](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml/badge.svg?branch=main&event=push)](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml)
 
 `mermaid-geocsv` fetches MERMAID GeoCSV files, reads them into typed pandas
-DataFrames, and associates event metadata with ObsPy waveforms. The reader returns one table
-per dataset and preserves source column names, record order, timestamps and
+DataFrames, associates event metadata with ObsPy waveforms, and exports
+associated original segments to SAC with geographic headers. The reader returns
+one table per dataset and preserves source column names, record order, timestamps and
 their timezones, and GeoCSV metadata, including units, comments, and the source
 file path or download provenance.
 
@@ -32,8 +33,8 @@ any trace is modified.
 Source preflight rejects invalid event identities and duplicate full matching
 keys. Only Location may be empty; no SNCL field may be missing. All trace
 matches validate before projections or mutation.
-SAC projection is deferred and has no placeholder argument; its planned scope
-is recorded in [future workflows](docs/FUTURE.md#project-associated-metadata-into-sac-headers).
+`geocsv.write_sac(trace, path)` separately exports one associated original
+segment to a new SAC file; association itself does not create SAC headers.
 See the [merged-trace policy](docs/OBSPY_MERGED_TRACES.md) for checks and limits.
 Real-data association tests run from tracked files without restoring full
 histories. Association requires complete source latitude/longitude in declared
@@ -65,7 +66,7 @@ If `.venv` already exists, activate it and skip the creation step. See the
 [installation guide](docs/INSTALLATION.md) for notebook setup and optional
 ObsPy support.
 
-For association, install the optional ObsPy 1.5.1 or newer dependency:
+For association or SAC writing, install the optional ObsPy 1.5.1 or newer dependency:
 
 ```bash
 python -m pip install '.[obspy]'
@@ -140,6 +141,30 @@ scientific policy. No unique match or an invalid projection raises
 argument types raise `TypeError`; missing ObsPy raises an actionable
 `ImportError`. See the association tutorial for provenance and fallback details.
 
+Write an associated original segment to an explicit, unused path:
+
+```python
+geocsv.write_sac(stream[0], "/path/to/associated.sac")
+```
+
+`write_sac(trace, path)` returns `None` and leaves the input trace unchanged.
+It uses the attached `stats.geocsv` source row and unit metadata, without
+reopening GeoCSV or reading `stats.coordinates` or existing `stats.sac` values.
+ObsPy supplies waveform headers; geographic headers are `stla`/`stlo` from
+Latitude/Longitude, `stel=0` metres at sea level, and
+`stdp=WaterPressure[mbar]/100` metres. The latter reproduces automaid's
+approximate 1 dbar ≈ 1 metre convention, not a physical depth calculation.
+Missing REQ pressure (source DataQuality D) leaves `stdp` undefined; missing DET
+pressure raises. `first_segment` associations are rejected. Export original
+segments before processing: consistency checks cannot establish an unchanged
+sample history. Output is little-endian binary SAC with float32 samples and
+floating headers; samples are not calibrated. Other automaid-specific headers
+and GeoCSV provenance are not reconstructed. Existing files are never
+overwritten, and parent directories must exist. Loop over a Stream with
+explicit distinct paths for several files; exports are independent calls.
+See the [SAC writing tutorial](docs/tutorials/WRITE_SAC.md) for round-trip
+verification and comparison precision.
+
 ## Documentation
 
 - [Reader specification](docs/READER_SPEC.md): Python API, metadata, and
@@ -151,6 +176,8 @@ argument types raise `TypeError`; missing ObsPy raises an actionable
 - Association tutorial and API contract: [Markdown](docs/tutorials/ASSOCIATE.md)
   or [Jupyter notebook](docs/tutorials/ASSOCIATE.ipynb), including a real P0045
   merge from 2022-01-15 with explicit overlap and alignment choices.
+- SAC writing and independent automaid comparisons: [Markdown](docs/tutorials/WRITE_SAC.md)
+  or [Jupyter notebook](docs/tutorials/WRITE_SAC.ipynb).
 - Plotting and downstream analysis: [Markdown](docs/tutorials/PLOTTING.md) or
   [Jupyter notebook](docs/tutorials/PLOTTING.ipynb).
 - [Installation guide](docs/INSTALLATION.md): environment and notebook setup.
