@@ -202,7 +202,7 @@ See the [original-file evidence](OBSPY_RETRIEVAL_OBSERVATIONS.md#original-july-1
 These clarifications do not finish this audit or resolve findings 4 and 5.
 In particular, legacy EarthScope M responses may lose DET Q / REQ D evidence
 and combine overlapping coverage. Contiguity and quality-based validation of
-such transformed inputs remain open. A subsequent explicit `allow_merge=True`
+such transformed inputs remain open. A subsequent explicit `allow_first_segment=True`
 fallback now adopts a first-segment location without resolving those provenance
 questions; see the [merged-trace policy](OBSPY_MERGED_TRACES.md). Strict
 count matching remains the default; both outcomes carry an association label.

@@ -2,6 +2,8 @@
 
 Implemented in the sandbox, 2026-10-15; exposed as `geocsv.associate` in 0.15.0.
 The other open questions and audit findings remain open.
+Version 0.18.0 names the option `allow_first_segment`; association behavior
+is unchanged.
 
 ## Motivation and observed example
 
@@ -27,12 +29,13 @@ convention, not a general claim for all sensors, floats, or arbitrary durations.
 ## Opt-in call and labels
 
 ```python
-associate(st, records, allow_merge=False)  # Strict default.
-associate(st, records, allow_merge=True)   # Permit first-segment location fallback.
+associate(st, records, allow_first_segment=False)  # Strict default.
+associate(st, records, allow_first_segment=True)   # Permit first-segment location fallback.
 ```
 
-The flag does not merge, split, resample, fill gaps, move samples, or
-re-interpolate coordinates. Other arguments and no-mixing rules are unchanged.
+The flag permits a first-segment metadata association. Waveform manipulation
+belongs outside `geocsv`; association preserves supplied samples and timing.
+Other arguments and no-mixing rules are unchanged.
 
 | stats.geocsv.association | Initial association performed |
 | --- | --- |
@@ -59,7 +62,7 @@ All validation finishes before any batch mutation.
 
 ## Fallback requirements
 
-When no standard match exists and `allow_merge=True`:
+When no standard match exists and `allow_first_segment=True`:
 
 1. Require exactly one algorithm:event anchor matching complete SNCL and the
    trace start within `time_tolerance` (100 microseconds by default). Multiple

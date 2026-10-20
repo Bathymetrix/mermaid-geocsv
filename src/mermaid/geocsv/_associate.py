@@ -110,7 +110,7 @@ def _validate_merged_coverage(trace, datasets, tolerance_ns):
                          f"after overlap removal; requires exactly npts={trace.stats.npts}")
 
 
-def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
+def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=False):
     """Associate a Trace or Stream with event rows returned by geocsv.read.
 
     Validate all matches before modifying any trace; return None. By default require exact
@@ -129,7 +129,7 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
     zero for exact matching. Comparisons preserve full nanosecond values.
     ``stats.geocsv.starttime_difference_seconds`` records waveform minus source
     start time, computed in integer nanoseconds before conversion to seconds.
-    ``allow_merge=True`` requires a unique SNCL/start-time anchor and exact,
+    ``allow_first_segment=True`` requires a unique SNCL/start-time anchor and exact,
     gap-free source sample coverage after overlap removal on the waveform grid.
     No waveform merging is performed. ``stats.geocsv.association`` records
     ``one_segment`` for a standard match or ``first_segment`` for this fallback.
@@ -274,7 +274,7 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
                     continue
                 matches.append(match)
         association = "one_segment"
-        if not matches and allow_merge and len(anchors) == 1:
+        if not matches and allow_first_segment and len(anchors) == 1:
             anchor, rate_ok = anchors[0]
             dataset_index, record_index, row, metadata = anchor
             count, source_rate = row["SampleCount"], row["SampleRate"]
@@ -286,11 +286,11 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
                     association = "first_segment"
                 else:
                     candidates[0]["reasons"].append(
-                        "allow_merge requires a longer trace "
+                        "allow_first_segment requires a longer trace "
                         "and a positive integer anchor SampleCount")
         if len(matches) != 1:
             outcome = "no match" if not matches else f"ambiguous ({len(matches)} matches)"
-            if not matches and allow_merge and len(anchors) > 1:
+            if not matches and allow_first_segment and len(anchors) > 1:
                 outcome = (f"ambiguous ({len(anchors)} SNCL/start-time anchors; "
                            "no standard match)")
             raise ValueError(f"trace {trace_index} {trace.id} at {trace.stats.starttime} "

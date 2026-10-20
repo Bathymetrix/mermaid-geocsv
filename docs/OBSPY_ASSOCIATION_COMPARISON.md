@@ -1,7 +1,8 @@
 # ObsPy merging versus the association prototype
 
-Report, 2026-10-16. This is a comparison and API design discussion, not an
-implemented rename or policy change. Version 0.15.0 subsequently exposes the
+Report, 2026-10-16; naming decision updated 2026-10-20. Version 0.18.0 renames
+`allow_merge` to `allow_first_segment` without changing association behavior.
+Version 0.15.0 previously exposed the
 same behavior as `geocsv.associate`, with its implementation in
 [`_associate.py`](../src/mermaid/geocsv/_associate.py). See the
 [association tutorial](tutorials/ASSOCIATE.md) for the public API.
@@ -38,7 +39,7 @@ Neither operation substitutes for the other.
 | Calibration/dtype | Must agree for full merge. | Neither is matched to a source replacement; native waveform calibration and data remain unchanged. |
 | Overlaps | `method=-1`, `0`, or `1` controls cleanup/conflict handling. | Does not join, compare, discard, or interpolate overlapping waveform samples. |
 | Gaps | Masked by default; `fill_value` can supply values. | Rejects masked missing samples; cannot detect every previous fill. |
-| Longer coverage | Constructed through merging, including overlap/gap policy. | `allow_merge=True` requires a unique location anchor and exact gap-free source sample coverage after overlap removal on the waveform grid. |
+| Longer coverage | Constructed through merging, including overlap/gap policy. | `allow_first_segment=True` requires a unique location anchor and exact gap-free source sample coverage after overlap removal on the waveform grid. |
 | Metadata | Generally inherits earlier trace headers; does not reconcile arbitrary namespaces. | Creates fresh `stats.geocsv` and complete `stats.coordinates`; existing destinations raise. |
 | Ambiguity/cardinality | Reduces compatible same-ID traces; it has no source-row matching contract. | Exactly one eligible row per trace; several traces may independently use that row. |
 | Quality | MiniSEED Q/D/M is not in the grouping ID. | Retains source `DataQuality` separately from waveform quality; neither is a match filter. |
@@ -90,7 +91,7 @@ rate difference also accumulates timing drift with duration; acceptance by
 our provisional rate check does not imply merge compatibility or agreement
 of whole-trace sampling grids.
 
-## `allow_merge` is the clearest naming question
+## `allow_first_segment` names the metadata policy
 
 Our flag does not perform a merge. With no standard match, it permits one
 unique SNCL/start-time anchor with compatible rate and positive integer
@@ -103,10 +104,9 @@ labels the result `first_segment`; all raw anchor fields stay unchanged.
 It does not verify contributing acquisitions or prefer rows by M/Q/D quality.
 See the [complete fallback policy](OBSPY_MERGED_TRACES.md).
 
-**Recommendation for a future design discussion:** consider a name such as
-`allow_first_segment` rather than borrowing ObsPy's `method`, `fill_value`,
-or `interpolation_samples`. That would communicate the implemented metadata
-policy more directly. This report does not choose or introduce a replacement.
+Version 0.18.0 adopts `allow_first_segment` to communicate this metadata
+policy directly. Waveform manipulation remains outside association; ObsPy's
+`method`, `fill_value`, and `interpolation_samples` have no counterpart here.
 
 ## Ordering association and merge
 
@@ -140,7 +140,7 @@ operation; even `merge`'s prose disagrees with its return statement.
 | Candidate | Recommendation and current status |
 | --- | --- |
 | `time_tolerance` | Keep the seconds meaning explicit. `starttime_tolerance` could make its scope clearer if later renamed; do not borrow `misalignment_threshold` for the present semantics. |
-| `allow_merge` | Discuss a name reflecting permission to use the first segment's metadata, rather than waveform manipulation. |
+| `allow_first_segment` | Adopted in 0.18.0: permits the first-segment metadata fallback without waveform manipulation. |
 | `SAMPLE_RATE_TOLERANCE_HZ` | Its unit is explicit. There is no matching merge parameter to imitate; the provisional scientific criterion needs review before any public exposure. |
 | `waveforms`, `records` | Reasonable descriptive standalone-function names. Moving into a method or ObsPy package is a separate ownership/API decision. |
 | SAC projection | The unused `project_sac` option was removed on 2026-10-16. Version 0.17.0 implements separate `write_sac(trace, path)` export; see the [tutorial](tutorials/WRITE_SAC.md). |

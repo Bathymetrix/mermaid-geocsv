@@ -12,7 +12,7 @@ from .read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.17.0"
+__version__ = "0.18.0"
 
 __all__ = [
     "__version__",
@@ -29,7 +29,7 @@ __all__ = [
 ]
 
 
-def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
+def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=False):
     """Attach uniquely matched GeoCSV event metadata to ObsPy waveforms.
 
     Parameters
@@ -46,7 +46,7 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
         (100 microseconds); zero requires exact matching. Must be finite and
         nonnegative. Full UTC nanosecond values are compared; source lexical
         resolution does not enlarge the tolerance.
-    allow_merge : bool, optional
+    allow_first_segment : bool, optional
         Default False requires the original sample count. If True, a longer
         trace without a standard match may adopt a unique first segment's
         location, provided source sample ranges cover its grid exactly without
@@ -102,7 +102,7 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
             "pip install 'mermaid-geocsv[obspy]'"
         ) from exc
     return _associate(waveforms, records, time_tolerance=time_tolerance,
-                      allow_merge=allow_merge)
+                      allow_first_segment=allow_first_segment)
 
 
 def write_sac(trace, path):

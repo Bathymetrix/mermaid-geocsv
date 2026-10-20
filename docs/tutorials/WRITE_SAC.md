@@ -235,7 +235,7 @@ for path in sorted(merge_dir.glob("*.mseed")):
 segments.merge(method=1, interpolation_samples=0, misalignment_threshold=0)
 merged, = segments
 merged_tables = geocsv.read(root / "tests" / "fixtures" / "geocsv" / "P0045.geocsv")
-geocsv.associate(merged, merged_tables, time_tolerance=0.025, allow_merge=True)
+geocsv.associate(merged, merged_tables, time_tolerance=0.025, allow_first_segment=True)
 assert merged.stats.geocsv.association == "first_segment"
 assert merged.stats.npts == 45683
 rejected_path = output_dir / "merged.sac"

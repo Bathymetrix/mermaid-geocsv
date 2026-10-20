@@ -538,7 +538,7 @@ Proposed first matching policy:
    The current Automaid millisecond rendering can exceed the default tolerance.
    Use an explicit tolerance such as `time_tolerance=0.001` for those histories.
    Require the full original sample count and loaded data length to agree
-   exactly with GeoCSV `SampleCount` by default. The explicit `allow_merge=True`
+   exactly with GeoCSV `SampleCount` by default. The explicit `allow_first_segment=True`
    fallback below is the sole exception to original-count equality.
 4. Require present, finite, positive rates satisfying the provisional minimum
    check `obspy_sps - 0.01 <= geocsv_sps <= obspy_sps + 0.01`, in Hz (samples
@@ -680,8 +680,8 @@ remain open. The opt-in below adopts a location without resolving that provenanc
 from mermaid import geocsv
 
 records = geocsv.read("geo_DET_REQ.csv")
-geocsv.associate(tr, records, allow_merge=False, time_tolerance=0.001)
-geocsv.associate(st, records, allow_merge=True, time_tolerance=0.001)  # Exact coverage required.
+geocsv.associate(tr, records, allow_first_segment=False, time_tolerance=0.001)
+geocsv.associate(st, records, allow_first_segment=True, time_tolerance=0.001)  # Exact coverage required.
 ```
 
 `associate` accepts one `Trace` or a `Stream`, mutates supplied traces in place,
@@ -692,8 +692,8 @@ row. Zero and multiple matches raise informative `ValueError`s including
 source paths and candidate row indices. All matches and destination checks
 are validated before modifying any trace in the batch.
 
-`allow_merge=False` requires a standard match and labels it
-`stats.geocsv.association = "one_segment"`. With `allow_merge=True`, standard
+`allow_first_segment=False` requires a standard match and labels it
+`stats.geocsv.association = "one_segment"`. With `allow_first_segment=True`, standard
 matches retain that label. Only if no standard match exists may a trace use
 `"first_segment"`: require exactly one complete SNCL/start-time anchor under the
 same time tolerance, a compatible rate, positive integer anchor SampleCount,

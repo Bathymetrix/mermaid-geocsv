@@ -111,21 +111,21 @@ def test_sncl_mismatch_is_not_repaired_from_geocsv(records):
 
 
 @pytest.mark.parametrize('location', ['', '""'])
-@pytest.mark.parametrize('allow_merge', [False, True])
-def test_known_empty_location_associates_exactly(tmp_path, location, allow_merge):
+@pytest.mark.parametrize('allow_first_segment', [False, True])
+def test_known_empty_location_associates_exactly(tmp_path, location, allow_first_segment):
     source = tmp_path / 'empty_location.geocsv'
     source.write_text(FIXTURE.read_text().replace(',00,BDH,', f',{location},BDH,'))
     records = geocsv.read(source)
     assert records[0].loc[1, 'Location'] == ''
     tr = trace()
     tr.stats.location = ''
-    if allow_merge:
+    if allow_first_segment:
         tr.data = np.arange(10, dtype=np.float32)
     before = tr.copy()
-    associate(tr, records, allow_merge=allow_merge)
+    associate(tr, records, allow_first_segment=allow_first_segment)
     assert tr.stats.geocsv.Location == ''
     assert tr.stats.geocsv.source_record_index == 1
-    assert tr.stats.geocsv.association == ('first_segment' if allow_merge else 'one_segment')
+    assert tr.stats.geocsv.association == ('first_segment' if allow_first_segment else 'one_segment')
     assert all(tr.stats[key] == value for key, value in before.stats.items())
     np.testing.assert_array_equal(tr.data, before.data)
 
@@ -406,16 +406,16 @@ def test_time_matching_does_not_require_source_resolution_metadata(records):
     assert tr.stats.geocsv.source_record_index == 1
 
 
-@pytest.mark.parametrize('allow_merge', [False, True])
-def test_standard_match_label_with_or_without_merge_permission(records, allow_merge):
+@pytest.mark.parametrize('allow_first_segment', [False, True])
+def test_standard_match_label_with_or_without_first_segment_permission(records, allow_first_segment):
     tr = trace()
     tr.stats.mseed = {'dataquality': 'M'}
-    associate(tr, records, allow_merge=allow_merge)
+    associate(tr, records, allow_first_segment=allow_first_segment)
     assert tr.stats.geocsv.association == 'one_segment'
     assert tr.stats.mseed.dataquality == 'M'
 
 
-def test_merge_requires_opt_in_and_preserves_anchor_and_waveform(records):
+def test_first_segment_requires_opt_in_and_preserves_anchor_and_waveform(records):
     tr = trace()
     tr.data = np.arange(10, dtype=np.float32)
     tr.stats.mseed = {'dataquality': 'M'}
@@ -426,7 +426,7 @@ def test_merge_requires_opt_in_and_preserves_anchor_and_waveform(records):
     assert str(FIXTURE.resolve()) in str(exc.value)
     assert "'record': 1" in str(exc.value)
     assert tr.stats == before.stats
-    associate(tr, records, allow_merge=True)
+    associate(tr, records, allow_first_segment=True)
     assert tr.stats.geocsv.association == 'first_segment'
     assert tr.stats.geocsv.SampleCount == 4
     assert tr.stats.geocsv.DataQuality == 'Q'
@@ -446,7 +446,7 @@ def test_overlapping_source_ranges_count_each_sample_once(records):
     stream.merge(method=1, misalignment_threshold=0)
     tr, = stream
     assert tr.stats.npts == 8
-    associate(tr, records, allow_merge=True)
+    associate(tr, records, allow_first_segment=True)
     assert tr.stats.geocsv.association == 'first_segment'
     assert tr.stats.geocsv.SampleCount == 4  # Anchor remains unchanged.
     assert tr.stats.coordinates.latitude == 10.0
@@ -457,7 +457,7 @@ def test_merged_coverage_rejects_ambiguous_grid_alignment(records):
     tr = trace()
     tr.data = np.arange(10, dtype=np.float32)
     with pytest.raises(ValueError, match='multiple waveform sample indices'):
-        associate(tr, records, allow_merge=True, time_tolerance=0.05)
+        associate(tr, records, allow_first_segment=True, time_tolerance=0.05)
     assert 'geocsv' not in tr.stats
 
 
@@ -468,7 +468,7 @@ def test_exact_merged_alignment_uses_integer_nanosecond_sample_times(records):
     tr = trace()
     tr.stats.sampling_rate = 3.0
     tr.data = np.arange(10, dtype=np.float32)
-    associate(tr, records, allow_merge=True, time_tolerance=0)
+    associate(tr, records, allow_first_segment=True, time_tolerance=0)
     assert tr.stats.geocsv.association == 'first_segment'
     assert tr.stats.geocsv.starttime_difference_seconds == 0
 
@@ -479,7 +479,7 @@ def test_later_merged_count_failure_leaves_entire_batch_unchanged(records):
     stream = obspy.Stream([first, second])
     before = [tr.copy() for tr in stream]
     with pytest.raises(ValueError, match='requires exactly npts=11'):
-        associate(stream, records, allow_merge=True)
+        associate(stream, records, allow_first_segment=True)
     for tr, original in zip(stream, before):
         assert tr.stats == original.stats
         np.testing.assert_array_equal(tr.data, original.data)
@@ -511,7 +511,7 @@ def test_merge_requires_exact_grid_coverage(records, problem):
         records[0].loc[7, 'SampleRate'] = 19.991
     before = tr.copy()
     with pytest.raises(ValueError, match='merged coverage'):
-        associate(tr, records, allow_merge=True)
+        associate(tr, records, allow_first_segment=True)
     assert tr.stats == before.stats
     np.testing.assert_array_equal(tr.data, before.data)
 
@@ -521,13 +521,13 @@ def test_merged_segment_alignment_accepts_timing_boundary(records, offset_ns):
     records[0].loc[7, 'StartTime'] += pd.Timedelta(nanoseconds=offset_ns)
     tr = trace()
     tr.data = np.arange(10, dtype=np.float32)
-    associate(tr, records, allow_merge=True)
+    associate(tr, records, allow_first_segment=True)
     assert tr.stats.geocsv.association == 'first_segment'
 
 
 @pytest.mark.parametrize('problem', ['short', 'rate', 'time', 'sncl', 'ambiguous',
                                     'missing_coordinates', 'missing_count', 'duration'])
-def test_merge_permission_does_not_bypass_other_requirements(records, problem):
+def test_first_segment_permission_does_not_bypass_other_requirements(records, problem):
     tr = trace()
     tr.data = np.arange(10, dtype=np.float32)
     if problem == 'short':
@@ -551,17 +551,17 @@ def test_merge_permission_does_not_bypass_other_requirements(records, problem):
         tr.data = np.arange(10001, dtype=np.float32)
     before = tr.copy()
     with pytest.raises(ValueError):
-        associate(tr, records, allow_merge=True)
+        associate(tr, records, allow_first_segment=True)
     assert tr.stats == before.stats
     np.testing.assert_array_equal(tr.data, before.data)
 
 
-@pytest.mark.parametrize('allow_merge', [False, True])
-def test_masked_gaps_are_not_contiguous_segments(records, allow_merge):
+@pytest.mark.parametrize('allow_first_segment', [False, True])
+def test_masked_gaps_are_not_contiguous_segments(records, allow_first_segment):
     tr = trace()
     tr.data = np.ma.array(np.arange(10, dtype=np.float32), mask=[False] * 5 + [True] + [False] * 4)
     with pytest.raises(ValueError, match='masked gaps'):
-        associate(tr, records, allow_merge=allow_merge)
+        associate(tr, records, allow_first_segment=allow_first_segment)
     assert 'geocsv' not in tr.stats
 
 
@@ -572,9 +572,9 @@ def test_mixed_batch_labels_and_failure_atomicity(records):
     st = obspy.Stream([first, second, bad])
     before = [deepcopy(tr.stats) for tr in st]
     with pytest.raises(ValueError, match='requires both'):
-        associate(st, records, allow_merge=True)
+        associate(st, records, allow_first_segment=True)
     assert [tr.stats for tr in st] == before
-    associate(obspy.Stream([first, second]), records, allow_merge=True)
+    associate(obspy.Stream([first, second]), records, allow_first_segment=True)
     assert first.stats.geocsv.association == 'one_segment'
     assert second.stats.geocsv.association == 'first_segment'
     assert first.stats.geocsv is not second.stats.geocsv
@@ -630,25 +630,25 @@ def test_nonreserved_extension_column_is_preserved(records):
     assert tr.stats.geocsv['ResearchNote'] == 'independent source value'
 
 
-@pytest.mark.parametrize('allow_merge', [False, True])
-def test_batch_starttime_differences_are_signed_and_independent(records, allow_merge):
+@pytest.mark.parametrize('allow_first_segment', [False, True])
+def test_batch_starttime_differences_are_signed_and_independent(records, allow_first_segment):
     offsets_ns = [1, -1, 0]  # Deliberately unsorted; all match the same source row.
     st = obspy.Stream()
     source_time = pd.Timestamp(TIMES['SYN01'])
     for offset_ns in offsets_ns:
         tr = trace()
-        if allow_merge:
+        if allow_first_segment:
             tr.data = np.arange(10, dtype=np.float32)
         tr.stats.starttime = obspy.UTCDateTime(ns=source_time.value + offset_ns)
         st.append(tr)
     before = [deepcopy(tr.stats) for tr in st]
 
-    associate(st, records, allow_merge=allow_merge)
+    associate(st, records, allow_first_segment=allow_first_segment)
 
     for tr, offset_ns, original in zip(st, offsets_ns, before):
         assert tr.stats.geocsv.starttime_difference_seconds == offset_ns / 1_000_000_000
         assert tr.stats.geocsv.StartTime == source_time
         assert tr.stats.geocsv.source_record_index == 1
-        assert tr.stats.geocsv.association == ('first_segment' if allow_merge else 'one_segment')
+        assert tr.stats.geocsv.association == ('first_segment' if allow_first_segment else 'one_segment')
         assert all(tr.stats[key] == value for key, value in original.items())
     assert len({id(tr.stats.geocsv) for tr in st}) == len(st)

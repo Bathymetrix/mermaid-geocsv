@@ -39,8 +39,8 @@ between first and last samples). This timing placement is explicit and is not
 a statement that the original grids were identical.
 
 Association fails with the earlier tutorial's 1 ms tolerance, including with
-`allow_merge=True`. It succeeds with explicit `time_tolerance=0.025` and
-`allow_merge=True`, uniquely placing the source ranges `[0, 9696)` and
+`allow_first_segment=True`. It succeeds with explicit `time_tolerance=0.025` and
+`allow_first_segment=True`, uniquely placing the source ranges `[0, 9696)` and
 `[9683, 45683)`. It attaches row 101433 and the `first_segment` label without
 changing the source row or merged samples. The 25 ms tolerance is an example
 policy close to half a sample; it does not establish clock accuracy. No

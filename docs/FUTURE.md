@@ -30,8 +30,9 @@ hosting and a default collection URL remain undecided. See the
 
 ## Associate GeoCSV metadata with ObsPy traces
 
-Implemented in version 0.15.0 as `geocsv.associate(waveforms, records, *,
-time_tolerance=0.0001, allow_merge=False)`, with optional ObsPy support. It
+Implemented in version 0.15.0 with optional ObsPy support. The current signature
+is `geocsv.associate(waveforms, records, *, time_tolerance=0.0001,
+allow_first_segment=False)`; version 0.18.0 renames the first-segment option. It
 attaches uniquely matched event metadata and coordinates in place and returns
 `None`. See the [association tutorial](tutorials/ASSOCIATE.md) for the public
 contract and executable examples; the [original discussion](OBSPY_ASSOCIATION.md)
@@ -45,7 +46,7 @@ version 0.17.0; archive reconstruction remains future work.
 
 Before extending association to trimmed, split, resampled, or archive-combined
 waveforms, establish how original acquisitions and overlapping sample values
-can be identified. The current `allow_merge=True` option validates exact
+can be identified. The current `allow_first_segment=True` option validates exact
 source-grid coverage and adopts a unique first segment's location; it does
 not reconstruct contributions or acquisition lineage. Keep its existing
 contract while investigating stronger evidence.

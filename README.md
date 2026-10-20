@@ -18,8 +18,10 @@ ObsPy traces in place and returns `None`. Paired waveform fixtures and tracked
 GeoCSV subsets are documented in the
 [fixture inventory](data/fixtures/association/README.md). Strict association is
 the default;
-`allow_merge=True` permits adopting the first segment's location for a longer
-trace. `stats.geocsv.association` records `one_segment` or `first_segment`.
+`allow_first_segment=True` permits adopting the first segment's location for a
+longer trace. `stats.geocsv.association` records `one_segment` or `first_segment`.
+Version 0.18.0 renames `allow_merge` to `allow_first_segment`; update existing
+calls to use the new keyword. Association behavior is unchanged.
 `stats.geocsv.starttime_difference_seconds` records waveform minus matched
 GeoCSV start time in seconds. Batch lookup groups events by SNCL and sorts
 them by UTC start time.
@@ -132,8 +134,8 @@ print(stream[0].stats.geocsv.metadata.source_path)
 ```
 
 The public signature is `associate(waveforms, records, *,
-time_tolerance=0.0001, allow_merge=False)`. The example explicitly allows 1 ms
-for millisecond-rendered Automaid histories; the default remains 100
+time_tolerance=0.0001, allow_first_segment=False)`. The example explicitly allows
+1 ms for millisecond-rendered Automaid histories; the default remains 100
 microseconds. Exact SNCL, original sample count, and rates within 0.01 Hz are
 required for a standard match. That rate threshold remains provisional
 scientific policy. No unique match or an invalid projection raises

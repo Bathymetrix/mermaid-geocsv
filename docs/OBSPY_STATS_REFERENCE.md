@@ -115,6 +115,6 @@ missing-data policy switches. Missing required inputs raise. Source fields
 that have no agreed projection remain faithfully available under stats.geocsv.
 
 `stats.geocsv.association` records `one_segment` or `first_segment` at initial
-association. The latter requires explicit `allow_merge=True`; see the
+association. The latter requires explicit `allow_first_segment=True`; see the
 [merged-trace policy](OBSPY_MERGED_TRACES.md). It adopts an anchor location
 without rewriting native waveform fields or source-row values.

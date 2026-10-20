@@ -85,7 +85,7 @@ sample time, irrespective of waveform length or when a repeat request was
 made. Do not average position over the waveform. This position convention
 does not relax sample-count validation: GeoCSV `SampleCount` already represents
 NPTS and remains an additional check against the original waveform. The
-explicit `allow_merge=True` option is the documented exception: a unique
+explicit `allow_first_segment=True` option is the documented exception: a unique
 SNCL/start-time anchor may supply location for a longer trace only when source
 sample ranges cover the waveform grid exactly and without gaps after overlaps
 are counted once. Source start and last-sample alignment use the explicit
@@ -191,7 +191,7 @@ infrastructure.
 
 The intended public Python API is deliberately small and must be documented.
 `geocsv.associate(waveforms, records, *, time_tolerance=0.0001,
-allow_merge=False)` attaches uniquely matched event metadata to an ObsPy Trace
+allow_first_segment=False)` attaches uniquely matched event metadata to an ObsPy Trace
 or Stream in place and returns `None`. ObsPy remains an optional dependency,
 loaded only when association is called. Keep the matching implementation
 private and preserve the scientific contract above.
@@ -263,7 +263,7 @@ order. Keep committed notebook outputs empty and execution counts unset.
 Extend `tests/test_tutorials.py` whenever a public operation or tutorial pair
 is added; verify content parity and run each tutorial's Python examples in
 order after changing them. Verify that each example actually exercises its
-stated behavior (for example, `allow_merge=True` must reach `first_segment`
+stated behavior (for example, `allow_first_segment=True` must reach `first_segment`
 in its fallback example). Report missing fixture coverage explicitly, and
 distinguish real-data examples from synthetic demonstrations so suitable
 fixtures can be added.

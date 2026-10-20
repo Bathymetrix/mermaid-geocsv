@@ -87,7 +87,7 @@ help(geocsv.associate)
 Begin with one trace and the parsed tables. This fixture needs the explicit
 1 ms tolerance explained below; no other optional input is needed.
 Its signature is `associate(waveforms, records, *, time_tolerance=0.0001,
-allow_merge=False)`. Each trace must match exactly one `Algorithm(event):` row
+allow_first_segment=False)`. Each trace must match exactly one `Algorithm(event):` row
 under these rules:
 
 - Network, Station, Location, and Channel (SNCL) match exactly. Only Location
@@ -258,7 +258,7 @@ values, and association never merges, overwrites, or deletes destinations.
 ## 6. Opt in to a first-segment location for a longer trace
 
 Strict matching is the default. When a longer waveform combines several
-source segments, the explicit `allow_merge=True` option may attach a unique
+source segments, the explicit `allow_first_segment=True` option may attach a unique
 first segment's metadata and adopt its location for the whole trace. It
 requires exact gap-free coverage of the waveform sample grid by source sample
 ranges, counting overlaps once. Both starts and last samples must align within
@@ -325,13 +325,13 @@ GeoCSV rows remain unchanged. This is an explicit overlap-handling choice,
 not a reconstruction of which original acquisition supplied each sample.
 
 Strict association rejects its enlarged sample count. Even with
-`allow_merge=True`, the 1 ms tolerance used earlier is too small for this
+`allow_first_segment=True`, the 1 ms tolerance used earlier is too small for this
 sample-grid placement. Demonstrate both failures before increasing the option:
 
 ```python
 for options in (
     {"time_tolerance": 0.001},
-    {"time_tolerance": 0.001, "allow_merge": True},
+    {"time_tolerance": 0.001, "allow_first_segment": True},
 ):
     try:
         geocsv.associate(merged_trace, p0045_tables, **options)
@@ -354,7 +354,7 @@ waveforms.
 ```python
 before_merge_association = merged_trace.copy()
 geocsv.associate(merged_trace, p0045_tables,
-                  time_tolerance=0.025, allow_merge=True)
+                  time_tolerance=0.025, allow_first_segment=True)
 assert merged_trace.stats.geocsv.association == "first_segment"
 assert merged_trace.stats.geocsv.source_record_index == 101433
 assert merged_trace.stats.geocsv.SampleCount == 9696
@@ -377,7 +377,7 @@ sample; it does not average drift over the merged waveform.
 The function performs no waveform merge and reconstructs no acquisition
 lineage. All attached raw fields still describe the anchor row only; its
 count, quality, pressure, and rate do not become whole-trace measurements.
-A standard match remains `one_segment` even when `allow_merge=True`.
+A standard match remains `one_segment` even when `allow_first_segment=True`.
 MiniSEED quality M neither enables nor prevents the fallback. Coverage cannot
 detect gaps already filled upstream or determine which overlapping samples
 survived a prior merge. See the [merged-trace policy](../OBSPY_MERGED_TRACES.md).
