@@ -33,28 +33,6 @@ material says raw-buffer data receive no time correction and use quality
 indicator `R`. To date, the user identifies P0006 and P0023 as providing this
 stream.
 
-## Nominal waveform identity and quality assignment
-
-The user-supplied table gives this nominal sampling/channel/location mapping.
-Quality is assigned by stream type, not sampling frequency: DET is `Q` and REQ
-is `D` at any frequency where that stream occurs. The quality column below
-states the assignment rule for a stream at that configuration; it does not
-assert that every stream/configuration combination is present in the dataset.
-
-| Nominal sample rate (Hz) | Channel | Location | Processed event qualities |
-| ---: | --- | --- | --- |
-| 20 | BDH | 00 | DET `Q`; REQ `D` |
-| 40 | BDH | 10 | DET `Q`; REQ `D` for RAW event products |
-| 10 | BDH | 20 | DET `Q`; REQ `D` |
-| 5 | MDH | 00 | DET `Q`; REQ `D` |
-| 2.5 | MDH | 10 | DET `Q`; REQ `D` |
-| 1.25 | MDH | 20 | DET `Q`; REQ `D` |
-| 40* | BDH | 20 | R |
-
-`*` The supplied note reports raw-buffer data averaging an unresolved `XX`
-Hz for P0006 and 40.01406 Hz for P0023, citing Pipatprathanporn & Simon
-(2022). The P0006 rate and the cited source still need verification.
-
 ## Automaid waveform filenames and sampling SNCL
 
 Automaid's current `events.py:set_processed_file_name()` constructs the
@@ -110,7 +88,12 @@ different from the nominal rate.
 | `RAW` event product (`STAGES=-1`) | about 40 | BDH | 10 in current helper; older/local event files also show 00 or 01 | DET `Q`; REQ `D` |
 | physically recovered continuous buffer | about 40 | BDH | 20 | R in supplied table and local P0023 files |
 
-The newly added fixture `20210527T154441.0030_60AFC696.MER.DET.WLT2.mseed`
+These nominal configurations do not assert that every DET/REQ combination
+occurs. The supplied note reports a raw-buffer average of unresolved `XX` Hz
+for P0006 and 40.01406 Hz for P0023, citing Pipatprathanporn & Simon (2022);
+the P0006 value and citation still need verification.
+
+The fixture `20210527T154441.0030_60AFC696.MER.DET.WLT2.mseed`
 reads as `MH.P0030.10.MDH`, 2.5009128631 Hz, 584 samples, with MiniSEED quality
 `Q`; its paired SAC file has `kuser1=DET.WLT2`. This confirms a non-20-Hz DET
 product using the current helper's WLT2 location `10`. Before the rebuild, a separate older

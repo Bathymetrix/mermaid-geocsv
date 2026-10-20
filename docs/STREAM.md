@@ -16,9 +16,8 @@ Primary sources at that revision:
 - [Stream tests](https://github.com/obspy/obspy/blob/50033e1daf95233cd4f30e95a49c37fd50be2ccd/obspy/core/tests/test_stream.py):
   merge gaps, overlaps, incompatible headers, cleanup, and misalignment cases.
 
-Companions: [Stats](OBSPY_STATS.md),
-[comparison with association](OBSPY_ASSOCIATION_COMPARISON.md), and
-[our first-segment location policy](OBSPY_MERGED_TRACES.md).
+Companions: [Stats](OBSPY_STATS.md), [association design](OBSPY_ASSOCIATION.md),
+and [our first-segment location policy](OBSPY_MERGED_TRACES.md).
 
 ## Container semantics
 
@@ -186,6 +185,56 @@ unmasked traces from a masked result. Neither reconstructs discarded
 samples, hidden fills, source metadata, or original acquisition identity.
 These limitations are central to the association comparison; merging an
 already associated trace does not revalidate its association label.
+
+## Comparison with GeoCSV association
+
+This section consolidates the 2026-10-16 comparison, updated for the
+0.18.0 `allow_first_segment` name. It uses the same pinned ObsPy checkout
+and separately installed 1.5.1 described above.
+
+ObsPy merge combines waveform samples on a shared grid. GeoCSV association
+identifies one source row and attaches metadata while preserving samples and
+native headers. Their timing controls compare different quantities:
+
+| Concern | ObsPy merge/cleanup | `geocsv.associate` |
+| --- | --- | --- |
+| Timing control | `misalignment_threshold=0.01`, a fraction of sample interval. | `time_tolerance=0.0001`, inclusive absolute seconds between waveform and source starts. |
+| Timing effect | Cleanup can shift starts; full merge rounds separation to sample counts. | Neither waveform nor source times change; comparison uses UTC integer nanoseconds. |
+| Rates | Exactly equal per trace ID. | Source rate within inclusive 0.01 Hz endpoint bounds, provisionally. |
+| Counts and overlaps | Produces new coverage under `method`/`fill_value` choices. | Exact original count by default; explicit fallback validates coverage without combining samples. |
+| Metadata | Earlier headers can survive without reconciliation. | Fresh source-row and coordinate containers; existing destinations raise. |
+| Result | Mutates Stream/traces, returns `self`, and is not transactional. | Validates the full batch before attachment, returns `None`. |
+
+For a seconds tolerance `t` at rate `f`, `t * f` gives the same numeric
+fraction of a sample interval, **not an equivalent test**. At 20 Hz, 1 ms
+corresponds to 0.02 of an interval. Starts seconds apart may share a sampling
+grid; association still compares each waveform's first sample to its source
+start. The two appearances of 0.01 in cleanup's fraction and association's
+Hz bound are dimensionally unrelated. Neither threshold measures clock accuracy.
+The queried `misalign_tolerance` is not an option in the inspected merge code.
+
+`stats.geocsv.starttime_difference_seconds` records waveform minus source
+start at initial association. It is a diagnostic, not an applied alignment
+shift. Raw source names such as `StartTime` remain intentional provenance,
+not alternate spellings to replace with core Stats names.
+
+Ordering has consequences:
+
+1. **Associate, then merge:** ObsPy may inherit only the earlier source row
+   and coordinates while increasing count/duration. A retained `one_segment`
+   label is not revalidated or converted to `first_segment`; contributing rows
+   are not collected.
+2. **Merge, then associate:** strict matching normally rejects the changed
+   count. `allow_first_segment=True` can adopt a unique anchor's location only
+   with the exact source-grid coverage checks in the
+   [fallback policy](OBSPY_MERGED_TRACES.md). It cannot recover discarded
+   overlaps, hidden fills, or acquisition identities. Masked gaps raise.
+
+Quality is not part of either grouping/matching identity. Calling association
+again on retained destinations raises; there is no implicit clearing or
+reconciliation workflow. SAC export is a separate operation for associated
+original segments, not a merge option. Use the
+[association guide](tutorials/ASSOCIATE.md) for the complete public contract.
 
 ## Verification limits
 

@@ -1,9 +1,9 @@
 # Merged EarthScope traces: first-segment location and sample-coverage validation
 
-Implemented in the sandbox, 2026-10-15; exposed as `geocsv.associate` in 0.15.0.
-The other open questions and audit findings remain open.
-Version 0.18.0 names the option `allow_first_segment`; association behavior
-is unchanged.
+Current opt-in policy for `geocsv.associate`. See the
+[association tutorial](tutorials/ASSOCIATE.md) for runnable examples;
+[open scientific questions](OPEN_QUESTIONS.md#association-scientific-questions)
+track acquisition lineage beyond this location convention.
 
 ## Motivation and observed example
 
@@ -28,10 +28,8 @@ convention, not a general claim for all sensors, floats, or arbitrary durations.
 
 ## Opt-in call and labels
 
-```python
-associate(st, records, allow_first_segment=False)  # Strict default.
-associate(st, records, allow_first_segment=True)   # Permit first-segment location fallback.
-```
+The strict default is `allow_first_segment=False`. Set
+`allow_first_segment=True` to permit the first-segment location fallback.
 
 The flag permits a first-segment metadata association. Waveform manipulation
 belongs outside `geocsv`; association preserves supplied samples and timing.
@@ -117,8 +115,9 @@ The location convention covers geographic position and the adopted reference
 elevation. It does not independently justify projecting anchor pressure/depth,
 clock correction, or all SAC fields onto the merged waveform. SAC stla/stlo
 would follow the adopted position; other projections need explicit decisions.
-SAC projection remains unimplemented. SAC reference files remain comparison
-references, never association inputs.
+The implemented `write_sac` exporter rejects `first_segment` attachments;
+see the [SAC writing guide](tutorials/WRITE_SAC.md). SAC reference files remain
+comparison references, never association inputs.
 
 ## Questions deliberately left open
 
@@ -127,12 +126,9 @@ references, never association inputs.
   clock grids shifted, gaps filled, or acquisition boundaries obscured?
 - Which metadata beyond location can meaningfully describe the entire merge?
 
-The original many-traces-to-one-row rule remains. The opt-in still chooses
-one location anchor, not several competing source rows. Incomplete-event
-handling and per-call SNCL/time indexing address audit findings 4 and 5;
-Version 0.15.0 exposes the same matching behavior through `geocsv.associate`;
-see the [association tutorial](tutorials/ASSOCIATE.md). SAC projection remains
-unfinished work.
+The many-traces-to-one-row rule remains. The opt-in chooses one location
+anchor, not several competing source rows. Supporting merged SAC exports
+would need a separate scientific mapping decision.
 
 ## Verification
 

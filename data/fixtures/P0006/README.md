@@ -10,3 +10,14 @@ under `tests/fixtures/` and should isolate individual parser behaviors.
 
 Do not modify, subset, normalize, or regenerate this file during tests. If a
 replacement is required, document the source and reason for the change here.
+
+The file contains 20,345 records, including 828 `Algorithm(event)` waveform
+records alongside GPS, pressure, and thermocline observations. All 828 events
+have latitude/longitude; all lack elevation, and 32 lack water pressure.
+Complete SNCL/start time happens to be unique among these event records;
+this is fixture evidence, not a general association uniqueness guarantee.
+These counts were moved from the association design notes and rechecked with
+`geocsv.read` during the documentation cleanup.
+
+General-fixture consolidation remains [deferred maintenance](../../../scripts/fixtures/README.md#deferred-general-fixture-consolidation);
+this cleanup does not replace or modify the source fixture.

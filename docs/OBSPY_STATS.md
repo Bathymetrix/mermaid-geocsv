@@ -176,33 +176,17 @@ metadata it needs from a supplied source using trace identity and time.
 It need not attach a duplicate first. This is explicit operation-time lookup,
 not a permanent link between the trace and the inventory.
 
-## Architectural evidence, without choosing our API yet
+## GeoCSV mapping boundary
 
-ObsPy's common nested metadata model does not promise that every duplicate
-header agrees indefinitely. Its adapters define when values are mapped and
-which representation wins at that boundary. Its consumers define the fields
-they require. Stronger relationships are implemented selectively through
-properties or specialized classes.
+GeoCSV follows the format-adapter precedent: retain the complete source row
+and immutable provenance under `stats.geocsv`, create explicit coordinates
+at association, and construct fresh SAC headers only during `write_sac`.
+There is no perpetual synchronization between these containers. The
+[association reference](OBSPY_ASSOCIATION.md) specifies authority and lifetime.
 
-This leaves several legitimate precedents for GeoCSV:
-
-- Preserve source metadata in a namespace and map when requested, following
-  format-adapter behavior.
-- Pass source metadata to the consuming operation and look it up then,
-  following Inventory-based processing.
-- Use a specialized nested object for managed views if a demonstrated need
-  justifies it, while recognizing that ordinary `Stats` will not provide that
-  behavior automatically.
-
-The question to settle is the intended mapping boundary and authoritative
-representation for each overlapping field. A requirement for perpetual
-synchronization should be stated explicitly rather than inferred from
-ObsPy's support for nested metadata.
-
-The original survey used source/documentation inspection. ObsPy is now
-installed in the repository's `.venv`; the focused reference checks its ten
-core defaults against the user-supplied source. Processing history remains
-optional decorator-maintained metadata, not a default Stats field.
+An Inventory or specialized managed metadata object would need an actual
+consumer and explicit epoch/synchronization rules; it is not required by the
+current in-memory contract.
 
 ## Stream merging does not reconcile nested metadata
 
@@ -212,5 +196,4 @@ It does not reconcile coordinates, SAC headers, MiniSEED quality, GeoCSV rows,
 or processing histories from both inputs. `Stream.merge` and `Trace.__add__`
 are not decorated with `_add_processing_info`; merging itself adds no history
 entry. Thus a retained attachment can describe an original segment while
-core Stats now describe a longer waveform. See [Stream and merge](STREAM.md)
-and the [association comparison](OBSPY_ASSOCIATION_COMPARISON.md).
+core Stats now describe a longer waveform. See [Stream and merge](STREAM.md#comparison-with-geocsv-association).

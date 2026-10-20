@@ -46,3 +46,13 @@ documentation and current manifest record those additions. Retain the script for
 provenance; replacing or regenerating fixtures requires a separately chosen
 snapshot and a complete provenance/audit update. Do not remove the current
 fixture directory to run it.
+
+## Deferred general-fixture consolidation
+
+The older general fixture `data/fixtures/P0006/P0006.geocsv` and current
+real fixtures under `tests/fixtures/geocsv/` still need consolidation. Choose
+one authoritative copy of each instrument file; update parser tests,
+reading/plotting tutorial pairs, provenance notes, and all path references
+before removing superseded copies. Do not retain different exports under
+the same purported fixture identity. This task remains deferred; the docs
+cleanup does not replace or delete any fixture.

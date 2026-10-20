@@ -38,9 +38,8 @@ Each pair contains the same prose and Python examples and runs independently.
   [dated retrieval observations](OBSPY_RETRIEVAL_OBSERVATIONS.md).
 - ObsPy [Stats survey](OBSPY_STATS.md), [Stats source reference](OBSPY_STATS_REFERENCE.md),
   and [Stream and merge behavior](STREAM.md).
-- [Association architecture and history](OBSPY_ASSOCIATION.md),
-  [comparison with ObsPy association patterns](OBSPY_ASSOCIATION_COMPARISON.md),
-  and [association audit](OBSPY_ASSOCIATION_AUDIT.md).
+- [Association design and scientific conventions](OBSPY_ASSOCIATION.md).
+- [Historical audits](../audits/README.md): dated findings and remediation evidence.
 - [Open questions](OPEN_QUESTIONS.md) and [future workflows](FUTURE.md).
 
 ## Fixtures and maintenance
@@ -51,4 +50,4 @@ Each pair contains the same prose and Python examples and runs independently.
   tracked files; complete histories are optional local references.
 - [Fixture maintenance](../scripts/fixtures/README.md): complete-history
   restoration, corpus checks, and collection provenance.
-- [TODO](../TODO.md): fixture maintenance tasks.
+- [Deferred fixture consolidation](../scripts/fixtures/README.md#deferred-general-fixture-consolidation).

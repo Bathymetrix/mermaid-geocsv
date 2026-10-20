@@ -1,9 +1,15 @@
 # Adversarial association audit and API readiness
 
+Historical record: the findings, intermediate remedies, test counts, and
+readiness statements below describe their dated development stages. They
+are not current instructions or outstanding API blockers. Use the
+[association reference](../docs/OBSPY_ASSOCIATION.md) and
+[tutorial](../docs/tutorials/ASSOCIATE.md) for the implemented contract.
+
 Audit performed 2026-10-14 against the sandbox `associate.py`. This records
 findings before remediation and their dispositions. Version 0.15.0 subsequently
 promotes the implemented behavior to `geocsv.associate`; see the
-[association tutorial](tutorials/ASSOCIATE.md) for the current public contract.
+[association tutorial](../docs/tutorials/ASSOCIATE.md) for the current public contract.
 
 ## SAC placeholder removal, 2026-10-16
 
@@ -11,12 +17,12 @@ Version 0.14.1 removes the unused `project_sac` argument and its
 `NotImplementedError` placeholder from the sandbox associator. The historical
 sections below describe the former option. No package API was exposed by this
 removal. Version 0.17.0 later implements separate SAC export as
-`geocsv.write_sac`; see the [SAC writing tutorial](tutorials/WRITE_SAC.md) for
+`geocsv.write_sac`; see the [SAC writing tutorial](../docs/tutorials/WRITE_SAC.md) for
 the current mapping and independent comparison contract.
 
 ## Portable real-data verification update, 2026-10-16
 
-The [current repository audit](../audits/05.md) supersedes the historical
+The [current repository audit](05.md) supersedes the historical
 verification counts below. Tracked GeoCSV subsets now supply every real-data
 association test: all 296 tests pass with ObsPy installed, including from a
 copy containing only files eligible for Git. Full histories remain ignored
@@ -33,8 +39,8 @@ duplicate complete SNCL/UTC-time/count/rate keys across datasets. All supplied
 trace matches validate before projections. Same SNCL/time with different counts
 can still be uniquely matched. These replace the former universal empty-cell
 missingness for Location; other columns keep their prior policy. See the
-[current reader rules](READER_SPEC.md#field-types-and-missing-values) and
-[association rules](OBSPY_ASSOCIATION.md#matching-original-traces).
+[current reader rules](../docs/READER_SPEC.md#field-types-and-missing-values) and
+[association rules](../docs/OBSPY_ASSOCIATION.md#matching-original-traces).
 
 ## Timing and coverage policy update, 2026-10-16
 
@@ -48,8 +54,8 @@ The first-segment fallback now requires exact gap-free source sample coverage
 on the waveform grid, with overlapping samples counted once. Start and
 last-sample alignment must satisfy the chosen time tolerance. The historical
 remediation details and test counts below describe earlier implementations.
-See [current matching rules](OBSPY_ASSOCIATION.md#matching-original-traces) and
-[merged coverage](OBSPY_MERGED_TRACES.md) for the active contract.
+See [current matching rules](../docs/OBSPY_ASSOCIATION.md#matching-original-traces) and
+[merged coverage](../docs/OBSPY_MERGED_TRACES.md) for the active contract.
 
 ## Input scope clarification
 
@@ -149,7 +155,7 @@ An intermediate remedy offered `missing_coordinates="warn"`; this was removed
 at the user's request in favor of simple rules, clear projections, and no
 surprise side effects. Processing history is not a projection or one of the
 ten core Stats defaults; its existing list is left untouched. See the
-[source-based reference](OBSPY_STATS_REFERENCE.md).
+[source-based reference](../docs/OBSPY_STATS_REFERENCE.md).
 
 ### Reproducible unit coverage without cutting real histories
 
@@ -187,7 +193,7 @@ format belongs to the waveform reader, not this GeoCSV parser.
 
 Related metadata dependencies (position pairs, timing, orientation, response,
 pressure/depth, clock corrections, and provenance) are listed in the
-[architecture notes](OBSPY_ASSOCIATION.md#timestamp-precision-and-metadata-dependencies).
+[architecture notes](../docs/OBSPY_ASSOCIATION.md#timestamp-precision-and-metadata-dependencies).
 
 ## Readiness boundary
 
@@ -197,14 +203,14 @@ multiple rows for the core metadata considered here. Repeated identical REQ
 files were inspected and successfully mapped to the same rebuilt GeoCSV row.
 Position is interpolated at the first sample time, regardless of request date
 or sample length. `SampleCount` already supplies the proposed NPTS check.
-See the [original-file evidence](OBSPY_RETRIEVAL_OBSERVATIONS.md#original-july-13-waveforms-2026-10-15).
+See the [original-file evidence](../docs/OBSPY_RETRIEVAL_OBSERVATIONS.md#original-july-13-waveforms-2026-10-15).
 
 These clarifications do not finish this audit or resolve findings 4 and 5.
 In particular, legacy EarthScope M responses may lose DET Q / REQ D evidence
 and combine overlapping coverage. Contiguity and quality-based validation of
 such transformed inputs remain open. A subsequent explicit `allow_first_segment=True`
 fallback now adopts a first-segment location without resolving those provenance
-questions; see the [merged-trace policy](OBSPY_MERGED_TRACES.md). Strict
+questions; see the [merged-trace policy](../docs/OBSPY_MERGED_TRACES.md). Strict
 count matching remains the default; both outcomes carry an association label.
 
 Preserve the sound parts: waveform metadata is authoritative; quality remains
