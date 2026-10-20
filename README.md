@@ -40,7 +40,9 @@ histories. Association requires complete source latitude/longitude in declared
 degrees_north/degrees_east and creates fresh `stats.geocsv` and
 `stats.coordinates` containers, including the adopted sea-level elevation zero.
 Both destinations must be absent. Waveform samples and native headers remain
-unchanged; later waveform processing does not refresh the attachment.
+unchanged.
+
+Association validates the supplied waveform and attaches metadata describing its matched source record at that moment. Subsequent waveform modifications do not update or revalidate the attachment. Users are responsible for interpreting and maintaining metadata after processing.
 
 Reader version 0.11.0 also preserves source datetime resolution in immutable
 `frame.attrs["geocsv"].datetime_resolution_ns[column][source_record_index]`
