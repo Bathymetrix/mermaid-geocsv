@@ -147,10 +147,12 @@ argument types raise `TypeError`; missing ObsPy raises an actionable
 - Read tutorial and pandas basics: [Markdown](docs/tutorials/READ.md) or
   [Jupyter notebook](docs/tutorials/READ.ipynb).
 - Association tutorial and API contract: [Markdown](docs/tutorials/ASSOCIATE.md)
-  or [Jupyter notebook](docs/tutorials/ASSOCIATE.ipynb).
+  or [Jupyter notebook](docs/tutorials/ASSOCIATE.ipynb), including a real P0045
+  merge from 2022-01-15 with explicit overlap and alignment choices.
 - Plotting and downstream analysis: [Markdown](docs/tutorials/PLOTTING.md) or
   [Jupyter notebook](docs/tutorials/PLOTTING.ipynb).
 - [Installation guide](docs/INSTALLATION.md): environment and notebook setup.
+- [TODO](TODO.md): fixture maintenance tasks.
 - [Open questions](docs/OPEN_QUESTIONS.md): unresolved format and association
   details; [future workflows](docs/FUTURE.md) tracks planned functionality.
 - [Fixture maintenance](scripts/fixtures/README.md): optional complete-history

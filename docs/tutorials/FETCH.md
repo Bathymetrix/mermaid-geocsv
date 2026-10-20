@@ -29,9 +29,9 @@ the repository root, `docs/`, or `docs/tutorials/`.
 
 ## 1. Start a temporary local test collection
 
-Production hosting is undecided. This standalone example serves a tracked
-P0006 fixture over loopback HTTP using only the standard library. It creates
-an illustrative `test-001` release in a temporary directory; this is not a
+Production hosting is undecided. This standalone example serves tracked
+P0006 and P0045 fixtures over loopback HTTP using only the standard library.
+It creates an illustrative `test-001` release in a temporary directory; this is not a
 published scientific release. The context manager stops the server and removes
 the temporary files even if a download fails.
 
@@ -62,16 +62,20 @@ def local_collection():
         server_root = directory / "server"
         release_directory = server_root / "releases/test-001"
         release_directory.mkdir(parents=True)
-        content = fixture_path.read_bytes()
-        (release_directory / "P0006.geocsv").write_bytes(content)
-        manifest = {
-            "release_id": "test-001", "testing_only": True,
-            "files": [{
-                "instrument_id": "P0006", "filename": "P0006.geocsv",
+        entries = []
+        for instrument in ("P0006", "P0045"):
+            source = fixture_path.with_name(f"{instrument}.geocsv")
+            content = source.read_bytes()
+            (release_directory / source.name).write_bytes(content)
+            entries.append({
+                "instrument_id": instrument, "filename": source.name,
                 "size_bytes": len(content),
                 "sha256": hashlib.sha256(content).hexdigest(),
                 "provenance": {"notes": "Unmodified tracked test fixture"},
-            }],
+            })
+        manifest = {
+            "release_id": "test-001", "testing_only": True,
+            "files": entries,
         }
         (release_directory / "manifest.json").write_text(
             json.dumps(manifest), encoding="utf-8",
@@ -109,13 +113,23 @@ assert tables[0].attrs["geocsv"].download.testing_only is True
 ## 3. Select a list or discover the entire release
 
 A list selects instruments in the requested order. Omitting the selection
-fetches every instrument in manifest order. This test release has one float.
+fetches every instrument in manifest order. Select the two real floats in the
+reverse order to make the difference visible, then select only P0045:
 
 ```python
 with local_collection() as (collection_url, output_directory):
-    selected = geocsv.fetch(["P0006"], base_url=collection_url, output_dir=None)
+    selected = geocsv.fetch(["P0045", "P0006"], base_url=collection_url,
+                            output_dir=None)
     discovered = geocsv.fetch(base_url=collection_url, output_dir=None)
-assert selected == discovered
+    only_p0045 = geocsv.fetch("P0045", base_url=collection_url, output_dir=None)
+assert [item.provenance.instrument_id for item in selected] == ["P0045", "P0006"]
+assert [item.provenance.instrument_id for item in discovered] == ["P0006", "P0045"]
+assert len(only_p0045) == 1
+selected_tables = geocsv.read(selected)
+assert selected_tables[0]["Station"].eq("P0045").all()
+assert selected_tables[1]["Station"].eq("P0006").all()
+assert selected_tables[0].attrs["geocsv"].download is selected[0].provenance
+assert selected_tables[1].attrs["geocsv"].download is selected[1].provenance
 ```
 
 ## 4. Save verified files to disk and reuse them
@@ -314,9 +328,8 @@ policy; association diagnostics now identify memory-fetched sources by URL.
 ## Fixture coverage
 
 These examples exercise memory retrieval, disk retrieval and reuse, release
-pinning, and download provenance using one real P0006 GeoCSV payload served
-as a test release. Selection and discovery return the same one-file inventory;
-they do not demonstrate differing selections or multi-instrument ordering.
-A second distinct real instrument fixture is needed for that tutorial example.
-The package's fetch tests separately exercise ordering with an invented second
-identifier. No public production endpoint is exercised here.
+pinning, and download provenance using real P0006 and P0045 GeoCSV payloads
+served as a temporary test release. Assertions distinguish explicit reverse
+selection order, manifest discovery order, and a one-instrument selection,
+then verify the station and provenance of each parsed table. No public
+production endpoint is exercised here.

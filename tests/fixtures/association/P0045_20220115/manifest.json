@@ -1,0 +1,171 @@
+{
+  "collected": "2026-10-20",
+  "obspy_version": "1.5.1",
+  "obspy_source_commit": "50033e1daf95233cd4f30e95a49c37fd50be2ccd",
+  "geocsv": {
+    "path": "../../geocsv/P0045.geocsv",
+    "sha256": "ce8df12383ae128798d84d154a1926f96f488a2282a666c4fb2575e7a0f8fb3a",
+    "size_bytes": 18031573,
+    "record_count": 124022,
+    "provenance": "User-supplied fixture; source header retained unchanged"
+  },
+  "day_inventory": [
+    {
+      "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20220115T034444.0045_62AAD314.MER.REQ.WLT5.mseed",
+      "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T034444.0045_62AAD314.MER.REQ.WLT5.mseed",
+      "id": "MH.P0045.00.BDH",
+      "starttime": "2022-01-15T03:44:44.916327Z",
+      "starttime_ns": 1642218284916327000,
+      "endtime": "2022-01-15T04:14:44.238969Z",
+      "endtime_ns": 1642220084238969176,
+      "sample_count": 36000,
+      "sample_rate": 20.006973266601562,
+      "selected": false
+    },
+    {
+      "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20220115T041444.0045_620D861C.MER.REQ.RAW.mseed",
+      "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T041444.0045_620D861C.MER.REQ.RAW.mseed",
+      "id": "MH.P0045.10.BDH",
+      "starttime": "2022-01-15T04:14:44.912992Z",
+      "starttime_ns": 1642220084912992000,
+      "endtime": "2022-01-15T04:33:59.885296Z",
+      "endtime_ns": 1642221239885295511,
+      "sample_count": 46216,
+      "sample_rate": 40.013946533203125,
+      "selected": false
+    },
+    {
+      "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20220115T043358.0045_6238169F.MER.REQ.WLT5.mseed",
+      "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T043358.0045_6238169F.MER.REQ.WLT5.mseed",
+      "id": "MH.P0045.00.BDH",
+      "starttime": "2022-01-15T04:33:58.910159Z",
+      "starttime_ns": 1642221238910159000,
+      "endtime": "2022-01-15T04:42:03.491203Z",
+      "endtime_ns": 1642221723491203359,
+      "sample_count": 9696,
+      "sample_rate": 20.006973266601562,
+      "selected": true
+    },
+    {
+      "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20220115T044202.0045_62A7D1AC.MER.REQ.WLT5.mseed",
+      "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T044202.0045_62A7D1AC.MER.REQ.WLT5.mseed",
+      "id": "MH.P0045.00.BDH",
+      "starttime": "2022-01-15T04:42:02.916205Z",
+      "starttime_ns": 1642221722916205000,
+      "endtime": "2022-01-15T05:12:02.238847Z",
+      "endtime_ns": 1642223522238847176,
+      "sample_count": 36000,
+      "sample_rate": 20.006973266601562,
+      "selected": true
+    },
+    {
+      "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20220115T051202.0045_629CA5E8.MER.REQ.WLT5.mseed",
+      "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T051202.0045_629CA5E8.MER.REQ.WLT5.mseed",
+      "id": "MH.P0045.00.BDH",
+      "starttime": "2022-01-15T05:12:02.912869Z",
+      "starttime_ns": 1642223522912869000,
+      "endtime": "2022-01-15T05:42:02.235511Z",
+      "endtime_ns": 1642225322235511176,
+      "sample_count": 36000,
+      "sample_rate": 20.006973266601562,
+      "selected": false
+    },
+    {
+      "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20220115T054035.0045_61E48C16.MER.DET.WLT5.mseed",
+      "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T054035.0045_61E48C16.MER.DET.WLT5.mseed",
+      "id": "MH.P0045.00.BDH",
+      "starttime": "2022-01-15T05:40:35.640608Z",
+      "starttime_ns": 1642225235640608000,
+      "endtime": "2022-01-15T05:43:55.520917Z",
+      "endtime_ns": 1642225435520917066,
+      "sample_count": 4000,
+      "sample_rate": 20.006973266601562,
+      "selected": false
+    },
+    {
+      "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20220115T075918.0045_62956C26.MER.REQ.WLT5.mseed",
+      "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T075918.0045_62956C26.MER.REQ.WLT5.mseed",
+      "id": "MH.P0045.00.BDH",
+      "starttime": "2022-01-15T07:59:18.909545Z",
+      "starttime_ns": 1642233558909545000,
+      "endtime": "2022-01-15T08:29:18.232187Z",
+      "endtime_ns": 1642235358232187176,
+      "sample_count": 36000,
+      "sample_rate": 20.006973266601562,
+      "selected": false
+    },
+    {
+      "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20220115T135356.0045_61E48C16.MER.DET.WLT5.mseed",
+      "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T135356.0045_61E48C16.MER.DET.WLT5.mseed",
+      "id": "MH.P0045.00.BDH",
+      "starttime": "2022-01-15T13:53:56.670631Z",
+      "starttime_ns": 1642254836670631000,
+      "endtime": "2022-01-15T13:57:16.550940Z",
+      "endtime_ns": 1642255036550940066,
+      "sample_count": 4000,
+      "sample_rate": 20.006973266601562,
+      "selected": false
+    },
+    {
+      "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20220115T182157.0045_61E48C16.MER.DET.WLT5.mseed",
+      "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T182157.0045_61E48C16.MER.DET.WLT5.mseed",
+      "id": "MH.P0045.00.BDH",
+      "starttime": "2022-01-15T18:21:57.707328Z",
+      "starttime_ns": 1642270917707328000,
+      "endtime": "2022-01-15T18:25:17.587637Z",
+      "endtime_ns": 1642271117587637066,
+      "sample_count": 4000,
+      "sample_rate": 20.006973266601562,
+      "selected": false
+    }
+  ],
+  "selected": [
+    {
+      "mseed": {
+        "path": "20220115T043358.0045_6238169F.MER.REQ.WLT5.mseed",
+        "sha256": "c4752e9c2ad1d720ba863522881fd520621886ff53570b175e2c3c97739242fa",
+        "size_bytes": 45056,
+        "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20220115T043358.0045_6238169F.MER.REQ.WLT5.mseed",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T043358.0045_6238169F.MER.REQ.WLT5.mseed"
+      },
+      "sac": {
+        "path": "20220115T043358.0045_6238169F.MER.REQ.WLT5.sac",
+        "sha256": "d62b91d0c03471760240281fcf27ba9ffd88bc1fb0d30bdbf10a5ee8dbf4b372",
+        "size_bytes": 39416,
+        "source_path": "/Users/jdsimon/mermaid/waveforms/sac/20220115T043358.0045_6238169F.MER.REQ.WLT5.sac",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T043358.0045_6238169F.MER.REQ.WLT5.sac"
+      }
+    },
+    {
+      "mseed": {
+        "path": "20220115T044202.0045_62A7D1AC.MER.REQ.WLT5.mseed",
+        "sha256": "d1036cca99d37d234b4ac7129deb473ca84bb71990140491dad8d21dcafd35fb",
+        "size_bytes": 159744,
+        "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20220115T044202.0045_62A7D1AC.MER.REQ.WLT5.mseed",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T044202.0045_62A7D1AC.MER.REQ.WLT5.mseed"
+      },
+      "sac": {
+        "path": "20220115T044202.0045_62A7D1AC.MER.REQ.WLT5.sac",
+        "sha256": "e847f6f9f61d7667b0337cfada8b33da917146ffa0e7629fd1b3c3a50698903c",
+        "size_bytes": 144632,
+        "source_path": "/Users/jdsimon/mermaid/waveforms/sac/20220115T044202.0045_62A7D1AC.MER.REQ.WLT5.sac",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T044202.0045_62A7D1AC.MER.REQ.WLT5.sac"
+      }
+    }
+  ],
+  "merged": {
+    "id": "MH.P0045.00.BDH",
+    "starttime": "2022-01-15T04:33:58.910159Z",
+    "starttime_ns": 1642221238910159000,
+    "endtime": "2022-01-15T05:12:02.214055Z",
+    "endtime_ns": 1642223522214054660,
+    "sample_count": 45683,
+    "sample_rate": 20.006973266601562,
+    "association": "first_segment",
+    "source_record_indices": [
+      101433,
+      101434
+    ],
+    "time_tolerance_seconds": 0.025
+  }
+}

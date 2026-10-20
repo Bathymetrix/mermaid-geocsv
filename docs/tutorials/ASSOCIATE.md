@@ -264,33 +264,113 @@ the chosen time tolerance, without ambiguous sample placement. A shorter
 trace, ambiguous anchor, masked gap, missing coordinate pair, incompatible
 rate, or any coverage gap or excess still raises.
 
-To make this distinction inspectable offline, use the clearly invented
-synthetic fixture for this section only: its SYN01 event rows contain four
-samples followed by six samples at 20 Hz. We construct an illustrative
-10-sample trace; it is not a real recorded MERMAID waveform.
+Use the two real P0045 WLT5 request segments selected from 2022-01-15, the
+date of the Hunga Tonga eruption. We inspected all nine P0045 MiniSEED files
+whose starts fall on that UTC day. These two overlapping segments form the
+longest continuous span with the same SNCL and sample rate. The complete
+inventory, source paths, hashes, and independent SAC comparison references
+are documented in the [fixture notes](../../tests/fixtures/association/P0045_20220115/README.md).
+The full P0045 GeoCSV fixture is shared with the fetch tests; no second copy
+or subset is needed for this example.
+
+First load the original segments and inspect their overlap:
 
 ```python
-from obspy import Trace, UTCDateTime
-
-synthetic_tables = geocsv.read(root / "tests" / "fixtures" / "association" / "synthetic.geocsv")
-anchor_time = synthetic_tables[0].loc[1, "StartTime"]
-longer = Trace(np.arange(10, dtype=np.float32), header={
-    "network": "MH", "station": "SYN01", "location": "00", "channel": "BDH",
-    "starttime": UTCDateTime(ns=anchor_time.value), "sampling_rate": 20.0,
-})
-try:
-    geocsv.associate(longer, synthetic_tables)
-except ValueError as error:
-    print(error)  # Source SampleCount=4 differs from waveform npts=10.
-else:
-    raise AssertionError("Expected strict matching to reject the longer trace")
-
-geocsv.associate(longer, synthetic_tables, allow_merge=True)
-assert longer.stats.geocsv.association == "first_segment"
-assert longer.stats.geocsv.SampleCount == 4
-assert longer.stats.npts == 10
-print(longer.stats.coordinates)
+merge_directory = root / "tests/fixtures/association/P0045_20220115"
+merge_manifest = json.loads((merge_directory / "manifest.json").read_text())
+p0045_tables = geocsv.read(root / "tests/fixtures/geocsv/P0045.geocsv")
+p0045_records = p0045_tables[0]
+segments = Stream()
+for item in merge_manifest["selected"]:
+    segments += read_waveforms(str(merge_directory / item["mseed"]["path"]))
+segments.sort()
+assert len(segments) == 2
+assert all(item.id == "MH.P0045.00.BDH" for item in segments)
+assert [item.stats.npts for item in segments] == [9696, 36000]
+print(segments)
+print(segments.get_gaps())  # Negative duration/count indicates an overlap.
 ```
+
+ObsPy reports an overlap of approximately 0.625 seconds, counting the interval
+to the next expected sample. The later segment starts about 24.8 ms off the
+earlier segment's sample grid. There is a separate **0.624-second gap** before
+the following request segment at 05:12:02.912869 UTC. We stop before that gap;
+filling it would not demonstrate continuous source coverage. The RAW segment
+earlier that day has location `10` and twice the sample rate, so it cannot be
+combined directly with location `00` WLT5 samples.
+
+Now merge the two loaded segments with ObsPy, before attaching metadata:
+
+```python
+merged_stream = segments.copy()
+merged_stream.merge(method=1, interpolation_samples=0, misalignment_threshold=0)
+merged_trace, = merged_stream
+assert np.ma.count_masked(merged_trace.data) == 0
+assert merged_trace.stats.npts == 45683
+assert np.array_equal(merged_trace.data,
+                      np.concatenate([segments[0].data[:9683], segments[1].data]))
+print(merged_stream)
+```
+
+`method=1` uses the later trace's values in the overlap, without interpolating
+sample amplitudes. `misalignment_threshold=0` disables cleanup's preliminary
+subsample adjustment; the merge still places segments at the nearest integer
+sample index on the first trace's grid. This shifts the later segment's grid
+by about 24.8 ms. The result runs from 04:33:58.910159 through approximately
+05:12:02.214055 UTC: **38 minutes 3.304 seconds** between first and last samples,
+at the measured rate of 20.006973266601562 Hz. Original input traces and
+GeoCSV rows remain unchanged. This is an explicit overlap-handling choice,
+not a reconstruction of which original acquisition supplied each sample.
+
+Strict association rejects its enlarged sample count. Even with
+`allow_merge=True`, the 1 ms tolerance used earlier is too small for this
+sample-grid placement. Demonstrate both failures before increasing the option:
+
+```python
+for options in (
+    {"time_tolerance": 0.001},
+    {"time_tolerance": 0.001, "allow_merge": True},
+):
+    try:
+        geocsv.associate(merged_trace, p0045_tables, **options)
+    except ValueError as error:
+        print(error)
+    else:
+        raise AssertionError("Expected strict count or 1 ms grid validation to fail")
+assert "geocsv" not in merged_trace.stats
+assert "coordinates" not in merged_trace.stats
+```
+
+For this example only, explicitly allow 25 ms for source start and last-sample
+alignment. This is close to half a sample at the measured rate; the associator
+still requires exactly one eligible sample index for every source start.
+The millisecond-rendered GeoCSV starts and rounded rates pass that uniqueness
+check at 25 ms. This tolerance is a declared example policy, not a claim about
+clock accuracy or a new default. Do not increase tolerance blindly for other
+waveforms.
+
+```python
+before_merge_association = merged_trace.copy()
+geocsv.associate(merged_trace, p0045_tables,
+                  time_tolerance=0.025, allow_merge=True)
+assert merged_trace.stats.geocsv.association == "first_segment"
+assert merged_trace.stats.geocsv.source_record_index == 101433
+assert merged_trace.stats.geocsv.SampleCount == 9696
+assert merged_trace.stats.npts == 45683
+assert np.array_equal(merged_trace.data, before_merge_association.data)
+assert all(merged_trace.stats[key] == value
+           for key, value in before_merge_association.stats.items())
+anchor = p0045_records.loc[101433]
+assert merged_trace.stats.coordinates.latitude == anchor.Latitude
+assert merged_trace.stats.coordinates.longitude == anchor.Longitude
+assert p0045_records.loc[101434, "SampleCount"] == 36000
+print(merged_trace.stats.coordinates)
+```
+
+The source ranges occupy `[0, 9696)` and `[9683, 45683)` on the merged grid;
+their 13-sample overlap is counted once, giving exactly 45,683 samples with no
+gap. The attached position remains the first segment's position at its first
+sample; it does not average drift over the merged waveform.
 
 The function performs no waveform merge and reconstructs no acquisition
 lineage. All attached raw fields still describe the anchor row only; its
@@ -309,8 +389,9 @@ downstream transformations when you need the original segment relationship.
 
 The real P0030 fixture exercises `one_segment`, the explicit time tolerance,
 repeated-row batch association, and rejection of existing destinations.
-The synthetic SYN01 example explicitly asserts `first_segment`: the
-`allow_merge=True` fallback is exercised, not merely enabled on a standard
-match. This tutorial does not yet demonstrate that fallback with real merged
-MiniSEED segments. A real contiguous multi-segment waveform with matching
-GeoCSV coverage and documented provenance is needed for that example.
+The real P0045 example merges two original MiniSEED request segments and
+explicitly asserts `first_segment`, unchanged anchor fields and waveform data,
+and failure at the earlier 1 ms tolerance. The largest continuous span is
+limited by the following real gap; no gap filling, resampling, or mixing of
+location codes is used. Synthetic coverage tests remain in the test suite,
+separate from this real-data tutorial.

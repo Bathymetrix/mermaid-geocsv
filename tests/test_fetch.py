@@ -25,10 +25,11 @@ def collection(tmp_path):
     directory = root / "releases" / "test-001"
     directory.mkdir(parents=True)
     entries = []
-    # Real download fixture plus a small two-dataset parsing fixture. The
-    # second identifier is invented for exercising batch selection and order.
+    # Two real instruments plus an invented entry for multiple-dataset parsing.
+    # Keep the small synthetic entry second for the partial-batch failure test.
     for instrument, source in [("P0006", FIXTURES / "geocsv/P0006.geocsv"),
-                               ("P_TEST", FIXTURES / "typed.geocsv")]:
+                               ("P_TEST", FIXTURES / "typed.geocsv"),
+                               ("P0045", FIXTURES / "geocsv/P0045.geocsv")]:
         destination = directory / f"{instrument}.geocsv"
         shutil.copyfile(source, destination)
         if instrument == "P_TEST":
@@ -86,7 +87,7 @@ def update_manifest(collection):
 def test_memory_all_real_fixture_and_metadata(collection, monkeypatch):
     monkeypatch.chdir(collection.client)
     results = geocsv.fetch(base_url=collection.url, output_dir=None)
-    assert [result.provenance.instrument_id for result in results] == ["P0006", "P_TEST"]
+    assert [result.provenance.instrument_id for result in results] == ["P0006", "P_TEST", "P0045"]
     assert list(collection.client.iterdir()) == []
     assert all(result.path is None and isinstance(result.content, bytes) for result in results)
     first = results[0]
@@ -97,7 +98,12 @@ def test_memory_all_real_fixture_and_metadata(collection, monkeypatch):
     assert first.provenance.release_id == "test-001"
     assert json.loads(first.provenance.manifest)["files"][0]["provenance"]["manual_edits"] is False
     frames = geocsv.read(results)
-    assert len(frames) == 3
+    assert len(frames) == 4
+    assert len(results[2].content) == 18_031_573
+    assert frames[3]["Station"].eq("P0045").all()
+    assert frames[3].index.equals(pd.RangeIndex(len(frames[3]), name="source_record_index"))
+    assert frames[3]["SampleCount"].dtype == pd.Int64Dtype()
+    assert frames[3].attrs["geocsv"].download is results[2].provenance
     frame = frames[0]
     assert len(frame) == 20_345
     assert frame.index.equals(pd.RangeIndex(20_345, name="source_record_index"))
@@ -144,11 +150,17 @@ def test_default_local_output_and_reuse(collection, monkeypatch):
 
 def test_selected_order_and_explicit_release_bypass_latest(collection):
     (collection.root / "latest.json").unlink()
-    results = geocsv.fetch(["P_TEST", "P0006"], base_url=collection.url,
+    results = geocsv.fetch(["P0045", "P0006"], base_url=collection.url,
                            output_dir=collection.client / "downloads", release="test-001")
-    assert [result.provenance.instrument_id for result in results] == ["P_TEST", "P0006"]
+    assert [result.provenance.instrument_id for result in results] == ["P0045", "P0006"]
     assert results[0].path.parent == collection.client / "downloads/test-001"
     assert "/latest.json" not in collection.requests
+    frames = geocsv.read(results)
+    assert frames[0]["Station"].eq("P0045").all()
+    assert frames[1]["Station"].eq("P0006").all()
+    assert frames[0].attrs["geocsv"].download is results[0].provenance
+    assert frames[1].attrs["geocsv"].download is results[1].provenance
+    assert "/releases/test-001/P_TEST.geocsv" not in collection.requests
 
 
 def test_missing_instrument_has_no_partial_output(collection):
