@@ -5,6 +5,14 @@ implemented contract to `geocsv.associate`; see the
 [association tutorial](tutorials/ASSOCIATE.md) for the public API. Earlier
 proposals below remain design history where explicitly marked as such.
 
+## Version 0.18.0 migration
+
+The public keyword `allow_merge` was renamed to `allow_first_segment` in
+version 0.18.0. Update existing calls to use `allow_first_segment=True`;
+association behavior is unchanged. The name describes adopting the first
+segment's location rather than performing a waveform merge. See the
+[merged-trace policy](OBSPY_MERGED_TRACES.md) for coverage checks and limits.
+
 ## Starting point
 
 Treat `geocsv.read` as complete for the current MERMAID parsing scope. The
