@@ -140,6 +140,13 @@ metadata.source_path
 
 `source_path` is the full, resolved path of the file opened by the reader. It
 records where the data came from; it is not a field declared in the GeoCSV.
+For in-memory input, `source_path` is None. When reading a fetch result,
+`metadata.download` retains the selected release, requested URLs, verified
+checksum and byte count, test-collection flag, and original manifest bytes;
+for a bare path or bytes it is None. See [Fetching GeoCSV](FETCH.md) for local
+and memory-only retrieval. Metadata is guaranteed on freshly parsed frames,
+including after a fetch, with no guarantee of persistence through later
+pandas operations or exports.
 Optional `metadata.field_long_names` and `metadata.field_standard_names` map
 source column names to individually trimmed descriptions; P0006 does not
 declare them, so their values are empty. The reader preserves coordinate

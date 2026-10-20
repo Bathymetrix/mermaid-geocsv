@@ -18,11 +18,19 @@ records = tables[0]  # P0006 contains one dataset
 
 For a hands-on introduction using the included P0006 file, see the
 [pandas tutorial](TUTORIAL.md).
-Possible future workflows for writing, fetching, and associating GeoCSV
-metadata with ObsPy traces are outlined in [Future workflows](FUTURE.md).
+For retrieval into memory or local files, see [Fetching GeoCSV](FETCH.md).
+Association is documented in the [association tutorial](ASSOCIATION_TUTORIAL.md);
+planned extensions are outlined in [Future workflows](FUTURE.md).
 
-`geocsv.read` returns a list of typed DataFrames, one per dataset in file
-order. Select a table from that list before using pandas. Each table's columns
+`geocsv.read(source, *, datetime_timezone=None)` accepts a local path, raw
+UTF-8 bytes, one `GeoCSVFetchResult`, or a list/tuple of fetch results. It
+returns a list of typed DataFrames, one per dataset in source order. A batch
+returns a flat list in result order followed by dataset order; it does not
+concatenate tables or impose a shared schema. Record indices restart for each
+file and continue across datasets within that file. Saved fetch results are
+reverified against their original checksum and byte count before parsing.
+Passing a bare path or bytes does not infer retrieval provenance from adjacent
+manifests. Select a table from the list before using pandas. Each table's columns
 use the exact field names from its GeoCSV header. The zero-based
 `source_record_index` counts data records in file order, excluding headers and
 comments; it is not a physical line number. Datetime values preserve their
@@ -33,6 +41,10 @@ different offsets, its values are preserved as `Timestamp` objects in an
 `object` column. Depending on pandas version, parsing mixed timezone entries
 may issue a warning or become unsupported; the reader does not normalize them
 by default.
+
+In version 0.16.0 the first argument is named `source` rather than `path`, to
+cover local and in-memory inputs. Positional path calls remain unchanged;
+keyword callers should use `source=`.
 
 Pass `datetime_timezone` to convert datetime values to a common timezone:
 
@@ -85,17 +97,22 @@ use the exact source header names; `metadata.delimiter` is the decoded CSV
 character. `field_long_names` and `field_standard_names` contain individually
 trimmed values aligned with the source columns; absent attributes have empty
 values. Optional `field_missing` declarations are preserved as well.
-`metadata.source_path` is the resolved absolute path opened by the reader;
-it is reader provenance, not a GeoCSV header declaration.
+`metadata.source_path` is the resolved absolute path opened by the reader,
+or None for in-memory input. It is reader provenance, not a GeoCSV header
+declaration. `metadata.download` is None for bare paths and bytes, or the
+immutable `GeoCSVDownload` provenance supplied by a fetch result. It retains
+the instrument and release IDs, requested file and manifest URLs, verified byte
+count and SHA-256, test-collection flag, and original manifest bytes. It does
+not retain the GeoCSV payload. See the [fetch guide](FETCH.md#provenance).
 
 As of writing, pandas documents [`DataFrame.attrs`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.attrs.html)
 as experimental. We use it
 deliberately because GeoCSV is self-describing: its format metadata belongs
-with its parsed table. Metadata, including the source path, is guaranteed on
+with its parsed table. Metadata, including local or download provenance, is guaranteed on
 the freshly parsed DataFrame, but may not survive arbitrary pandas
 transformations or file exports. For example, concatenating DataFrames from
 different files does not retain their differing `attrs`. If provenance must
-survive a longer workflow, keep the input path separately.
+survive a longer workflow, keep the metadata or retrieval result separately.
 
 ## Supported GeoCSV semantics
 

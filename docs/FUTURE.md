@@ -6,10 +6,10 @@ behavior should be decided when an extension is taken up.
 
 ## Read local or fetched GeoCSV
 
-`geocsv.read(path)` already reads a local file and returns one DataFrame per
-dataset. Keep it as the parsing step in future workflows. Decide whether it
-should also accept downloaded text or a file-like object, or whether `fetch`
-should save the response and pass its path to `read`.
+Implemented in version 0.16.0. `geocsv.read(source)` accepts a local path,
+bytes, one fetch result, or a list/tuple of results and returns a flat list of
+dataset DataFrames. Fetch-result provenance is retained on fresh frames;
+in-memory sources have no local source path. See [Fetching GeoCSV](FETCH.md).
 
 ## Write MERMAID GeoCSV
 
@@ -20,12 +20,13 @@ incidental structure from the legacy script.
 
 ## Fetch the latest GeoCSV
 
-Initially, keep fetching simple: retrieve GeoCSV metadata for an instrument
-from the author's website, [bathymetrix.com](https://bathymetrix.com), at a
-location TBD. A possible interface is `geocsv.fetch(instrument_id)`, using an
-identifier such as `P0006`. Decide whether it returns downloaded
-content, a local path, parsed tables, or supports more than one of these; also
-decide whether fetching and parsing can be combined with `geocsv.read`.
+Implemented in version 0.16.0 as `geocsv.fetch(instrument_ids=None, *, base_url,
+output_dir=".", release=None, timeout=30)`. Manifest-based selection supports
+one float, selected floats, or a complete release. The default saves verified
+files and their manifest under a local release directory; `output_dir=None`
+retains bytes in memory. Parsing remains a separate `read` step. Production
+hosting and a default collection URL remain undecided. See the
+[fetch guide](FETCH.md) for the API and provisional hosting agreement.
 
 ## Associate GeoCSV metadata with ObsPy traces
 
@@ -36,9 +37,9 @@ attaches uniquely matched event metadata and coordinates in place and returns
 contract and executable examples; the [original discussion](OBSPY_ASSOCIATION.md)
 retains architectural evidence and unresolved archive-lineage questions.
 
-Fetching may later connect to reading and association, while each step remains
-usable independently. SAC projection and archive reconstruction remain future
-work; package exposure does not add either.
+Fetching, reading, and association connect through their results while each
+step remains usable independently. SAC projection and archive reconstruction
+remain future work; package exposure does not add either.
 
 ## Associate transformed archive waveforms
 

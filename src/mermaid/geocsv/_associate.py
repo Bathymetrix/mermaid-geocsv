@@ -17,6 +17,12 @@ IDENTITY = {"Network": "network", "Station": "station",
 SAMPLE_RATE_TOLERANCE_HZ = 0.01  # Provisional; revisit against MER timing precision.
 
 
+def _source_name(metadata):
+    if metadata.source_path is not None:
+        return str(metadata.source_path)
+    return metadata.download.url if metadata.download is not None else "<memory>"
+
+
 def _invalid_identity_fields(codes):
     """Only Location may be a known empty string; missing codes are invalid."""
     return [field for field, code in zip(IDENTITY, codes)
@@ -59,7 +65,7 @@ def _validate_merged_coverage(trace, datasets, tolerance_ns):
         last = bisect_right(timed_times, trace.stats.endtime.ns + tolerance_ns)
         for time_ns, record_index in timed_rows[first:last]:
             row = events.loc[record_index]
-            context = (f"{trace.id}: merged coverage source {metadata.source_path}, "
+            context = (f"{trace.id}: merged coverage source {_source_name(metadata)}, "
                        f"dataset {dataset_index}, record {record_index}")
             count, source_rate = row['SampleCount'], row['SampleRate']
             if (pd.isna(count) or not isfinite(float(count)) or count <= 0
@@ -174,7 +180,7 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
         container_conflicts = set(frame.columns) & set(dir(AttribDict))
         if container_conflicts:
             raise ValueError(
-                f"event dataset {dataset_index} ({metadata.source_path}): columns collide "
+                f"event dataset {dataset_index} ({_source_name(metadata)}): columns collide "
                 f"with reserved ObsPy AttribDict attributes or methods: "
                 f"{sorted(container_conflicts)}; stats.geocsv uses this container, "
                 "so source columns must not shadow its attributes or methods")
@@ -183,7 +189,7 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
             invalid = _invalid_identity_fields(sncl)
             if invalid:
                 raise ValueError(
-                    f"{metadata.source_path}, dataset {dataset_index}, records "
+                    f"{_source_name(metadata)}, dataset {dataset_index}, records "
                     f"{list(group.index)}: invalid event identity fields {invalid}; "
                     "Network, Station, Channel require nonempty strings; Location "
                     "may be an empty string but must not be missing")
@@ -200,7 +206,7 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
                         and float(count).is_integer() and not pd.isna(source_rate)
                         and isfinite(float(source_rate)) and source_rate > 0):
                     key = (sncl, time_ns, int(count), float(source_rate))
-                    source = (str(metadata.source_path), dataset_index, record_index)
+                    source = (_source_name(metadata), dataset_index, record_index)
                     if key in seen_events:
                         raise ValueError(
                             f"ambiguous duplicate GeoCSV event rows for SNCL {sncl}, "
@@ -239,7 +245,7 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
                 continue
             events, timed_rows, timed_times, incomplete_rows = indexed
             incomplete_events.extend({
-                "source": str(metadata.source_path), "dataset": dataset_index,
+                "source": _source_name(metadata), "dataset": dataset_index,
                 "record": record_index, "reason": reason,
             } for record_index, reason in incomplete_rows)
             first = bisect_left(timed_times, trace_time_ns - tolerance_ns)
@@ -261,7 +267,7 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_merge=False):
                     reasons.append(f"SampleRate={source_rate} incompatible with {rate} Hz")
                 match = (dataset_index, record_index, row, metadata)
                 anchors.append((match, rate_ok))
-                candidates.append({"source": str(metadata.source_path),
+                candidates.append({"source": _source_name(metadata),
                                    "dataset": dataset_index, "record": record_index,
                                    "reasons": reasons})
                 if reasons:

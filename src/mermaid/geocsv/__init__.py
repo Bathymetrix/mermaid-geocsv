@@ -4,22 +4,27 @@
 # Author: Joel D. Simon <jdsimon@bathymetrix.com>
 # SPDX-License-Identifier: MIT
 
-"""Read MERMAID GeoCSV tables and associate event metadata with ObsPy traces."""
+"""Fetch and read MERMAID GeoCSV, and associate event metadata with ObsPy traces."""
 
+from ._fetch import GeoCSVDownload, GeoCSVFetchError, GeoCSVFetchResult, fetch
 from .read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.15.0"
+__version__ = "0.16.0"
 
 __all__ = [
     "__version__",
     "read",
+    "fetch",
     "associate",
     "GeoCSVError",
     "GeoCSVComment",
     "GeoCSVMetadata",
+    "GeoCSVDownload",
+    "GeoCSVFetchError",
+    "GeoCSVFetchResult",
 ]
 
 

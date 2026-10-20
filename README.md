@@ -2,11 +2,11 @@
 
 [![Tests](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml/badge.svg?branch=main&event=push)](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml)
 
-`mermaid-geocsv` reads MERMAID GeoCSV files into typed pandas DataFrames and
-associates event metadata with ObsPy waveforms. The reader returns one table
+`mermaid-geocsv` fetches MERMAID GeoCSV files, reads them into typed pandas
+DataFrames, and associates event metadata with ObsPy waveforms. The reader returns one table
 per dataset and preserves source column names, record order, timestamps and
 their timezones, and GeoCSV metadata, including units, comments, and the source
-file path.
+file path or download provenance.
 
 Empty and quoted-empty cells in string-valued `Location` preserve the known
 empty SEED location code `""`; `nan` and declared missing markers remain missing.
@@ -85,6 +85,36 @@ metadata = records.attrs["geocsv"]
 The reader parses and preserves GeoCSV information; downstream scientific
 analysis remains in pandas or other tools.
 
+Retrieve one float, selected floats, or a complete release:
+
+```python
+# Local preview of the website's test collection; production URL is undecided.
+collection_url = "http://localhost:8000/data/geocsv/testing/"
+
+downloads = geocsv.fetch("P0006", base_url=collection_url)  # Save under ./<release_id>/.
+downloads = geocsv.fetch(["P0006"], base_url=collection_url, output_dir="data")
+downloads = geocsv.fetch(base_url=collection_url, output_dir=None)  # All floats, in memory.
+tables = geocsv.read(downloads)
+provenance = tables[0].attrs["geocsv"].download
+```
+
+`fetch(instrument_ids=None, *, base_url, output_dir=".", release=None,
+timeout=30)` discovers files from a release manifest and always returns a list
+of `GeoCSVFetchResult` values. Omit identifiers to fetch the complete release;
+`release=None` resolves latest once for the batch. An explicit release bypasses
+latest. Every file must match its declared byte count and SHA-256. Local output
+includes the original manifest; existing identical files are verified and
+reused, while differing files raise instead of being overwritten. There is no
+implicit persistent cache. Fetching uses the Python standard library.
+
+`read` accepts local paths, bytes, one fetch result, or its result list. It
+returns a flat list of dataset tables without combining files. Each table
+retains immutable GeoCSV metadata and, for fetch results, release/URL/checksum
+provenance. `source_path` is None for memory-only input. Metadata is guaranteed
+on freshly returned frames; persistence through pandas transformations or
+exports is not guaranteed. See the [fetch guide](docs/FETCH.md) for storage,
+memory use, failure behavior, and the test collection layout.
+
 Associate an original MiniSEED Trace or Stream with its GeoCSV tables:
 
 ```python
@@ -112,6 +142,8 @@ argument types raise `TypeError`; missing ObsPy raises an actionable
 
 - [Reader specification](docs/READER_SPEC.md): Python API, metadata, and
   detailed parsing rules.
+- [Fetching GeoCSV](docs/FETCH.md): complete-release discovery, downloads,
+  memory-only retrieval, and provenance.
 - Pandas tutorial: [Markdown](docs/TUTORIAL.md) or
   [Jupyter notebook](docs/TUTORIAL.ipynb).
 - Association tutorial and API contract: [Markdown](docs/ASSOCIATION_TUTORIAL.md)

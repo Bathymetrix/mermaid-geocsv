@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import io
 from datetime import tzinfo
 import math
 import re
@@ -16,6 +17,8 @@ from types import MappingProxyType
 from typing import TextIO
 
 import pandas as pd
+
+from ._fetch import GeoCSVDownload, GeoCSVFetchResult, _verify_file
 
 
 @dataclass(frozen=True)
@@ -38,7 +41,9 @@ class GeoCSVMetadata:
     """Source provenance and GeoCSV declarations at ``frame.attrs["geocsv"]``.
 
     ``source_path`` is the resolved absolute path opened by the reader, not a
-    declaration found in the file.
+    declaration found in the file. It is None for in-memory input. ``download``
+    retains immutable retrieval provenance when reading a fetch result; it is
+    None for bare local paths and bytes. It never retains the GeoCSV payload.
 
     Comments retain source order and repeated or unknown keys. Field mappings
     use the exact header names; values are the stripped source declarations.
@@ -54,7 +59,7 @@ class GeoCSVMetadata:
     accuracy. Both mapping levels are read-only; timestamp values are unchanged.
     """
 
-    source_path: Path
+    source_path: Path | None
     comments: tuple[GeoCSVComment, ...]
     field_types: Mapping[str, str]
     field_units: Mapping[str, str]
@@ -63,6 +68,7 @@ class GeoCSVMetadata:
     field_missing: Mapping[str, str]
     delimiter: str
     datetime_resolution_ns: Mapping[str, Mapping[int, int]] = field(default_factory=dict)
+    download: GeoCSVDownload | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "comments", tuple(self.comments))
@@ -124,9 +130,17 @@ _TIME_FRACTION = re.compile(r"[Tt ][0-9]+(?::[0-9]+){0,2}[.,]([0-9]+)")
 
 
 def read(
-    path: str | PathLike[str], *, datetime_timezone: str | tzinfo | None = None
+    source: str | PathLike[str] | bytes | GeoCSVFetchResult | list[GeoCSVFetchResult]
+    | tuple[GeoCSVFetchResult, ...],
+    *, datetime_timezone: str | tzinfo | None = None,
 ) -> list[pd.DataFrame]:
     """Read UTF-8 GeoCSV datasets into one DataFrame per dataset.
+
+    ``source`` may be a local path, raw bytes, one GeoCSVFetchResult, or a list
+    or tuple of fetch results. Batches return a flat list in result/dataset
+    order, with source record indices restarting for each file. Fetch results
+    retain download provenance; saved files are reverified before parsing.
+    Bare paths/bytes do not infer download provenance from adjacent files.
 
     Requires ``dataset`` before the header. ``field_type`` and ``field_unit``
     are optional; undeclared field types are read as strings, and undeclared
@@ -159,18 +173,39 @@ def read(
 
     Returns a list of DataFrames, one per dataset. Each frame is indexed by the
     file-wide, zero-based data-record position (``source_record_index``) and
-    stores immutable GeoCSV metadata, including the resolved source path, at
-    ``frame.attrs["geocsv"]``. The file is read once and all tables are loaded
-    into memory. Raises ``GeoCSVError`` for malformed or unsupported content.
+    stores immutable GeoCSV metadata, including the resolved source path (None
+    for in-memory input) and download provenance when supplied, at
+    ``frame.attrs["geocsv"]``. Each file is parsed once and all tables are loaded
+    into memory; saved fetch results also undergo an integrity pass. Raises
+    ``GeoCSVError`` for malformed or unsupported content.
     """
-    source = Path(path).resolve()
-    with source.open(encoding="utf-8-sig", newline="") as stream:
+    if isinstance(source, (list, tuple)):
+        if any(not isinstance(item, GeoCSVFetchResult) for item in source):
+            raise TypeError("batch input must contain GeoCSVFetchResult values")
+        return [frame for item in source
+                for frame in read(item, datetime_timezone=datetime_timezone)]
+    download = None
+    if isinstance(source, GeoCSVFetchResult):
+        download = source.provenance
+        if source.path is not None:
+            _verify_file(source.path, download)
+            source = source.path
+        else:
+            source = source.content
+    source_path = None
+    if isinstance(source, bytes):
+        stream = io.TextIOWrapper(io.BytesIO(source), encoding="utf-8-sig", newline="")
+    else:
+        source_path = Path(source).resolve()
+        stream = source_path.open(encoding="utf-8-sig", newline="")
+    label = source_path or (download.url if download is not None else "<memory>")
+    with stream:
         try:
-            return _read_datasets(_source_lines(stream), source, datetime_timezone)
+            return _read_datasets(_source_lines(stream), source_path, datetime_timezone, download)
         except GeoCSVError as exc:
-            raise GeoCSVError(f"{source}: {exc}") from exc
+            raise GeoCSVError(f"{label}: {exc}") from exc
         except UnicodeDecodeError as exc:
-            raise GeoCSVError(f"{source}: invalid UTF-8 input: {exc}") from exc
+            raise GeoCSVError(f"{label}: invalid UTF-8 input: {exc}") from exc
 
 
 def _source_lines(stream: TextIO) -> Iterator[tuple[int, str]]:
@@ -329,8 +364,9 @@ def _datetime_resolution_ns(value: str) -> int:
 
 def _read_datasets(
     lines: Iterator[tuple[int, str]],
-    source_path: Path,
+    source_path: Path | None,
     datetime_timezone: str | tzinfo | None,
+    download: GeoCSVDownload | None = None,
 ) -> list[pd.DataFrame]:
     frames: list[pd.DataFrame] = []
     comments: list[GeoCSVComment] = []
@@ -402,6 +438,7 @@ def _read_datasets(
         )
         frame.attrs["geocsv"] = GeoCSVMetadata(
             source_path=source_path,
+            download=download,
             comments=tuple(comments),
             field_types=dict(zip(header, field_types)),
             field_units=dict(zip(header, field_units)),

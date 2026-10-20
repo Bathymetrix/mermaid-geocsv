@@ -11,6 +11,16 @@ import pytest
 from mermaid import geocsv
 
 
+def test_fetch_public_api():
+    assert geocsv.__version__ == "0.16.0"
+    assert {"fetch", "GeoCSVFetchResult", "GeoCSVDownload", "GeoCSVFetchError"} <= set(geocsv.__all__)
+    parameters = inspect.signature(geocsv.fetch).parameters
+    assert parameters["instrument_ids"].default is None
+    assert parameters["base_url"].default is inspect.Parameter.empty
+    assert parameters["output_dir"].default == "."
+    assert parameters["release"].default is None
+
+
 def test_associate_public_signature():
     assert "associate" in geocsv.__all__
     assert str(inspect.signature(geocsv.associate)) == (
