@@ -9,7 +9,7 @@ behavior should be decided when an extension is taken up.
 Implemented in version 0.16.0. `geocsv.read(source)` accepts a local path,
 bytes, one fetch result, or a list/tuple of results and returns a flat list of
 dataset DataFrames. Fetch-result provenance is retained on fresh frames;
-in-memory sources have no local source path. See [Fetching GeoCSV](FETCH.md).
+in-memory sources have no local source path. See [Fetching GeoCSV](tutorials/FETCH.md).
 
 ## Write MERMAID GeoCSV
 
@@ -26,14 +26,14 @@ one float, selected floats, or a complete release. The default saves verified
 files and their manifest under a local release directory; `output_dir=None`
 retains bytes in memory. Parsing remains a separate `read` step. Production
 hosting and a default collection URL remain undecided. See the
-[fetch guide](FETCH.md) for the API and provisional hosting agreement.
+[fetch guide](tutorials/FETCH.md) for the API and provisional hosting agreement.
 
 ## Associate GeoCSV metadata with ObsPy traces
 
 Implemented in version 0.15.0 as `geocsv.associate(waveforms, records, *,
 time_tolerance=0.0001, allow_merge=False)`, with optional ObsPy support. It
 attaches uniquely matched event metadata and coordinates in place and returns
-`None`. See the [association tutorial](ASSOCIATION_TUTORIAL.md) for the public
+`None`. See the [association tutorial](tutorials/ASSOCIATE.md) for the public
 contract and executable examples; the [original discussion](OBSPY_ASSOCIATION.md)
 retains architectural evidence and unresolved archive-lineage questions.
 

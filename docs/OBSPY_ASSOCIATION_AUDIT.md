@@ -3,7 +3,7 @@
 Audit performed 2026-10-14 against the sandbox `associate.py`. This records
 findings before remediation and their dispositions. Version 0.15.0 subsequently
 promotes the implemented behavior to `geocsv.associate`; see the
-[association tutorial](ASSOCIATION_TUTORIAL.md) for the current public contract.
+[association tutorial](tutorials/ASSOCIATE.md) for the current public contract.
 
 ## SAC placeholder removal, 2026-10-16
 

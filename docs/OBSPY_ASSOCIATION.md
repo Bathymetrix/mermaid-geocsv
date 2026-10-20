@@ -2,7 +2,7 @@
 
 Architecture notes, initially updated 2026-10-15. Version 0.15.0 promotes the
 implemented contract to `geocsv.associate`; see the
-[association tutorial](ASSOCIATION_TUTORIAL.md) for the public API. Earlier
+[association tutorial](tutorials/ASSOCIATE.md) for the public API. Earlier
 proposals below remain design history where explicitly marked as such.
 
 ## Starting point

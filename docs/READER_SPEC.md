@@ -17,9 +17,9 @@ records = tables[0]  # P0006 contains one dataset
 ```
 
 For a hands-on introduction using the included P0006 file, see the
-[pandas tutorial](TUTORIAL.md).
-For retrieval into memory or local files, see [Fetching GeoCSV](FETCH.md).
-Association is documented in the [association tutorial](ASSOCIATION_TUTORIAL.md);
+[pandas tutorial](tutorials/READ.md).
+For retrieval into memory or local files, see [Fetching GeoCSV](tutorials/FETCH.md).
+Association is documented in the [association tutorial](tutorials/ASSOCIATE.md);
 planned extensions are outlined in [Future workflows](FUTURE.md).
 
 `geocsv.read(source, *, datetime_timezone=None)` accepts a local path, raw
@@ -103,7 +103,7 @@ declaration. `metadata.download` is None for bare paths and bytes, or the
 immutable `GeoCSVDownload` provenance supplied by a fetch result. It retains
 the instrument and release IDs, requested file and manifest URLs, verified byte
 count and SHA-256, test-collection flag, and original manifest bytes. It does
-not retain the GeoCSV payload. See the [fetch guide](FETCH.md#provenance).
+not retain the GeoCSV payload. See the [fetch guide](tutorials/FETCH.md#provenance).
 
 As of writing, pandas documents [`DataFrame.attrs`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.attrs.html)
 as experimental. We use it

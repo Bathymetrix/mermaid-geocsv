@@ -3,8 +3,8 @@
 This directory holds exploratory ObsPy scripts for investigating returned
 waveform timing, quality, segmentation, and coverage. The association
 implementation is part of the package; use the public
-[association tutorial](../../docs/ASSOCIATION_TUTORIAL.md) or its
-[notebook](../../docs/ASSOCIATION_TUTORIAL.ipynb) for `geocsv.associate`.
+[association tutorial](../../docs/tutorials/ASSOCIATE.md) or its
+[notebook](../../docs/tutorials/ASSOCIATE.ipynb) for `geocsv.associate`.
 
 Run from the repository root with the package and optional ObsPy dependency:
 

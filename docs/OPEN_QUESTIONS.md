@@ -185,7 +185,7 @@ rates nor silently normalizing parsed rates is authorized. See the
 These questions replace the former `sandbox/obspy_association/OPEN_QUESTIONS.md`
 TBD list. Preserve the distinction between dated evidence, current matching
 rules, and unresolved interpretation. The public API and initial attachment
-rules are settled in the [association tutorial](ASSOCIATION_TUTORIAL.md);
+rules are settled in the [association tutorial](tutorials/ASSOCIATE.md);
 SAC projection and broader transformed-waveform support remain
 [planned work](FUTURE.md#associate-transformed-archive-waveforms).
 

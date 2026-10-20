@@ -8,7 +8,7 @@ Do not infer EarthScope merging behavior from source inspection alone.
 
 As of 2026-10-19, `geocsv.associate` is public, uses an explicit fixed time
 tolerance rather than the historical millisecond bins, and has no SAC
-projection placeholder. See the [public tutorial](ASSOCIATION_TUTORIAL.md),
+projection placeholder. See the [public tutorial](tutorials/ASSOCIATE.md),
 [open scientific questions](OPEN_QUESTIONS.md#association-scientific-questions),
 and [SAC plan](FUTURE.md#project-associated-metadata-into-sac-headers).
 The [retrieval scripts](../sandbox/obspy_association/README.md) remain in the

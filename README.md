@@ -112,7 +112,7 @@ returns a flat list of dataset tables without combining files. Each table
 retains immutable GeoCSV metadata and, for fetch results, release/URL/checksum
 provenance. `source_path` is None for memory-only input. Metadata is guaranteed
 on freshly returned frames; persistence through pandas transformations or
-exports is not guaranteed. See the [fetch guide](docs/FETCH.md) for storage,
+exports is not guaranteed. See the [fetch guide](docs/tutorials/FETCH.md) for storage,
 memory use, failure behavior, and the test collection layout.
 
 Associate an original MiniSEED Trace or Stream with its GeoCSV tables:
@@ -142,12 +142,14 @@ argument types raise `TypeError`; missing ObsPy raises an actionable
 
 - [Reader specification](docs/READER_SPEC.md): Python API, metadata, and
   detailed parsing rules.
-- [Fetching GeoCSV](docs/FETCH.md): complete-release discovery, downloads,
-  memory-only retrieval, and provenance.
-- Pandas tutorial: [Markdown](docs/TUTORIAL.md) or
-  [Jupyter notebook](docs/TUTORIAL.ipynb).
-- Association tutorial and API contract: [Markdown](docs/ASSOCIATION_TUTORIAL.md)
-  or [Jupyter notebook](docs/ASSOCIATION_TUTORIAL.ipynb).
+- Fetch tutorial: [Markdown](docs/tutorials/FETCH.md) or
+  [Jupyter notebook](docs/tutorials/FETCH.ipynb).
+- Read tutorial and pandas basics: [Markdown](docs/tutorials/READ.md) or
+  [Jupyter notebook](docs/tutorials/READ.ipynb).
+- Association tutorial and API contract: [Markdown](docs/tutorials/ASSOCIATE.md)
+  or [Jupyter notebook](docs/tutorials/ASSOCIATE.ipynb).
+- Plotting and downstream analysis: [Markdown](docs/tutorials/PLOTTING.md) or
+  [Jupyter notebook](docs/tutorials/PLOTTING.ipynb).
 - [Installation guide](docs/INSTALLATION.md): environment and notebook setup.
 - [Open questions](docs/OPEN_QUESTIONS.md): unresolved format and association
   details; [future workflows](docs/FUTURE.md) tracks planned functionality.

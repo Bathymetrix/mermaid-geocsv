@@ -1,45 +1,164 @@
 # Fetch GeoCSV releases
 
-Version 0.16.0 adds verified retrieval into local files or memory. Fetching
-preserves the released GeoCSV bytes and does not parse or alter scientific
-metadata. Parsing remains the separate `read` operation.
+`geocsv.fetch` retrieves verified release files into local storage or memory.
+Fetching preserves the released bytes; parsing is a separate `read` operation.
+The companion files [FETCH.md](FETCH.md) and
+[FETCH.ipynb](FETCH.ipynb) contain the same prose and Python examples;
+update both together whenever either changes.
 
-## Selection and storage
+This tutorial runs independently using tracked fixtures from a fresh checkout.
+From the repository root, activate the existing environment and install the
+required packages:
+
+```bash
+source .venv/bin/activate
+python -m pip install .
+```
+
+See the [installation guide](../INSTALLATION.md) to create an environment.
+For a notebook, also install JupyterLab and a Python kernel:
+
+```bash
+python -m pip install jupyterlab ipykernel
+python -m jupyterlab docs/tutorials/FETCH.ipynb
+```
+
+Select this repository's `.venv` kernel and run cells from top to bottom.
+Alternatively, run the Python blocks in order at a Python prompt. Start from
+the repository root, `docs/`, or `docs/tutorials/`.
+
+## 1. Start a temporary local test collection
+
+Production hosting is undecided. This standalone example serves a tracked
+P0006 fixture over loopback HTTP using only the standard library. It creates
+an illustrative `test-001` release in a temporary directory; this is not a
+published scientific release. The context manager stops the server and removes
+the temporary files even if a download fails.
 
 ```python
+from contextlib import contextmanager
+from functools import partial
+import hashlib
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from threading import Thread
+
 from mermaid import geocsv
 
-# Website test collection when its repository is being served locally.
-collection_url = "http://localhost:8000/data/geocsv/testing/"
+repository_root = Path.cwd()
+if repository_root.name == "tutorials":
+    repository_root = repository_root.parent.parent
+elif repository_root.name == "docs":
+    repository_root = repository_root.parent
+fixture_path = repository_root / "tests/fixtures/geocsv/P0006.geocsv"
 
-# One float; save beneath ./<release_id>/.
-downloads = geocsv.fetch("P0006", base_url=collection_url)
 
-# A selection; save beneath ./data/<release_id>/.
-downloads = geocsv.fetch(["P0006"], base_url=collection_url, output_dir="data")
-
-# Every float in the release; no persistent files.
-downloads = geocsv.fetch(base_url=collection_url, output_dir=None)
-tables = geocsv.read(downloads)
-
-# Pin a release instead of following latest.
-downloads = geocsv.fetch(
-    base_url=collection_url, release="test-001", output_dir=None,
-)
+@contextmanager
+def local_collection():
+    with TemporaryDirectory(prefix="geocsv-tutorial-") as temporary:
+        directory = Path(temporary)
+        server_root = directory / "server"
+        release_directory = server_root / "releases/test-001"
+        release_directory.mkdir(parents=True)
+        content = fixture_path.read_bytes()
+        (release_directory / "P0006.geocsv").write_bytes(content)
+        manifest = {
+            "release_id": "test-001", "testing_only": True,
+            "files": [{
+                "instrument_id": "P0006", "filename": "P0006.geocsv",
+                "size_bytes": len(content),
+                "sha256": hashlib.sha256(content).hexdigest(),
+                "provenance": {"notes": "Unmodified tracked test fixture"},
+            }],
+        }
+        (release_directory / "manifest.json").write_text(
+            json.dumps(manifest), encoding="utf-8",
+        )
+        (server_root / "latest.json").write_text(json.dumps({
+            "release_id": "test-001", "testing_only": True,
+            "manifest": "releases/test-001/manifest.json",
+        }), encoding="utf-8")
+        handler = partial(SimpleHTTPRequestHandler, directory=str(server_root))
+        with ThreadingHTTPServer(("127.0.0.1", 0), handler) as server:
+            thread = Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                yield f"http://127.0.0.1:{server.server_port}/", directory / "downloads"
+            finally:
+                server.shutdown()
+                thread.join()
 ```
 
-The full signature is:
+## 2. Fetch one file into memory
+
+Start with one instrument and no persistent download files. `base_url` is
+required; `output_dir=None` keeps the verified bytes in memory.
 
 ```python
-fetch(instrument_ids=None, *, base_url, output_dir=".", release=None, timeout=30)
+with local_collection() as (collection_url, output_directory):
+    downloads = geocsv.fetch("P0006", base_url=collection_url, output_dir=None)
+
+# The temporary server is stopped; the memory result remains usable.
+assert downloads[0].content == fixture_path.read_bytes()
+tables = geocsv.read(downloads)
+assert tables[0].attrs["geocsv"].download.testing_only is True
 ```
+
+## 3. Select a list or discover the entire release
+
+A list selects instruments in the requested order. Omitting the selection
+fetches every instrument in manifest order. This test release has one float.
+
+```python
+with local_collection() as (collection_url, output_directory):
+    selected = geocsv.fetch(["P0006"], base_url=collection_url, output_dir=None)
+    discovered = geocsv.fetch(base_url=collection_url, output_dir=None)
+assert selected == discovered
+```
+
+## 4. Save verified files to disk and reuse them
+
+Omitting `output_dir` saves beneath the current directory. Here an explicit
+temporary directory keeps the exercise self-contained:
+
+```python
+with local_collection() as (collection_url, output_directory):
+    saved = geocsv.fetch("P0006", base_url=collection_url,
+                         output_dir=output_directory)
+    saved_tables = geocsv.read(saved)
+    print(saved[0].path)
+    assert saved[0].path.is_file()
+    reused = geocsv.fetch("P0006", base_url=collection_url,
+                          output_dir=output_directory)
+    assert reused == saved
+```
+
+The temporary disk files have now been removed. For research downloads, use a
+persistent directory of your choice instead of this temporary collection.
+
+## 5. Pin a release instead of consulting latest.json
+
+```python
+with local_collection() as (collection_url, output_directory):
+    pinned = geocsv.fetch("P0006", base_url=collection_url,
+                          release="test-001", output_dir=None)
+assert pinned[0].content == downloads[0].content
+help(geocsv.fetch)
+```
+
+The full signature is
+`fetch(instrument_ids=None, *, base_url, output_dir=".", release=None, timeout=30)`.
+For an actual collection, supply its publisher-provided URL as `base_url`.
+The local fixture provenance is documented in the
+[fixture notes](../../tests/fixtures/geocsv/README.md).
 
 Production hosting is undecided, so `base_url` is required. It must be an
 HTTP(S) collection URL without query parameters or a fragment; a trailing slash
-is optional. Use HTTPS for public hosting. The URL above is a local test
-endpoint, not a published scientific data release. To preview it, run
-`python3 -m http.server 8000 --bind 127.0.0.1` from the website repository.
-Routine package tests need neither that checkout nor an internet connection.
+is optional. Use HTTPS for public hosting. The example above uses a temporary
+local test endpoint, not a published scientific data release. It needs neither the website
+checkout nor an internet connection.
 
 Omit `instrument_ids` or pass None to discover every file from the manifest,
 in manifest order. A string selects one float; a sequence selects floats in
@@ -191,3 +310,13 @@ download helper, nearby utility tests, contribution instructions, and coding
 style. That read-only reference is distinct from the repository environment's
 installed ObsPy 1.5.1. Fetching adds no ObsPy dependency or scientific matching
 policy; association diagnostics now identify memory-fetched sources by URL.
+
+## Fixture coverage
+
+These examples exercise memory retrieval, disk retrieval and reuse, release
+pinning, and download provenance using one real P0006 GeoCSV payload served
+as a test release. Selection and discovery return the same one-file inventory;
+they do not demonstrate differing selections or multi-instrument ordering.
+A second distinct real instrument fixture is needed for that tutorial example.
+The package's fetch tests separately exercise ordering with an invented second
+identifier. No public production endpoint is exercised here.

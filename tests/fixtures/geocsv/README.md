@@ -15,7 +15,7 @@ Serve this local fixture with a local HTTP server for routine automated download
 tests; do not depend on the public endpoint or the website repository. The test
 endpoint layout and provisional manifest are documented in the website's
 `data/geocsv/testing/README.md` and `CONTRACT.md`. The package's fetch behavior
-is documented in [`docs/FETCH.md`](../../../docs/FETCH.md).
+is documented in [`docs/tutorials/FETCH.md`](../../../docs/tutorials/FETCH.md).
 `tests/test_fetch.py` constructs the release manifest and latest pointer in a
 temporary server directory from this fixture, preserving its bytes and hash.
 A second, invented instrument entry combines `typed.geocsv` and

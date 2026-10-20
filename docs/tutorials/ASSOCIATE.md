@@ -3,10 +3,10 @@
 `geocsv.associate` attaches a uniquely matched event row and receiver position
 to an ObsPy `Trace` or `Stream`. This tutorial uses tracked MiniSEED and GeoCSV
 fixtures, so it runs offline from a fresh checkout. The companion files
-[`ASSOCIATION_TUTORIAL.md`](ASSOCIATION_TUTORIAL.md) and
-[`ASSOCIATION_TUTORIAL.ipynb`](ASSOCIATION_TUTORIAL.ipynb) must keep the same
+[`ASSOCIATE.md`](ASSOCIATE.md) and
+[`ASSOCIATE.ipynb`](ASSOCIATE.ipynb) must keep the same
 explanations and Python examples in the same order when either is edited.
-For pandas basics, start with the [reader tutorial](TUTORIAL.md).
+For pandas basics, start with the [reader tutorial](READ.md).
 
 From the repository root, activate the existing environment and install the
 package with its optional ObsPy dependency (ObsPy 1.5.1 or newer):
@@ -16,18 +16,18 @@ source .venv/bin/activate
 python -m pip install '.[obspy]'
 ```
 
-See the [installation guide](INSTALLATION.md) if you have not created an
+See the [installation guide](../INSTALLATION.md) if you have not created an
 environment yet. For a notebook, also install JupyterLab and its Python kernel:
 
 ```bash
 python -m pip install jupyterlab ipykernel
-python -m jupyterlab docs/ASSOCIATION_TUTORIAL.ipynb
+python -m jupyterlab docs/tutorials/ASSOCIATE.ipynb
 ```
 
 Select a kernel using this repository's `.venv` and run the cells from top to
 bottom. Alternatively, start `python` and run the Python blocks in order at
 the shell's Python prompt. Start with the working directory set to the
-repository root or `docs/`. The reader itself requires only pandas; ObsPy is
+repository root, `docs/`, or `docs/tutorials/`. The reader itself requires only pandas; ObsPy is
 loaded when association is called.
 
 ## 1. Read a waveform and its GeoCSV records
@@ -45,8 +45,10 @@ from obspy import Stream, read as read_waveforms
 from mermaid import geocsv
 
 root = Path.cwd()
-if not (root / "data" / "fixtures").is_dir():
-    root = root.parent  # Also works when starting in docs/.
+if root.name == "tutorials":
+    root = root.parent.parent
+elif root.name == "docs":
+    root = root.parent
 fixtures = root / "data" / "fixtures" / "association"
 example_dir = fixtures / "452.020-P-0030"
 waveform_path = (
@@ -72,7 +74,7 @@ The tracked subset retains original header and selected record bytes, nearby
 candidates, and measurement context. It is sufficient for this example, but
 cannot establish uniqueness across omitted history records. Use your complete
 GeoCSV histories for research association. The [fixture manifest and provenance
-notes](../data/fixtures/association/README.md) describe the subset extraction.
+notes](../../data/fixtures/association/README.md) describe the subset extraction.
 
 ## 2. Associate in place with an explicit time tolerance
 
@@ -82,6 +84,8 @@ The public call is:
 help(geocsv.associate)
 ```
 
+Begin with one trace and the parsed tables. This fixture needs the explicit
+1 ms tolerance explained below; no other optional input is needed.
 Its signature is `associate(waveforms, records, *, time_tolerance=0.0001,
 allow_merge=False)`. Each trace must match exactly one `Algorithm(event):` row
 under these rules:
@@ -103,7 +107,7 @@ millisecond-rendered GeoCSV start. The default rejects it; explicitly allow
 
 ```python
 original = trace.copy()
-result = geocsv.associate(stream, tables, time_tolerance=0.001)
+result = geocsv.associate(trace, tables, time_tolerance=0.001)
 assert result is None
 assert np.array_equal(trace.data, original.data)
 assert all(trace.stats[key] == value for key, value in original.stats.items())
@@ -222,6 +226,8 @@ try:
     geocsv.associate(unmatched, tables)
 except ValueError as error:
     print(error)
+else:
+    raise AssertionError("Expected the default tolerance to reject this fixture")
 assert all("geocsv" not in item.stats for item in unmatched)
 assert all("coordinates" not in item.stats for item in unmatched)
 ```
@@ -239,6 +245,8 @@ try:
     geocsv.associate(trace, tables, time_tolerance=0.001)
 except ValueError as error:
     print(error)  # stats.geocsv already exists
+else:
+    raise AssertionError("Expected association to reject an existing destination")
 ```
 
 For another association experiment, use an untouched copy or reread the
@@ -274,6 +282,8 @@ try:
     geocsv.associate(longer, synthetic_tables)
 except ValueError as error:
     print(error)  # Source SampleCount=4 differs from waveform npts=10.
+else:
+    raise AssertionError("Expected strict matching to reject the longer trace")
 
 geocsv.associate(longer, synthetic_tables, allow_merge=True)
 assert longer.stats.geocsv.association == "first_segment"
@@ -288,9 +298,19 @@ count, quality, pressure, and rate do not become whole-trace measurements.
 A standard match remains `one_segment` even when `allow_merge=True`.
 MiniSEED quality M neither enables nor prevents the fallback. Coverage cannot
 detect gaps already filled upstream or determine which overlapping samples
-survived a prior merge. See the [merged-trace policy](OBSPY_MERGED_TRACES.md).
+survived a prior merge. See the [merged-trace policy](../OBSPY_MERGED_TRACES.md).
 
 Association describes the waveform at the time of attachment. Subsequent
 trimming, resampling, or merging does not refresh its source row, position,
 label, or start difference. Preserve original waveforms and associate before
 downstream transformations when you need the original segment relationship.
+
+## Fixture coverage
+
+The real P0030 fixture exercises `one_segment`, the explicit time tolerance,
+repeated-row batch association, and rejection of existing destinations.
+The synthetic SYN01 example explicitly asserts `first_segment`: the
+`allow_merge=True` fallback is exercised, not merely enabled on a standard
+match. This tutorial does not yet demonstrate that fallback with real merged
+MiniSEED segments. A real contiguous multi-segment waveform with matching
+GeoCSV coverage and documented provenance is needed for that example.

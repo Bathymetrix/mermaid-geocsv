@@ -1,19 +1,33 @@
 """Keep tutorial prose and executable examples synchronized."""
 
 import json
+import inspect
 from pathlib import Path
 import re
 
 import pytest
 
+from mermaid import geocsv
+
 
 ROOT = Path(__file__).resolve().parents[1]
+TUTORIALS = ROOT / "docs" / "tutorials"
+NAMES = sorted(path.stem for path in TUTORIALS.glob("*.md"))
 
 
-@pytest.mark.parametrize("name", ["TUTORIAL", "ASSOCIATION_TUTORIAL"])
+def test_public_functions_have_tutorial_pairs():
+    public_functions = {
+        name.upper() for name in geocsv.__all__
+        if inspect.isfunction(getattr(geocsv, name))
+    }
+    assert public_functions <= set(NAMES)
+    assert set(NAMES) == {path.stem for path in TUTORIALS.glob("*.ipynb")}
+
+
+@pytest.mark.parametrize("name", NAMES)
 def test_markdown_notebook_parity(name):
-    markdown = (ROOT / "docs" / f"{name}.md").read_text()
-    notebook = json.loads((ROOT / "docs" / f"{name}.ipynb").read_text())
+    markdown = (TUTORIALS / f"{name}.md").read_text()
+    notebook = json.loads((TUTORIALS / f"{name}.ipynb").read_text())
     parts = re.split(r"(?m)^```python\n(.*?)^```\n?", markdown, flags=re.S)
     markdown_prose = "".join(parts[::2])
     markdown_code = "\n".join(parts[1::2])
@@ -35,13 +49,20 @@ def test_markdown_notebook_parity(name):
     ]
 
 
-@pytest.mark.parametrize("working_directory", [ROOT, ROOT / "docs"])
-def test_association_tutorial_examples(working_directory, monkeypatch):
-    pytest.importorskip("obspy")
-    markdown = (ROOT / "docs" / "ASSOCIATION_TUTORIAL.md").read_text()
+@pytest.mark.parametrize("name", NAMES)
+@pytest.mark.parametrize("working_directory", [ROOT, ROOT / "docs", TUTORIALS])
+def test_tutorial_examples(name, working_directory, monkeypatch):
+    if name == "ASSOCIATE":
+        pytest.importorskip("obspy")
+    if name == "PLOTTING":
+        matplotlib = pytest.importorskip("matplotlib")
+        matplotlib.use("Agg")
+    markdown = (TUTORIALS / f"{name}.md").read_text()
     examples = re.findall(r"(?m)^```python\n(.*?)^```", markdown, flags=re.S)
     monkeypatch.chdir(working_directory)
     namespace = {"__name__": "__main__"}
     for number, example in enumerate(examples, start=1):
-        exec(compile(example, f"ASSOCIATION_TUTORIAL.md:block-{number}", "exec"),
+        exec(compile(example, f"{name}.md:block-{number}", "exec"),
              namespace)
+    if name == "PLOTTING":
+        namespace["plt"].close("all")

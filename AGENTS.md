@@ -242,16 +242,31 @@ do not authorize commits, tags, pushes, or publication.
 
 ## Development and Verification
 
-Keep both tutorial pairs synchronized: `docs/TUTORIAL.md` with
-`docs/TUTORIAL.ipynb` for reading, and `docs/ASSOCIATION_TUTORIAL.md` with
-`docs/ASSOCIATION_TUTORIAL.ipynb` for association. Any change to explanations,
-examples, scientific assumptions, or setup instructions in either file of a
-pair must be reflected in its companion in the same change. Markdown Python blocks
-become executable notebook cells; shell commands remain Markdown instructions.
-Cell boundaries may differ for readable interactive output, but preserve the
-same prose and Python source in the same order. Keep the committed notebook's
-outputs empty and execution counts unset. Verify content parity and run the
-Python examples in order after changing them.
+Every public function or method must have a dedicated, standalone tutorial
+pair under `docs/tutorials/`, named for that operation (for example, `READ.md`
+and `READ.ipynb`, `FETCH.md` and `FETCH.ipynb`, or `ASSOCIATE.md` and
+`ASSOCIATE.ipynb`). Each tutorial must include its own setup, imports, and
+examples runnable from top to bottom without another tutorial's state.
+Start each tutorial with the simplest working example, then build toward
+increasing input and option complexity. Explain additional options when they
+are first introduced.
+Downstream analysis examples may have additional standalone pairs, such as
+`PLOTTING.md` and `PLOTTING.ipynb`.
+
+Link both companions from each tutorial and list every pair in the README.
+Any change to explanations, examples, scientific assumptions, or setup
+instructions in either file must be reflected in its companion in the same
+change. Markdown Python blocks become executable notebook cells; shell
+commands remain Markdown instructions. Cell boundaries may differ for readable
+interactive output, but preserve the same prose and Python source in the same
+order. Keep committed notebook outputs empty and execution counts unset.
+Extend `tests/test_tutorials.py` whenever a public operation or tutorial pair
+is added; verify content parity and run each tutorial's Python examples in
+order after changing them. Verify that each example actually exercises its
+stated behavior (for example, `allow_merge=True` must reach `first_segment`
+in its fallback example). Report missing fixture coverage explicitly, and
+distinguish real-data examples from synthetic demonstrations so suitable
+fixtures can be added.
 
 When present, use this repository's `.venv` for Python commands, tests, and
 the installed console command.

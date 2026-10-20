@@ -128,7 +128,7 @@ The original many-traces-to-one-row rule remains. The opt-in still chooses
 one location anchor, not several competing source rows. Incomplete-event
 handling and per-call SNCL/time indexing address audit findings 4 and 5;
 Version 0.15.0 exposes the same matching behavior through `geocsv.associate`;
-see the [association tutorial](ASSOCIATION_TUTORIAL.md). SAC projection remains
+see the [association tutorial](tutorials/ASSOCIATE.md). SAC projection remains
 unfinished work.
 
 ## Verification
