@@ -136,6 +136,8 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
     In the latter case, source fields describe only the anchor; its location
     is adopted for the entire trace without reconstructing merge provenance.
     """
+    if not isinstance(allow_first_segment, bool):
+        raise TypeError("allow_first_segment must be a bool")
     try:
         tolerance_ns = Decimal(str(time_tolerance)) * 1_000_000_000
     except InvalidOperation as exc:
@@ -229,6 +231,8 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
             raise ValueError(f"trace {trace_index} {trace.id}: invalid waveform identity "
                              f"fields {invalid}; only Location may be an empty string; "
                              "no identity field may be missing")
+        if not len(trace.data):
+            raise ValueError(f"{trace.id}: association requires nonempty loaded samples")
         if trace.stats.npts != len(trace.data):
             raise ValueError(f"{trace.id}: npts differs from data length; load the samples")
         rate = trace.stats.sampling_rate

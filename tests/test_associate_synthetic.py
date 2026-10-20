@@ -299,6 +299,26 @@ def test_waveform_mismatch_fails(records, kind):
         associate(tr, records)
 
 
+def test_empty_waveform_and_zero_source_count_cannot_associate(records):
+    records[0].loc[1, 'SampleCount'] = 0
+    first, empty = trace('SYN02'), trace()
+    empty.data = np.array([], dtype=np.float32)
+    stream = obspy.Stream([first, empty])
+    with pytest.raises(ValueError, match='nonempty loaded samples'):
+        associate(stream, records)
+    assert all('geocsv' not in item.stats for item in stream)
+    assert all('coordinates' not in item.stats for item in stream)
+
+
+@pytest.mark.parametrize('value', ['False', 'True', 0, 1, None])
+def test_first_segment_permission_requires_a_boolean(records, value):
+    tr = trace()
+    tr.data = np.arange(10, dtype=np.float32)
+    with pytest.raises(TypeError, match='allow_first_segment must be a bool'):
+        associate(tr, records, allow_first_segment=value)
+    assert 'geocsv' not in tr.stats
+
+
 @pytest.mark.parametrize('station', ['SYN01', 'SYN02'])
 @pytest.mark.parametrize('offset_ns', [-100_001, -100_000, 100_000, 100_001])
 def test_default_time_tolerance_is_fixed_and_inclusive(records, station, offset_ns):

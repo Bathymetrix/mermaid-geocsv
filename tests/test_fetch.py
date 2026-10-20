@@ -320,3 +320,29 @@ def test_fetched_parser_error_identifies_url(collection):
     results = geocsv.fetch("P0006", base_url=collection.url, output_dir=None)
     with pytest.raises(geocsv.GeoCSVError, match=r"http://.*P0006.geocsv:.*LF or CRLF"):
         geocsv.read(results)
+
+
+@pytest.mark.parametrize('memory', [False, True])
+def test_real_download_read_associate_write_sac_pipeline(collection, memory):
+    obspy = pytest.importorskip('obspy')
+    import numpy as np
+    from obspy.io.sac import SACTrace
+
+    downloads = geocsv.fetch('P0045', base_url=collection.url,
+                             output_dir=None if memory else collection.client)
+    tables = geocsv.read(downloads)
+    directory = FIXTURES / 'association/P0045_20220115'
+    manifest = json.loads((directory / 'manifest.json').read_text())
+    item = manifest['selected'][0]
+    trace, = obspy.read(str(directory / item['mseed']['path']))
+    geocsv.associate(trace, tables, time_tolerance=0.001)
+    assert trace.stats.geocsv.metadata.download is downloads[0].provenance
+    output = collection.client / 'located.sac'
+    geocsv.write_sac(trace, output)
+    actual = SACTrace.read(str(output))
+    reference = SACTrace.read(str(directory / item['sac']['path']))
+    assert actual.to_obspy_trace(round_sampling_interval=False).id == trace.id
+    assert actual.stla == np.float32(trace.stats.geocsv.Latitude)
+    assert actual.stlo == np.float32(trace.stats.geocsv.Longitude)
+    assert actual.stdp is reference.stdp is None  # REQ has no measured pressure.
+    np.testing.assert_array_equal(actual.data, reference.data)

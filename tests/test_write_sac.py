@@ -232,3 +232,47 @@ def test_missing_dataset_provenance_is_rejected(trace, tmp_path):
     with pytest.raises(ValueError, match="dataset metadata"):
         geocsv.write_sac(trace, tmp_path / "invalid.sac")
     assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize('value', [1e100, 1e-100, np.nan, np.inf, 1 + 2j])
+def test_unrepresentable_samples_fail_before_file_creation(trace, tmp_path, value):
+    trace.data = np.full(trace.stats.npts, value)
+    before = trace.copy()
+    with pytest.raises(ValueError, match='samples'):
+        geocsv.write_sac(trace, tmp_path / 'invalid.sac')
+    np.testing.assert_array_equal(trace.data, before.data)
+    assert trace.stats == before.stats
+    assert not list(tmp_path.iterdir())
+
+
+def test_large_finite_float32_samples_have_finite_summary_headers(trace, tmp_path):
+    trace.data = np.full(trace.stats.npts, np.finfo(np.float32).max, dtype=np.float32)
+    geocsv.write_sac(trace, tmp_path / 'large.sac')
+    written = SACTrace.read(str(tmp_path / 'large.sac'), headonly=True)
+    assert written.depmin == written.depmax == written.depmen == np.finfo(np.float32).max
+
+
+@pytest.mark.parametrize('code', ['ABCDEFGHI', 'SYNé', ' PAD ', '-12345'])
+def test_identity_must_survive_sac_serialization(trace, tmp_path, code):
+    trace.stats.station = trace.stats.geocsv.Station = code
+    with pytest.raises(ValueError, match='ASCII SAC identity'):
+        geocsv.write_sac(trace, tmp_path / 'invalid.sac')
+    assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize('field,value', [('WaterPressure', 1e100),
+                                        ('WaterPressure', 1e-100),
+                                        ('WaterPressure', 5e-324),
+                                        ('calib', 1e100), ('calib', 1e-100),
+                                        ('calib', -12345), ('calib', -12344.99999),
+                                        ('SampleRate', 1e100)])
+def test_unrepresentable_numeric_headers_fail_before_file_creation(trace, tmp_path, field, value):
+    if field == 'calib':
+        trace.stats.calib = value
+    else:
+        trace.stats.geocsv[field] = value
+        if field == 'SampleRate':
+            trace.stats.sampling_rate = value
+    with pytest.raises(ValueError, match='float32|undefined'):
+        geocsv.write_sac(trace, tmp_path / 'invalid.sac')
+    assert not list(tmp_path.iterdir())

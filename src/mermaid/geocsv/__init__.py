@@ -12,7 +12,7 @@ from .read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.18.0"
+__version__ = "0.18.1"
 
 __all__ = [
     "__version__",
@@ -47,7 +47,8 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
         nonnegative. Full UTC nanosecond values are compared; source lexical
         resolution does not enlarge the tolerance.
     allow_first_segment : bool, optional
-        Default False requires the original sample count. If True, a longer
+        Must be a bool. Default False requires the original sample count.
+        If True, a longer
         trace without a standard match may adopt a unique first segment's
         location, provided source sample ranges cover its grid exactly without
         gaps after overlaps are counted once. No waveform merging is performed.
@@ -63,7 +64,8 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
     ImportError
         ObsPy is unavailable; install ``mermaid-geocsv[obspy]``.
     TypeError
-        The waveform argument is not an ObsPy Trace or Stream.
+        The waveform argument is not an ObsPy Trace or Stream, or
+        allow_first_segment is not a bool.
     ValueError
         Inputs, provenance, or destination containers are invalid, a trace has
         no unique eligible event row, or a coordinate projection is incomplete.
@@ -71,7 +73,7 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
     Notes
     -----
     Matches require complete, exact SNCL (only Location may be empty), zoned
-    UTC-comparable times, loaded sample count equality, and measured rates
+    UTC-comparable times, nonempty loaded sample count equality, and measured rates
     within 0.01 Hz. This rate threshold is provisional scientific policy.
     DataQuality is retained as source evidence, independent of waveform quality.
     Invalid event identities and duplicate complete SNCL/time/count/rate keys
@@ -111,7 +113,8 @@ def write_sac(trace, path):
     Parameters
     ----------
     trace : obspy.Trace
-        Original MiniSEED-derived trace with loaded, unmasked samples and a
+        Original MiniSEED-derived trace with loaded, unmasked, finite real
+        samples and a
         ``one_segment`` attachment from :func:`associate`. Export before
         waveform processing; ``first_segment`` associations are rejected.
     path : str or os.PathLike
@@ -130,7 +133,8 @@ def write_sac(trace, path):
         The waveform argument is not one ObsPy Trace.
     ValueError
         Association, waveform consistency, required coordinates, pressure,
-        or declared units are invalid. Missing pressure is allowed only for
+        declared units, or SAC storage representations are invalid.
+        Missing pressure is allowed only for
         REQ source records, identified by source ``DataQuality="D"``.
     FileExistsError
         The output path already exists; it is never overwritten.
@@ -150,7 +154,9 @@ def write_sac(trace, path):
 
     ObsPy supplies waveform identity, timing, sampling and default headers.
     Binary SAC stores samples and floating headers at float32 precision;
-    export does not apply calibration. Other automaid headers are not
+    nonfinite samples, overflow, and nonzero values lost to zero are rejected.
+    Identity codes must fit eight ASCII bytes without padding or SAC null tokens.
+    Export does not apply calibration. Other automaid headers are not
     reconstructed, and GeoCSV provenance is not serialized into SAC.
     Identity, start, sample count and source rate agreement are checked, but
     these checks cannot establish an unmodified sample history. This is not

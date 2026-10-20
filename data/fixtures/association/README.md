@@ -13,7 +13,9 @@ references only: read them separately with ObsPy, then compare their inherited
 `stats.sac` values key-by-key against approved SAC fields projected onto the
 MiniSEED traces after GeoCSV association. Never use SAC reference headers to
 fill or match association metadata. SAC-input association is outside scope
-until further instruction; SAC output projection remains deferred without a placeholder argument.
+until further instruction. Separate `geocsv.write_sac` exports associated
+original segments without changing `stats.sac`; see the
+[SAC writing tutorial](../../../docs/tutorials/WRITE_SAC.md).
 
 Complete `geo_DET_REQ.csv` histories remain unchanged, local, and Git-ignored.
 They are optional corpus references, not test prerequisites. To restore and
@@ -112,8 +114,9 @@ for unsampled events. The optional full-history check also confirms unique
 matches for all 18 sampled waveforms in the recorded complete histories.
 
 The non-20-Hz DET.WLT2 sample uses `MH.P0030.10.MDH` and Q. RAW requested
-products use location 10 and D. Paired SAC geographic/depth header comparisons
-remain future work. ObsPy emits sample-spacing warnings for some SAC inputs:
+products use location 10 and D. The SAC export tests compare geographic/depth
+headers against all 18 independent paired SAC references. ObsPy emits
+sample-spacing warnings for some SAC inputs:
 its reader rounds float32 SAC delta to microsecond precision when constructing
 core sampling metadata. SAC core sampling rates should therefore not be
 assumed bit-identical to MiniSEED or the original `stats.sac.delta` header.

@@ -120,7 +120,12 @@ ObsPy supplies ordinary waveform identity, sampling, timing, calibration
 metadata, and default SAC headers. Samples are not scaled or calibrated.
 Output is little-endian binary SAC, with float32 samples and floating headers.
 Integer samples outside the exactly representable float32 range can lose
-precision. SAC timing also has finite precision and does not guarantee
+precision. Export requires finite real samples. Overflow and nonzero values
+that would become zero in float32 storage raise `ValueError` before file
+creation; the same storage checks apply to depth, sample interval, and
+calibration. Identity codes must fit eight ASCII bytes, have no surrounding
+whitespace, and not equal the SAC undefined token `-12345`.
+SAC timing also has finite precision and does not guarantee
 preservation of UTC nanoseconds. GeoCSV row provenance is not serialized into
 SAC; retain the associated trace or source records when you need it.
 

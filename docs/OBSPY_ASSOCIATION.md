@@ -48,7 +48,7 @@ A standard match requires:
    nanoseconds. The default is 100 microseconds; an override must be finite
    nonnegative seconds, and zero requires exact equality. `None` is invalid.
    Source lexical resolution does not enlarge the tolerance.
-3. GeoCSV `SampleCount == stats.npts == len(data)` exactly, with loaded,
+3. GeoCSV `SampleCount == stats.npts == len(data) > 0` exactly, with loaded,
    unmasked samples. There is no sample-count tolerance.
 4. Finite positive rates satisfying the inclusive floating-point endpoint
    check `waveform_rate - 0.01 <= source_rate <= waveform_rate + 0.01`, in Hz.

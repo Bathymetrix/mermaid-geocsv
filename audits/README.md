@@ -16,6 +16,7 @@ scientific or format decisions.
 | [04](04.md) | Reader policies and format ambiguities consolidated into open questions. |
 | [Association](ASSOCIATION.md) | Sandbox association findings, intermediate remedies, and later policy updates. |
 | [05](05.md) | Portable real-data verification, package promotion handoff, and SAC placeholder removal. |
+| [06](06.md) | Complete workflow adversarial audit, prioritized decisions, and 0.18.1 reliability fixes. |
 
 The association report formerly lived at `docs/OBSPY_ASSOCIATION_AUDIT.md`.
 The numbered reports retain their detailed evidence; they need not duplicate

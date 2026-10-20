@@ -87,7 +87,8 @@ help(geocsv.associate)
 Begin with one trace and the parsed tables. This fixture needs the explicit
 1 ms tolerance explained below; no other optional input is needed.
 Its signature is `associate(waveforms, records, *, time_tolerance=0.0001,
-allow_first_segment=False)`. Each trace must match exactly one `Algorithm(event):` row
+allow_first_segment=False)`. The fallback flag must be a Python bool; strings
+such as `"False"` are rejected. Each trace must match exactly one `Algorithm(event):` row
 under these rules:
 
 - Network, Station, Location, and Channel (SNCL) match exactly. Only Location
@@ -96,7 +97,7 @@ under these rules:
   inclusive tolerance, in seconds. The default is 100 microseconds. Zero
   requires exact equality; `None`, negative, and nonfinite values are invalid.
 - `SampleCount` equals both waveform `npts` and the number of loaded samples.
-  Counts have no tolerance. Masked sample gaps are rejected.
+  Counts have no tolerance. Empty waveforms and masked sample gaps are rejected.
 - Source `SampleRate`, declared in hertz, differs from the waveform rate by at
   most 0.01 Hz. This threshold remains provisional scientific policy.
 

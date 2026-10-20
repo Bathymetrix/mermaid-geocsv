@@ -113,10 +113,11 @@ headers, then compare those fields key-by-key with `stats.sac` on the paired
 SAC trace read separately by ObsPy. Define field coverage, units, missing-value
 conventions, and numeric precision for the comparisons. Do not promise whole
 SAC-header equivalence for fields without a GeoCSV source or agreed mapping.
-Supporting association of SAC-derived input traces is outside current scope;
-creating SAC headers on associated MiniSEED traces is deferred planned work.
+Supporting association of SAC-derived input traces is outside current scope.
+The separate `write_sac(trace, path)` operation exports associated original
+MiniSEED segments using fresh SAC headers without mutating `stats.sac`.
 The unused `project_sac` option was removed on 2026-10-16 before package
-exposure. Keep the mapping and comparison plan in `docs/FUTURE.md`; do not
+exposure. Keep deferred mappings in `docs/FUTURE.md`; do not
 reserve an unimplemented argument in the current associator.
 
 ### Automaid Source Reference

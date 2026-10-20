@@ -12,6 +12,15 @@ import pandas as pd
 from .read import GeoCSVMetadata
 
 
+def _float32_value(value, label):
+    """Reject overflow and loss to zero at the SAC storage boundary."""
+    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+        stored = np.float32(value)
+    if not np.isfinite(stored) or (value != 0 and stored == 0):
+        raise ValueError(f"{label}: value cannot be represented in SAC float32 storage")
+    return stored
+
+
 def write_sac(trace, path):
     """Validate an associated original segment and write fresh SAC headers."""
     if not isinstance(trace, Trace):
@@ -32,12 +41,23 @@ def write_sac(trace, path):
         code = source.get(field)
         if not isinstance(code, str) or code != trace.stats[key]:
             raise ValueError(f"{trace.id}: waveform {key} differs from its association")
+        if (not code.isascii() or len(code) > 8 or code.strip() != code
+                or code == "-12345"):
+            raise ValueError(f"{trace.id}: {key} cannot be preserved in an "
+                             "eight-byte ASCII SAC identity header")
     count = source.get("SampleCount")
     if (not len(trace.data) or np.ma.is_masked(trace.data)
             or len(trace.data) != trace.stats.npts
             or count is None or pd.isna(count) or count != trace.stats.npts):
         raise ValueError(f"{trace.id}: requires the original loaded sample count "
                          "without masked gaps")
+    if trace.data.dtype.kind not in "iuf" or not np.isfinite(trace.data).all():
+        raise ValueError(f"{trace.id}: SAC export requires finite real samples")
+    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+        samples = trace.data.astype(np.float32)
+    if (not np.isfinite(samples).all()
+            or np.any((trace.data != 0) & (samples == 0))):
+        raise ValueError(f"{trace.id}: samples cannot be represented in SAC float32 storage")
     source_start = pd.Timestamp(source.get("StartTime"))
     difference = source.get("starttime_difference_seconds")
     if (pd.isna(source_start) or source_start.tzinfo is None
@@ -50,6 +70,9 @@ def write_sac(trace, path):
             or not isfinite(trace.stats.sampling_rate) or trace.stats.sampling_rate <= 0
             or not trace.stats.sampling_rate - 0.01 <= rate <= trace.stats.sampling_rate + 0.01):
         raise ValueError(f"{trace.id}: waveform rate disagrees with its association")
+    _float32_value(trace.stats.delta, f"{trace.id}: delta")
+    if _float32_value(trace.stats.calib, f"{trace.id}: calib") == -12345:
+        raise ValueError(f"{trace.id}: calib collides with the SAC undefined value")
 
     headers = {"stel": 0.0}
     for field, key, unit, lower, upper in (
@@ -78,10 +101,17 @@ def write_sac(trace, path):
             raise ValueError(f"{trace.id}: requires finite nonnegative WaterPressure")
         # Automaid convention: 100 mbar = 1 dbar, treated as approximately 1 m.
         headers["stdp"] = float(pressure) / 100
+        if pressure != 0 and headers["stdp"] == 0:
+            raise ValueError(f"{trace.id}: stdp underflows before SAC float32 storage")
+        _float32_value(headers["stdp"], f"{trace.id}: stdp")
 
     sac = SACTrace.from_obspy_trace(trace, keep_sac_header=False)
     for key, value in headers.items():
         setattr(sac, key, value)
+    _float32_value(sac.e, f"{trace.id}: e")
+    # Compute summaries from the actual stored values, using float64 accumulation
+    # so a valid float32 array near its maximum does not overflow its mean.
+    sac.data = samples.astype(np.float64)
     # Exclusive creation also protects against collisions between loop iterations.
     with Path(path).open("xb") as handle:
         sac.write(handle, byteorder="little")

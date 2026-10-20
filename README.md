@@ -54,6 +54,18 @@ segments; longer traces require the explicit `allow_first_segment=True`
 option. SAC export requires an original segment. See the linked guides for
 signatures, matching rules, units, provenance, and limitations.
 
+EarthScope downloads must retain the original segment's complete SNCL,
+start, sample count, and compatible measured rate. Arbitrary time-window
+downloads may trim or combine acquisitions and fail association. The explicit
+first-segment fallback supplies location only; it does not enable SAC export
+of longer traces or reconstruct acquisition lineage. Production GeoCSV
+hosting is still pending.
+
+Export before waveform processing. SAC output has float32 precision and no
+serialized GeoCSV provenance; nonfinite or unrepresentable values and identity
+codes that cannot survive SAC storage are rejected. No response correction or
+counts-to-pressure calibration is supplied.
+
 ## Learn more
 
 Each tutorial is standalone, with matching Markdown and notebook versions.
