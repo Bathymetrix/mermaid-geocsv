@@ -135,10 +135,13 @@ metadata.field_units["Latitude"]
 metadata.field_types["StartTime"]
 metadata.comments[:5]
 metadata.source_path
+metadata.record_line_numbers[0]  # Physical starting line of source record 0.
 ```
 
 `source_path` is the full, resolved path of the file opened by the reader. It
 records where the data came from; it is not a field declared in the GeoCSV.
+`record_line_numbers` is a read-only map from record indices to one-based
+physical starting lines, including for records with multiline quoted cells.
 For in-memory input, `source_path` is None. When reading a fetch result,
 `metadata.download` retains the selected release, requested URLs, verified
 checksum and byte count, test-collection flag, and original manifest bytes;

@@ -216,7 +216,7 @@ Algorithm(event):synthetic:v0,2025-01-01T00:00:00.123456789Z,MH,SYN01,,BDH,Q,0,0
     np.testing.assert_array_equal(waveform.data, before.data)
 
 
-@pytest.mark.parametrize("field", ["Station", "SampleCount", "StartTime",
+@pytest.mark.parametrize("field", ["Station", "SampleCount", "waveform_sample_count", "StartTime",
                                    "starttime_difference_seconds", "DataQuality"])
 def test_incomplete_attachment_is_rejected(trace, field, tmp_path):
     trace.stats.geocsv[field] = pd.NA
@@ -232,6 +232,39 @@ def test_missing_dataset_provenance_is_rejected(trace, tmp_path):
     with pytest.raises(ValueError, match="dataset metadata"):
         geocsv.write_sac(trace, tmp_path / "invalid.sac")
     assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize('start_sample,count', [(0, 25), (10, 25)])
+def test_clipped_real_det_uses_containing_anchor_geography(subsets, tmp_path, start_sample, count):
+    example = EXAMPLES[0]
+    trace, = obspy.read(str(FIXTURES / example['mseed']))
+    trace.stats.starttime += start_sample / trace.stats.sampling_rate
+    trace.data = trace.data[start_sample:start_sample + count].copy()
+    before = trace.copy()
+    geocsv.associate(trace, subsets[example['geocsv']],
+                     allow_first_segment=True, time_tolerance=0.001)
+    source = trace.stats.geocsv
+    assert source.association == 'first_segment'
+    assert source.SampleCount != trace.stats.npts == source.waveform_sample_count == count
+    path = tmp_path / 'clipped.sac'
+    geocsv.write_sac(trace, path)
+    actual = SACTrace.read(str(path))
+    reference = SACTrace.read(str(FIXTURES / example['sac']))
+    for key in ('stla', 'stlo'):
+        tolerance = 0.5e-6 + abs(float(np.spacing(np.float32(getattr(reference, key)))))
+        assert getattr(actual, key) == pytest.approx(getattr(reference, key), abs=tolerance)
+    assert actual.stdp == reference.stdp
+    assert actual.stel == reference.stel == 0
+    np.testing.assert_array_equal(actual.data, before.data.astype(np.float32))
+    assert abs(actual.to_obspy_trace(round_sampling_interval=False).stats.starttime.ns
+               - before.stats.starttime.ns) <= 1000
+    np.testing.assert_array_equal(trace.data, before.data)
+    # An association-time snapshot prevents a later length change from silently
+    # exporting samples whose source coverage has never been checked.
+    trace.data = np.append(trace.data, 0)
+    with pytest.raises(ValueError, match='association-time loaded sample count'):
+        geocsv.write_sac(trace, tmp_path / 'changed.sac')
+    assert not (tmp_path / 'changed.sac').exists()
 
 
 @pytest.mark.parametrize('value', [1e100, 1e-100, np.nan, np.inf, 1 + 2j])

@@ -282,6 +282,10 @@ def test_multiline_csv_and_comments_at_record_boundaries() -> None:
     comments = frame.attrs["geocsv"].comments
     assert [comment.key for comment in comments] == ["dataset", "field_type", "field_unit", "note"]
     assert comments[-1].line_number == 8
+    lines = frame.attrs['geocsv'].record_line_numbers
+    assert lines == {0: 5, 1: 9}
+    with pytest.raises(TypeError):
+        lines[0] = 100
 
 
 def test_crlf_inside_a_quoted_cell_is_preserved(tmp_path: Path) -> None:
@@ -462,6 +466,8 @@ def test_read_returns_each_dataset_with_file_wide_record_indices(tmp_path: Path)
     assert second["Count"].dtype == "Int64"
     assert second.index.equals(pd.RangeIndex(2, 4, name="source_record_index"))
     assert second.attrs["geocsv"].field_types == {"Count": "integer"}
+    assert first.attrs['geocsv'].record_line_numbers == {0: 6, 1: 7}
+    assert second.attrs['geocsv'].record_line_numbers == {2: 13, 3: 14}
     assert second.attrs["geocsv"].comments[1].value == "second table"
     assert first.attrs["geocsv"].source_path == source.resolve()
     assert second.attrs["geocsv"].source_path == source.resolve()

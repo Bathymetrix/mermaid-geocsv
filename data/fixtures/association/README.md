@@ -14,7 +14,7 @@ references only: read them separately with ObsPy, then compare their inherited
 MiniSEED traces after GeoCSV association. Never use SAC reference headers to
 fill or match association metadata. SAC-input association is outside scope
 until further instruction. Separate `geocsv.write_sac` exports associated
-original segments without changing `stats.sac`; see the
+waveforms with either association label without changing `stats.sac`; see the
 [SAC writing tutorial](../../../docs/tutorials/WRITE_SAC.md).
 
 Complete `geo_DET_REQ.csv` histories remain unchanged, local, and Git-ignored.

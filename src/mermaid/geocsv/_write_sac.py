@@ -22,20 +22,20 @@ def _float32_value(value, label):
 
 
 def write_sac(trace, path):
-    """Validate an associated original segment and write fresh SAC headers."""
+    """Validate an associated waveform and write fresh geographic SAC headers."""
     if not isinstance(trace, Trace):
         raise TypeError("write_sac requires one ObsPy Trace")
     source = trace.stats.get("geocsv")
     if not isinstance(source, Mapping):
         raise ValueError("write_sac requires stats.geocsv from geocsv.associate")
-    if source.get("association") != "one_segment":
-        raise ValueError("write_sac requires a one_segment association; "
-                         "first_segment anchor metadata cannot describe a longer trace")
+    association = source.get("association")
+    if association not in {"one_segment", "first_segment"}:
+        raise ValueError("write_sac requires a one_segment or first_segment association")
     metadata = source.get("metadata")
     if not isinstance(metadata, GeoCSVMetadata):
         raise ValueError("write_sac requires attached GeoCSV dataset metadata")
 
-    # Check the original segment relationship without reopening its source file.
+    # Check the association-time waveform without reopening any source file.
     for field, key in (("Network", "network"), ("Station", "station"),
                        ("Location", "location"), ("Channel", "channel")):
         code = source.get(field)
@@ -46,10 +46,15 @@ def write_sac(trace, path):
             raise ValueError(f"{trace.id}: {key} cannot be preserved in an "
                              "eight-byte ASCII SAC identity header")
     count = source.get("SampleCount")
+    associated_count = source.get("waveform_sample_count")
     if (not len(trace.data) or np.ma.is_masked(trace.data)
             or len(trace.data) != trace.stats.npts
-            or count is None or pd.isna(count) or count != trace.stats.npts):
-        raise ValueError(f"{trace.id}: requires the original loaded sample count "
+            or associated_count is None or pd.isna(associated_count)
+            or associated_count != trace.stats.npts
+            or count is None or pd.isna(count) or count <= 0
+            or not float(count).is_integer()
+            or (association == "one_segment" and count != trace.stats.npts)):
+        raise ValueError(f"{trace.id}: requires the association-time loaded sample count "
                          "without masked gaps")
     if trace.data.dtype.kind not in "iuf" or not np.isfinite(trace.data).all():
         raise ValueError(f"{trace.id}: SAC export requires finite real samples")

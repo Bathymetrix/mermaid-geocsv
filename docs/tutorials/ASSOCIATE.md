@@ -154,11 +154,11 @@ units for a future nonzero elevation projection. This is the interpolated
 receiver position at the first sample time, rather than an average position
 over the waveform. Elevation does not
 represent receiver depth or infer a pressure conversion. Missing either
-coordinate fails the association. To export an associated original segment
+coordinate fails the association. To export an associated waveform
 with geographic SAC headers, use the separate [SAC writing tutorial](WRITE_SAC.md).
 Association itself does not create or modify `stats.sac`.
 
-The attachment also has five association-owned keys:
+The attachment also has six association-owned keys:
 
 | Key | Meaning |
 | --- | --- |
@@ -166,6 +166,7 @@ The attachment also has five association-owned keys:
 | `source_record_index` | Original DataFrame row label, counting data records rather than physical file lines. |
 | `metadata` | Immutable GeoCSV dataset metadata, including source path, units, and comments. |
 | `association` | `one_segment` for standard matching, or `first_segment` for the explicit fallback below. |
+| `waveform_sample_count` | Loaded waveform count when association was performed; independent of source SampleCount. |
 | `starttime_difference_seconds` | Waveform start minus matched source start, calculated from integer UTC nanoseconds before conversion to seconds. |
 
 Positive start differences mean the waveform begins later. This records the
@@ -256,16 +257,27 @@ For another association experiment, use an untouched copy or reread the
 MiniSEED file. Existing source or trace metadata never fills missing matched
 values, and association never merges, overwrites, or deletes destinations.
 
-## 6. Opt in to a first-segment location for a longer trace
+## 6. Opt in to a containing anchor for clipped or combined windows
 
-Strict matching is the default. When a longer waveform combines several
-source segments, the explicit `allow_first_segment=True` option may attach a unique
-first segment's metadata and adopt its location for the whole trace. It
-requires exact gap-free coverage of the waveform sample grid by source sample
-ranges, counting overlaps once. Both starts and last samples must align within
-the chosen time tolerance, without ambiguous sample placement. A shorter
-trace, ambiguous anchor, masked gap, missing coordinate pair, incompatible
-rate, or any coverage gap or excess still raises.
+Strict matching is the default. With `allow_first_segment=True`, exactly one
+same-SNCL source segment must contain the waveform's first sample. Its inclusive
+last-sample time is `StartTime + (SampleCount - 1) / SampleRate`; the explicit
+time tolerance applies at the interval boundaries. A nearest-prior row is not
+enough. Multiple containing anchors raise even if one is an exact start/count
+match. Errors identify affected traces, source records and one-based physical
+starting lines. Resolve the source ambiguity or fill headers manually outside
+this package; the associator does not choose an anchor or modify any trace on
+failure.
+
+The fallback retains exact gap-free source sample coverage over the downloaded
+window, counting overlaps once. Source ranges are clipped to that window,
+allowing either edge to fall inside a source segment. Retained first/last
+samples must align within the timing tolerance without ambiguous sample
+placement. Missing source coverage, masked waveform gaps, incompatible rates,
+or incomplete coordinates still raise. Raw anchor fields remain unchanged;
+`waveform_sample_count` records the downloaded count separately. Under the user's
+MERMAID negligible-drift convention, the anchor's position and approximate depth
+may also supply the whole window's geographic SAC headers.
 
 Use the two real P0045 WLT5 request segments selected from 2022-01-15, the
 date of the Hunga Tonga eruption. We inspected all nine P0045 MiniSEED files
@@ -378,7 +390,8 @@ sample; it does not average drift over the merged waveform.
 The function performs no waveform merge and reconstructs no acquisition
 lineage. All attached raw fields still describe the anchor row only; its
 count, quality, pressure, and rate do not become whole-trace measurements.
-A standard match remains `one_segment` even when `allow_first_segment=True`.
+A standard match remains `one_segment` with `allow_first_segment=True` only
+when its containing anchor is also unique.
 MiniSEED quality M neither enables nor prevents the fallback. Coverage cannot
 detect gaps already filled upstream or determine which overlapping samples
 survived a prior merge. See the [merged-trace policy](../OBSPY_MERGED_TRACES.md).
@@ -388,6 +401,39 @@ trimming, resampling, or merging does not refresh its source row, position,
 label, or start difference. Preserve original waveforms and associate before
 downstream transformations when you need the original segment relationship.
 
+## 7. Associate a window starting and ending inside source segments
+
+Clip the unassociated originals after merging, then associate that final window.
+This real example starts inside the first REQ segment and ends inside the second.
+Both source ranges extend outside the window; their clipped union must still
+cover every downloaded sample. The earlier 25 ms alignment choice remains
+explicit for this merge, rather than a new default.
+
+```python
+window, = segments.copy().merge(method=1, interpolation_samples=0,
+                                misalignment_threshold=0)
+window.trim(starttime=window.stats.starttime + 1,
+            endtime=window.stats.endtime - 1)
+window_before = window.copy()
+geocsv.associate(window, p0045_tables,
+                  time_tolerance=0.025, allow_first_segment=True)
+assert window.stats.geocsv.association == "first_segment"
+assert window.stats.geocsv.source_record_index == 101433
+assert window.stats.geocsv.waveform_sample_count == window.stats.npts
+assert window.stats.geocsv.SampleCount == 9696
+assert window.stats.geocsv.starttime_difference_seconds > 0.9
+np.testing.assert_array_equal(window.data, window_before.data)
+assert window.stats.coordinates.latitude == anchor.Latitude
+print(window.stats.coordinates)
+```
+
+The anchor's GeoCSV position still describes its original first sample. Its
+geographic projection onto this window follows the supplied MERMAID convention;
+no new interpolation or average position is computed. Associate after clipping
+or combining traces, before export. The exporter checks the association-time
+waveform count and start, so later length/start changes require a fresh
+association from an unassociated waveform. Source SampleCount is never rewritten.
+
 ## Fixture coverage
 
 The real P0030 fixture exercises `one_segment`, the explicit time tolerance,
@@ -396,5 +442,7 @@ The real P0045 example merges two original MiniSEED request segments and
 explicitly asserts `first_segment`, unchanged anchor fields and waveform data,
 and failure at the earlier 1 ms tolerance. The largest continuous span is
 limited by the following real gap; no gap filling, resampling, or mixing of
-location codes is used. Synthetic coverage tests remain in the test suite,
+location codes is used. The additional real window clips both ends and checks
+containment, unchanged anchor values and preserved samples. Synthetic coverage
+tests remain in the test suite,
 separate from this real-data tutorial.

@@ -24,7 +24,7 @@ event row. Multiple traces may independently match that row, including
 identical waveforms requested in different MER files. One trace must resolve
 to exactly one row; ambiguity never permits combining source metadata.
 
-Position is the interpolated receiver position at the **first sample time**,
+Position is the interpolated receiver position at the **source segment's first sample time**,
 independent of duration or repeat-request date. It is not averaged over the
 waveform. [Original July 13 waveform inspection](OBSPY_RETRIEVAL_OBSERVATIONS.md#original-july-13-waveforms-2026-10-15)
 provides evidence for the repeated-request case.
@@ -89,7 +89,8 @@ original field names, values, and missingness, plus:
 | `dataset_index` | Position of the matched table in the supplied records list. |
 | `metadata` | That table's immutable `GeoCSVMetadata`, including units and source/download provenance. |
 | `association` | `one_segment` for a standard match, or `first_segment` for the explicit fallback. |
-| `starttime_difference_seconds` | Waveform start minus matched source start, computed from integer UTC nanoseconds. Positive means the waveform starts later. |
+| `starttime_difference_seconds` | Waveform start minus matched source start, computed from integer UTC nanoseconds. Positive means the waveform starts later, including an interior start. |
+| `waveform_sample_count` | Loaded waveform count at association; independent of the source anchor's unchanged SampleCount. |
 
 These keys and ObsPy `AttribDict` attribute/method names are reserved against
 source-column collisions. A collision raises before mutation; fields are
@@ -140,11 +141,17 @@ the provisional rate threshold remain an [open investigation](OPEN_QUESTIONS.md#
 
 ## Longer traces and subsequent processing
 
-The explicit `allow_first_segment=True` fallback adopts one unique anchor's
-position only when source sample ranges cover the longer waveform grid
-exactly without gaps after overlaps are counted once. It preserves raw anchor
-fields and labels the initial attachment `first_segment`. It performs no
-waveform merge and does not reconstruct acquisition contributions. The
+With `allow_first_segment=True`, require exactly one same-SNCL source interval
+containing the waveform start within the timing tolerance. This includes an
+interior start; a nearest-prior row is insufficient. Multiple containing rows
+raise even if one passes strict count matching. Errors list affected traces,
+source records and one-based physical starting lines; no headers are filled.
+A nonstandard match must have complete gap-free source-grid coverage after
+clipping to the downloaded window and counting overlaps once. Shorter windows
+and source ranges extending beyond either edge are allowed. The raw source
+count stays unchanged; `waveform_sample_count` records the actual window count.
+The `first_segment` label retains one anchor, without reconstructing acquisition
+contributions or performing any waveform merge. The
 [merged-trace policy](OBSPY_MERGED_TRACES.md) specifies all coverage checks,
 observed examples, and limits.
 
@@ -155,9 +162,11 @@ retained `one_segment` label is not revalidated. See [Stream merging and
 association](STREAM.md#comparison-with-geocsv-association).
 
 Association does not create SAC headers. Separate
-[`geocsv.write_sac`](tutorials/WRITE_SAC.md) exports an associated original
-segment to a new file, constructing fresh headers from the attached GeoCSV
-values and units. It rejects `first_segment` attachments. Arbitrary GeoCSV
+[`geocsv.write_sac`](tutorials/WRITE_SAC.md) exports either association label to
+a new file, constructing fresh headers from the attached GeoCSV values and
+units. For `first_segment`, the anchor's receiver position, approximate depth,
+and sea-level reference apply to the whole window under the user's MERMAID
+negligible-drift convention. Missing REQ pressure remains undefined. Arbitrary GeoCSV
 provenance is not serialized by MiniSEED or SAC export.
 
 ## Timestamp precision and metadata dependencies
@@ -178,6 +187,11 @@ Scientific fields need context before projection or interpretation:
 These are interpretation requirements, not a general validation framework.
 
 ## Migration and related references
+
+Version 0.19.0 extends `allow_first_segment=True` to containing anchors and
+clipped source-grid coverage, accepts both labels for SAC export, and adds
+`waveform_sample_count` to attachments. Reassociate final waveform windows to
+obtain the new attachment before export; no old attachment is silently upgraded.
 
 Version 0.18.0 renamed `allow_merge` to `allow_first_segment` without changing
 association behavior. Update existing keyword calls. The unused

@@ -80,29 +80,37 @@ trace matching. Different counts may disambiguate the same SNCL/time. Resolve
 every trace match before building projections; validate all projections before
 mutating traces. DataQuality remains independent source evidence, not a filter.
 
-The assigned position is the interpolated receiver position at the first
-sample time, irrespective of waveform length or when a repeat request was
-made. Do not average position over the waveform. This position convention
-does not relax sample-count validation: GeoCSV `SampleCount` already represents
-NPTS and remains an additional check against the original waveform. The
-explicit `allow_first_segment=True` option is the documented exception: a unique
-SNCL/start-time anchor may supply location for a longer trace only when source
-sample ranges cover the waveform grid exactly and without gaps after overlaps
-are counted once. Source start and last-sample alignment use the explicit
-tolerance; sample counts have no tolerance. Label standard matches
+The source position is the interpolated receiver position at the source
+segment's first sample, irrespective of when a repeat request was made.
+Do not average position over the waveform. Strict association requires original
+start/count agreement. With explicit `allow_first_segment=True`, a unique
+same-SNCL source interval must contain the downloaded waveform's first sample;
+never assume the nearest earlier row contains it. This supports starts and ends
+inside source segments and longer combined windows. Source `SampleCount` remains
+necessary to establish intervals, but need not equal downloaded `npts`.
+Retain complete, gap-free source sample coverage after clipping ranges to the
+waveform bounds and counting overlaps once. Retained boundary samples must
+align within the explicit tolerance; counts have no tolerance. Multiple
+containing anchors raise, even when one would pass strict matching, with clear
+source record/physical line numbers and affected traces. Do not choose an
+anchor or fill headers automatically. Label standard matches
 `stats.geocsv.association = "one_segment"`
 and fallback matches `"first_segment"`; never change raw anchor row values.
 
 Retain DET Q and REQ D as useful lineage/validation evidence, independent of
 rate. Loss of these distinctions in EarthScope M data, overlaps, contiguity,
 and reconstruction of transformed/merged coverage remain open design questions.
-The first-segment option adopts a location without claiming that reconstruction;
-do not infer original segment identity from M or silently change matching rules.
+The first-segment option adopts anchor geography without claiming that
+reconstruction. Under the user's MERMAID negligible-drift convention, anchor
+STLA/STLO/STDP/STEL projection to the entire window is valid, including SAC
+export. Missing REQ pressure remains undefined; never borrow another row's
+pressure. Do not infer original segment identity from M.
 
 ### Association Inputs and SAC Comparison References
 
 Until further instruction, develop association for original MiniSEED-derived
-traces/streams and the explicit first-segment location fallback only.
+traces/streams and the explicit containing-anchor fallback for clipped or
+combined MiniSEED windows only.
 Paired `.sac` fixtures are independent comparison
 references, not association inputs. Their inherited `stats.sac` headers must
 never supply defaults, matching hints, or missing values to the associator.
@@ -114,8 +122,10 @@ SAC trace read separately by ObsPy. Define field coverage, units, missing-value
 conventions, and numeric precision for the comparisons. Do not promise whole
 SAC-header equivalence for fields without a GeoCSV source or agreed mapping.
 Supporting association of SAC-derived input traces is outside current scope.
-The separate `write_sac(trace, path)` operation exports associated original
-MiniSEED segments using fresh SAC headers without mutating `stats.sac`.
+The separate `write_sac(trace, path)` operation exports associated
+MiniSEED waveforms with either association label using fresh SAC headers
+without mutating `stats.sac`. Preserve association-time waveform sample count
+separately from raw source SampleCount so later length changes fail export.
 The unused `project_sac` option was removed on 2026-10-16 before package
 exposure. Keep deferred mappings in `docs/FUTURE.md`; do not
 reserve an unimplemented argument in the current associator.

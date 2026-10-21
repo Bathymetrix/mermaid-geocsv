@@ -98,7 +98,12 @@ character. `field_long_names` and `field_standard_names` contain individually
 trimmed values aligned with the source columns; absent attributes have empty
 values. Optional `field_missing` declarations are preserved as well.
 `metadata.source_path` is the resolved absolute path opened by the reader,
-or None for in-memory input. It is reader provenance, not a GeoCSV header
+or None for in-memory input. `metadata.record_line_numbers` is a read-only
+mapping from file-wide source record indices to one-based physical starting
+line numbers. Comments, dataset boundaries and multiline CSV cells are counted
+as physical lines, while the record index counts only data records. The mapping
+also exists for bytes and fetched in-memory inputs. It is reader provenance,
+not a GeoCSV header
 declaration. `metadata.download` is None for bare paths and bytes, or the
 immutable `GeoCSVDownload` provenance supplied by a fetch result. It retains
 the instrument and release IDs, requested file and manifest URLs, verified byte

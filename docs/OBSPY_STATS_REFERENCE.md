@@ -53,7 +53,7 @@ matching and projection behavior; it does not add native Stats fields.
 | network, station, location, channel | Match the complete MiniSEED identity; never fill or relabel it from GeoCSV. |
 | starttime | Validate against GeoCSV under the explicit tolerance; preserve the original UTCDateTime and its nanoseconds. |
 | sampling_rate | Check the source rate; preserve the waveform rate. |
-| npts | Check source SampleCount and loaded data length by default; preserve the waveform count. The explicit first-segment fallback permits a longer trace. |
+| npts | Check source SampleCount and loaded data length by default; preserve the waveform count. The explicit containing-anchor fallback permits clipped or combined windows; source coverage is still required. |
 | delta | ObsPy maintains its reciprocal relationship with sampling_rate; do not assign separately. |
 | endtime | Read-only last-sample time derived by ObsPy from starttime, npts, and sampling_rate. |
 | calib | Preserve the calibration factor; current GeoCSV supplies no replacement. |
@@ -116,5 +116,5 @@ that have no agreed projection remain faithfully available under stats.geocsv.
 
 `stats.geocsv.association` records `one_segment` or `first_segment` at initial
 association. The latter requires explicit `allow_first_segment=True`; see the
-[merged-trace policy](OBSPY_MERGED_TRACES.md). It adopts an anchor location
+[merged-trace policy](OBSPY_MERGED_TRACES.md). It adopts the containing source anchor's geographic metadata
 without rewriting native waveform fields or source-row values.

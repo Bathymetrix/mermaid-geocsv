@@ -323,7 +323,8 @@ def test_fetched_parser_error_identifies_url(collection):
 
 
 @pytest.mark.parametrize('memory', [False, True])
-def test_real_download_read_associate_write_sac_pipeline(collection, memory):
+@pytest.mark.parametrize('clipped', [False, True])
+def test_real_download_read_associate_write_sac_pipeline(collection, memory, clipped):
     obspy = pytest.importorskip('obspy')
     import numpy as np
     from obspy.io.sac import SACTrace
@@ -335,8 +336,12 @@ def test_real_download_read_associate_write_sac_pipeline(collection, memory):
     manifest = json.loads((directory / 'manifest.json').read_text())
     item = manifest['selected'][0]
     trace, = obspy.read(str(directory / item['mseed']['path']))
-    geocsv.associate(trace, tables, time_tolerance=0.001)
+    if clipped:
+        trace.stats.starttime += 10 / trace.stats.sampling_rate
+        trace.data = trace.data[10:110].copy()
+    geocsv.associate(trace, tables, time_tolerance=0.001, allow_first_segment=clipped)
     assert trace.stats.geocsv.metadata.download is downloads[0].provenance
+    assert trace.stats.geocsv.association == ('first_segment' if clipped else 'one_segment')
     output = collection.client / 'located.sac'
     geocsv.write_sac(trace, output)
     actual = SACTrace.read(str(output))
@@ -345,4 +350,5 @@ def test_real_download_read_associate_write_sac_pipeline(collection, memory):
     assert actual.stla == np.float32(trace.stats.geocsv.Latitude)
     assert actual.stlo == np.float32(trace.stats.geocsv.Longitude)
     assert actual.stdp is reference.stdp is None  # REQ has no measured pressure.
-    np.testing.assert_array_equal(actual.data, reference.data)
+    expected = reference.data[10:110] if clipped else reference.data
+    np.testing.assert_array_equal(actual.data, expected)

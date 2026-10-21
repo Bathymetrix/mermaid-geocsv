@@ -12,7 +12,7 @@ from .read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.18.1"
+__version__ = "0.19.0"
 
 __all__ = [
     "__version__",
@@ -35,23 +35,25 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
     Parameters
     ----------
     waveforms : obspy.Trace or obspy.Stream
-        Original MiniSEED-derived waveforms with loaded samples. Modified in
+        MiniSEED-derived waveforms with loaded samples. Modified in
         place only after every match and projection validates. The destinations
         ``stats.geocsv`` and ``stats.coordinates`` must be absent.
     records : list of pandas.DataFrame
         Tables returned by :func:`read`, retaining their source indices and
         immutable ``frame.attrs["geocsv"]`` provenance. May span datasets/files.
     time_tolerance : float, optional
-        Inclusive absolute start-time tolerance in seconds. Default is 0.0001
+        Inclusive absolute timing tolerance in seconds. Default is 0.0001
         (100 microseconds); zero requires exact matching. Must be finite and
         nonnegative. Full UTC nanosecond values are compared; source lexical
         resolution does not enlarge the tolerance.
     allow_first_segment : bool, optional
         Must be a bool. Default False requires the original sample count.
-        If True, a longer
-        trace without a standard match may adopt a unique first segment's
-        location, provided source sample ranges cover its grid exactly without
-        gaps after overlaps are counted once. No waveform merging is performed.
+        If True, require one source segment containing the waveform start.
+        A trace without a standard match may adopt that anchor's metadata,
+        including for clipped or combined windows. Source sample ranges must
+        cover its grid without gaps after clipping and counting overlaps once.
+        Multiple containing anchors raise, even if one is a standard match.
+        No waveform merging is performed.
 
     Returns
     -------
@@ -72,8 +74,8 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
 
     Notes
     -----
-    Matches require complete, exact SNCL (only Location may be empty), zoned
-    UTC-comparable times, nonempty loaded sample count equality, and measured rates
+    Standard matches require complete, exact SNCL (only Location may be empty),
+    zoned UTC-comparable times, nonempty loaded sample count equality, and rates
     within 0.01 Hz. This rate threshold is provisional scientific policy.
     DataQuality is retained as source evidence, independent of waveform quality.
     Invalid event identities and duplicate complete SNCL/time/count/rate keys
@@ -81,18 +83,21 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
 
     ``stats.geocsv`` preserves all source columns and adds ``dataset_index``,
     ``source_record_index``, immutable ``metadata``, ``association``
-    (``one_segment`` or ``first_segment``), and
-    ``starttime_difference_seconds`` (waveform minus matched source start).
+    (``one_segment`` or ``first_segment``),
+    ``starttime_difference_seconds`` (waveform minus matched source start), and
+    ``waveform_sample_count`` (the count at association, independent of the
+    anchor's original SampleCount).
     These keys and ObsPy AttribDict attributes/methods are reserved against
     source-column collisions. Coordinates require latitude/longitude declared
     in degrees_north/degrees_east; elevation is the adopted sea-level reference
     0.0, with no geoid model. Zero is the same in metres and kilometres; no
     nonzero elevation unit convention is established here. Position refers to
-    the first sample, not an average over the trace. For first_segment, raw
-    fields still describe only
-    the anchor row. Association guarantees end at initial attachment; later
-    waveform processing does not refresh it. Use :func:`write_sac` separately
-    to export an associated original segment with geographic SAC headers.
+    the source segment's first sample, not an average over the trace. For
+    first_segment, the anchor's geographic metadata is adopted for the whole
+    waveform under the MERMAID negligible-drift convention; raw fields still
+    describe only the anchor row. Association guarantees end at initial
+    attachment; later waveform processing does not refresh it. Use :func:`write_sac` separately
+    to export either association with geographic SAC headers.
     """
     try:
         from ._associate import associate as _associate
@@ -108,15 +113,14 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
 
 
 def write_sac(trace, path):
-    """Write one associated original segment to a new binary SAC file.
+    """Write one associated waveform to a new binary SAC file.
 
     Parameters
     ----------
     trace : obspy.Trace
-        Original MiniSEED-derived trace with loaded, unmasked, finite real
-        samples and a
-        ``one_segment`` attachment from :func:`associate`. Export before
-        waveform processing; ``first_segment`` associations are rejected.
+        MiniSEED-derived trace with loaded, unmasked, finite real samples and
+        a ``one_segment`` or ``first_segment`` attachment from :func:`associate`.
+        Associate the final downloaded/clipped/combined window before export.
     path : str or os.PathLike
         Explicit output filename in an existing directory. Must not exist.
 
@@ -159,8 +163,9 @@ def write_sac(trace, path):
     Export does not apply calibration. Other automaid headers are not
     reconstructed, and GeoCSV provenance is not serialized into SAC.
     Identity, start, sample count and source rate agreement are checked, but
-    these checks cannot establish an unmodified sample history. This is not
-    an exporter for processed or merged traces. Each call writes one file;
+    these checks cannot establish an unmodified sample history. For
+    first_segment, anchor geography and approximate depth describe the whole
+    waveform by the MERMAID negligible-drift convention. Each call writes one file;
     loop over a Stream with explicit distinct paths for multiple traces.
     """
     try:

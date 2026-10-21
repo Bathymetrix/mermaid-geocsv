@@ -1,145 +1,138 @@
-# Merged EarthScope traces: first-segment location and sample-coverage validation
+# Clipped and combined MiniSEED windows: containing anchors and source coverage
 
-Current opt-in policy for `geocsv.associate`. See the
-[association tutorial](tutorials/ASSOCIATE.md) for runnable examples;
-[open scientific questions](OPEN_QUESTIONS.md#association-scientific-questions)
-track acquisition lineage beyond this location convention.
+Current opt-in policy, revised 2026-10-21 in version 0.19.0 following the user's
+MERMAID scientific clarification. The [association tutorial](tutorials/ASSOCIATE.md)
+and [SAC tutorial](tutorials/WRITE_SAC.md) give runnable real-data examples.
 
-## Motivation and observed example
+## Scope and geographic meaning
 
-An end user may request all available data without distinguishing DET Q from
-REQ D. An EarthScope response may expose M quality and waveform coverage whose
-original Q/D contributions cannot be reconstructed. M alone does not prove a
-particular merge; an unchanged single acquisition may also carry M.
+A download may start or end inside an original acquisition, or combine several
+source segments. The strict default remains original-segment matching.
+`allow_first_segment=True` permits one same-SNCL source segment containing the
+waveform's first sample to supply its anchor metadata, provided GeoCSV sample
+ranges cover the complete downloaded waveform grid. Merely choosing the
+nearest preceding source row is not sufficient.
 
-The saved P0006 month response contains one 10176-sample trace beginning
-2018-07-13T09:48:03.139965Z. Original GeoCSV row 237 describes the first DET
-acquisition (4768 samples, start 09:48:03.139Z); row 238 describes the overlapping
-REQ acquisition (9600 samples, start 09:48:31.908Z). The original files retain
-Q/D distinctions, but the served trace has M. These observations do not prove
-how every served sample was selected or which layer combined the coverage.
-See the [inspection evidence](OBSPY_RETRIEVAL_OBSERVATIONS.md).
+The user's MERMAID construction currently produces windows for which receiver
+geographic drift is negligible. Under that explicit application convention,
+the anchor's latitude, longitude, approximate pressure-derived depth, and
+sea-level reference apply to the whole window, including SAC STLA/STLO/STDP/STEL.
+The source position still describes the source segment's original first sample;
+no interpolation to the clipped start, averaging, or reconstructed trajectory
+is performed. This is not a general moving-sensor or arbitrarily long-window
+claim. Missing REQ anchor pressure remains undefined, never borrowed from a
+later record. The existing declared-unit and missing-DET-pressure rules remain.
 
-The user supplies this practical MERMAID convention: drift over the merged
-waveform is sufficiently small that a new start/end-based position
-interpolation is unnecessary. Adopt the interpolated receiver location of the
-first segment for the entire contiguous merged trace. This is an application
-convention, not a general claim for all sensors, floats, or arbitrary durations.
+Waveform samples, identity, native timing, rate, calibration and quality are
+unchanged. Quality M neither proves a particular merge nor selects an anchor.
+No merging, gap filling, sample-value comparison or acquisition-lineage
+reconstruction is performed by association.
 
-## Opt-in call and labels
-
-The strict default is `allow_first_segment=False`. Set
-`allow_first_segment=True` to permit the first-segment location fallback.
-
-The flag permits a first-segment metadata association. Waveform manipulation
-belongs outside `geocsv`; association preserves supplied samples and timing.
-Other arguments and no-mixing rules are unchanged.
+## Matching and labels
 
 | stats.geocsv.association | Initial association performed |
 | --- | --- |
-| `one_segment` | Exactly one row passes the standard SNCL, start-time, sample-count, and sampling-rate checks. |
-| `first_segment` | One unique SNCL/start-time row supplies location; source sample ranges cover the longer trace exactly after overlap removal. |
+| `one_segment` | One row passes strict complete SNCL, start-time, source-count and rate checks. |
+| `first_segment` | One containing anchor supplies metadata; clipped source sample ranges cover the downloaded grid without gaps after overlaps are counted once. |
 
-With opt-in enabled, use `one_segment` whenever the standard checks pass.
-Use `first_segment` only when the fallback is needed and its conditions pass.
-These labels describe the matching performed, not proof of waveform provenance
-or sample integrity. They are not recomputed after later ObsPy manipulation.
-`association` is a reserved attachment key, alongside `source_record_index`,
-`dataset_index`, `metadata`, and `starttime_difference_seconds`; a colliding
-GeoCSV column raises. The signed difference is waveform start time minus the
-matched row's start time, in seconds, computed from integer UTC nanoseconds.
-For `first_segment`, it compares against the anchor row. Positive means the
-waveform starts later. This initial-match diagnostic is not a clock correction
-and is not recomputed after later waveform changes.
+With opt-in enabled, require a unique containing anchor even if one candidate
+would also pass strict matching. Two containing rows are ambiguous; do not
+prefer the nearer start, identical count, quality, or a row with more metadata.
+If the anchor is unique and strict matching passes, retain `one_segment`.
+Otherwise use `first_segment` only after coverage validation. Multiple traces
+may independently use the same unique source row.
 
-Do not reject or choose a policy solely because quality is M. Default failure
-diagnostics include the Stream index, SNCL, start/end times, waveform count
-and rate, GeoCSV source paths and candidate row indices, and concrete reasons
-such as 10176 versus 4768 samples. A bare Trace need not retain its filename.
-All validation finishes before any batch mutation.
+Source preflight still rejects invalid identities and duplicate complete
+SNCL/UTC-start/count/rate keys across the supplied datasets. Different counts
+may disambiguate strict default matching, but do not resolve containment
+ambiguity when opt-in is enabled.
 
-## Fallback requirements
+## Containment and complete coverage
 
-When no standard match exists and `allow_first_segment=True`:
+For `allow_first_segment=True`:
 
-1. Require exactly one algorithm:event anchor matching complete SNCL and the
-   trace start within `time_tolerance` (100 microseconds by default). Multiple
-   anchors remain ambiguous even when their rates or counts differ.
-2. Require a positive integer anchor count smaller than waveform `npts`.
-3. Collect same-SNCL event rows whose start times fall between the waveform's
-   first and last samples, allowing `time_tolerance` at either boundary.
-   Missing or timezone-naive times are ineligible. Each collected row must
-   have a positive integer count and a finite positive rate within the
-   provisional 0.01 Hz endpoint bounds around the waveform rate.
-4. Require exactly one waveform sample index within `time_tolerance` of each
-   start time; zero or multiple possible indices raise. Place its exact `SampleCount`
-   samples on that grid. No source timestamp, rate, count, or waveform is changed.
-   The source's last-sample time, calculated using its declared rate, must also
-   lie within `time_tolerance` of the assigned last waveform sample.
-   Sample times are rounded to integer nanoseconds for these comparisons.
-5. Require every source sample range to lie inside `[0, npts)`. Sort the integer
-   ranges and count their union, counting overlapping samples once. Require
-   gap-free coverage of exactly `[0, npts)`. There is no sample-count tolerance.
-   Gaps, excess coverage, and a missing tail all raise before batch mutation.
-6. Reject masked waveform gaps, incomplete coordinates, and existing destination
-   containers, as in strict mode.
+1. Use complete exact SNCL, including known empty Location, as in strict mode.
+   Require zoned source timestamps and positive integer source SampleCount,
+   with finite positive source SampleRate declared in hertz to establish a
+   source interval. Its inclusive last sample is
+   `StartTime + (SampleCount - 1) / SampleRate`, rounded to UTC nanoseconds.
+2. Require exactly one source interval containing the waveform's first sample,
+   allowing the explicit `time_tolerance` at interval boundaries. A preceding
+   interval that ended earlier is not an anchor. Zero or multiple anchors raise.
+3. For a nonstandard match, collect same-SNCL source intervals intersecting the
+   waveform window, including intervals beginning before the waveform. Required
+   counts/rates must be valid. Rates retain the provisional inclusive 0.01 Hz
+   agreement check around the waveform rate.
+4. Place each source's integer sample range on the waveform grid. Clip it to
+   `[0, npts)`; source samples outside the downloaded window are permitted.
+   Retained first and last source samples must align within `time_tolerance`
+   with exactly one waveform sample index. Off-grid or ambiguous placement raises.
+5. Require the union of those clipped integer ranges to cover every waveform
+   sample without gaps, counting overlaps once. Source SampleCount is not
+   rewritten and need not equal waveform `npts`. Full source metadata coverage
+   is still required; trimming the window does not waive it.
+6. Reject empty or masked waveform data, incomplete coordinates, existing
+   destination containers, and other invalid inputs as before. Waveform
+   `npts == len(data)` remains required. All matches and projections validate
+   before any trace is modified.
 
-This validates source-count consistency on the authoritative waveform grid.
-It does not compare sample values or identify which source supplied an
-individual overlapping sample. It does not infer cropped contributions from
-rows starting before the waveform, interpolate samples, fill gaps, or choose a
-subset of source rows to force agreement. The finite rate tolerance remains a
-compatibility check, not proof of identical acquisition clocks.
+The default timing tolerance remains 100 microseconds. Source lexical
+resolution does not enlarge it. A window can fail containment or sample-grid
+checks even with superficially nearby metadata; do not increase tolerance
+blindly. Resampling and reconstruction of altered sampling grids remain
+outside this change.
 
-The anchor location is adopted for the whole trace under the MERMAID drift
-convention. Native waveform fields, samples, and quality remain unchanged.
+## Ambiguity diagnostics and provenance
 
-## Source metadata remains anchor metadata
+Errors identify the affected trace indices, SNCL, start/end times, source
+path or download URL (or `<memory>` for bare bytes), dataset indices,
+zero-based source record indices, and one-based physical starting line numbers.
+For multiline CSV records, the line is the start of the record, not an assumed
+header offset. The reader retains this immutable mapping as
+`metadata.record_line_numbers`, including for in-memory downloads. Artificial
+rows added after parsing have no source line and are identified as unknown.
 
-In the July 13 example with explicit `time_tolerance=0.025`:
+Containing-anchor ambiguity is reported for every affected trace in the batch.
+The error leaves the choice to the caller: resolve the source ambiguity or
+manually fill headers outside the package. No automatic row selection, header
+filling or partial association occurs. Exact duplicate matching keys still
+fail source preflight and identify the affected traces and both source rows.
 
-| Quantity | Meaning after association |
-| --- | --- |
-| stats.npts = 10176 | Actual served waveform count; unchanged. |
-| stats.geocsv.SampleCount = 4768 | Count of original row 237; unchanged. |
-| stats.mseed.dataquality = M | Served waveform quality; unchanged. |
-| stats.geocsv.DataQuality = Q | Quality recorded for the anchor acquisition only. |
-| stats.geocsv.association = first_segment | Location comes from the first segment. |
-| stats.coordinates | Row 237 position adopted for the whole trace, elevation 0. |
+Every attachment retains unchanged raw anchor fields and dataset provenance.
+`starttime_difference_seconds` is waveform minus source start; an interior
+start can legitimately produce a difference of seconds or minutes.
+`waveform_sample_count` records the waveform's count at association, separately
+from the anchor's original SampleCount. Later processing does not refresh
+these values or the geographic projection.
 
-Keep all raw row/provenance values unchanged. Pressure, clock correction,
-and other attached fields describe the anchor acquisition; they are not
-thereby validated as whole-trace metadata.
+## SAC export
 
-The location convention covers geographic position and the adopted reference
-elevation. It does not independently justify projecting anchor pressure/depth,
-clock correction, or all SAC fields onto the merged waveform. SAC stla/stlo
-would follow the adopted position; other projections need explicit decisions.
-The implemented `write_sac` exporter rejects `first_segment` attachments;
-see the [SAC writing guide](tutorials/WRITE_SAC.md). SAC reference files remain
-comparison references, never association inputs.
+`write_sac` accepts both association labels. It constructs fresh geographic
+headers from the anchor and declared units, preserving missing REQ depth.
+Identity, association-time start/count, source rate agreement and SAC storage
+validity are checked before file creation. No GeoCSV file is reopened.
+Associate the final downloaded/clipped/combined window before export; later
+length/start changes require a fresh association on an unassociated waveform.
+Neither matching nor export proves an unmodified sample history.
 
-## Questions deliberately left open
+## Real-data evidence and limits
 
-- Can original Q/D contributions and boundaries be recovered reliably later?
-- How can coverage be validated more strongly when overlaps were replaced,
-  clock grids shifted, gaps filled, or acquisition boundaries obscured?
-- Which metadata beyond location can meaningfully describe the entire merge?
+The tracked P0045 tutorial merges two original REQ segments and then clips a
+second example at both ends. The anchor is source record 101433; record 101434
+covers the later portion. Source ranges overlap by 13 samples. The explicit
+25 ms grid tolerance accommodates the documented approximately 24.8 ms placement
+of the second segment; 1 ms still rejects the grid. The cropped example proves
+containment and complete clipped coverage without rewriting anchor fields.
+The SAC tutorial exports that clipped window with undefined REQ depth.
 
-The many-traces-to-one-row rule remains. The opt-in chooses one location
-anchor, not several competing source rows. Supporting merged SAC exports
-would need a separate scientific mapping decision.
+A separate historical July 13 P0006 archive response has 10,176 samples and
+quality M, with source counts 4,768 and 9,600. The previously recorded 25 ms
+check gave 10,176 unique covered samples after removing 4,192 overlapping
+samples. That dated observation does not establish which layer combined them
+or which source supplied overlapping values. It is not a portable service
+response fixture or a new default. See the
+[retrieval observations](OBSPY_RETRIEVAL_OBSERVATIONS.md).
 
-## Verification
-
-Tracked synthetic cases verify contiguous segments, overlapping ranges counted
-once, exact integer counts, one-sample shortages/excesses, gaps, off-grid
-starts, inclusive timing boundaries, incomplete metadata, and batch atomicity.
-The saved July 13 EarthScope trace was checked separately against the complete
-rebuilt history. Source row 238 maps to output sample index 576, with a start
-residual of -21,813,431 ns. A 1 ms tolerance rejects that alignment. An explicit
-25 ms tolerance passes the start/last-sample checks and gives exact coverage:
-4768 + 9600 - 4192 overlapping samples = 10176 unique samples. The anchor is
-row 237; waveform count and M quality remain unchanged. The 25 ms value is an
-explicit override for this check, not the default or an inferred uncertainty.
-The local download is not required by tracked tests.
+Exact range coverage cannot detect already filled waveform gaps, select source
+sample values in overlaps, or reconstruct Q/D lineage. These remain separate
+[scientific questions](OPEN_QUESTIONS.md#association-scientific-questions).

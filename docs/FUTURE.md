@@ -22,11 +22,13 @@ host, separate from the client package.
 
 ## Associate transformed archive waveforms
 
-Before extending association to trimmed, split, resampled, or archive-combined
-waveforms, establish how original acquisitions and overlapping sample values
-can be identified. The current `allow_first_segment=True` option validates
-exact source-grid coverage and adopts a unique first segment's location; it
-does not reconstruct contributions or acquisition lineage.
+The current `allow_first_segment=True` option supports clipped and combined
+MiniSEED windows using a unique source segment containing the waveform start
+and complete source-grid coverage clipped to the window. Anchor geographic SAC
+projection is supported under the user's MERMAID negligible-drift convention.
+This does not reconstruct contributions or acquisition lineage. Resampled
+waveforms and reconstruction of overlapping sample choices remain separate
+scientific questions.
 
 Decide supported transformations, required provenance, and failure behavior
 before adding APIs or changing matching rules. Quality M alone cannot identify
@@ -37,7 +39,7 @@ a particular merge. Use the [scientific questions](OPEN_QUESTIONS.md#association
 ## Project associated metadata into SAC headers
 
 Geographic SAC export is implemented separately as `geocsv.write_sac(trace,
-path)` for associated original MiniSEED segments. Association has no SAC
+path)` for associated MiniSEED-derived waveforms with either label. Association has no SAC
 option and does not mutate `stats.sac`; the unused `project_sac` placeholder
 was removed on 2026-10-16. The [SAC writing guide](tutorials/WRITE_SAC.md) and
 [notebook](tutorials/WRITE_SAC.ipynb) define current coverage, units, missing
@@ -48,8 +50,9 @@ The implemented mapping is `stla`/`stlo` from attached receiver coordinates
 in declared degrees, `stel=0` metres at the adopted sea-level reference, and
 approximate `stdp=WaterPressure[mbar]/100` metres. Missing REQ pressure
 (DataQuality D) leaves stdp undefined; missing DET pressure fails. SAC
-references never supply source values. `first_segment` attachments are
-rejected; merged/processed exports remain undecided.
+references never supply source values. `first_segment` exports adopt all four
+anchor geographic headers for the window; missing anchor pressure is not filled
+from later rows. Further processed-waveform semantics remain undecided.
 
 The pressure conversion follows automaid's 100 mbar per metre approximation,
 not an exact oceanographic depth calculation. The user's cited MERMAID manual

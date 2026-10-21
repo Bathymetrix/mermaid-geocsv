@@ -27,7 +27,8 @@ Each pair contains the same prose and Python examples and runs independently.
 - [Association guide](tutorials/ASSOCIATE.md): matching tolerances, source-row
   attachments, coordinate projections, validation, and processing limitations.
 - [Merged-trace policy](OBSPY_MERGED_TRACES.md): explicit first-segment location
-  fallback, sample-grid coverage, overlaps, and limits on reconstruction claims.
+  fallback for clipped/combined windows, sample-grid coverage, overlaps, and
+  limits on reconstruction claims.
 - [SAC writing guide](tutorials/WRITE_SAC.md): supported segments, geographic
   header mappings, pressure/depth conventions, missing pressure, float32
   precision, and independent automaid comparisons.

@@ -3,7 +3,7 @@
 [![Tests](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml/badge.svg?branch=main&event=push)](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml)
 
 Fetch and read MERMAID GeoCSV metadata, associate it with ObsPy waveforms,
-and export associated original segments to SAC with geographic headers.
+and export associated waveforms to SAC with geographic headers.
 
 The reader returns typed pandas DataFrames while preserving source column
 names, record order, timestamps, units, comments, and provenance. Scientific
@@ -47,21 +47,23 @@ metadata = records.attrs["geocsv"]
 | [`geocsv.fetch(...)`](docs/tutorials/FETCH.md) | Retrieve verified release files to disk or memory; returns a list of fetch results. Requires an explicit `base_url`. |
 | [`geocsv.read(...)`](docs/READER_SPEC.md#python-api) | Parse a local path, bytes, or fetch results; returns a list of dataset tables. |
 | [`geocsv.associate(...)`](docs/tutorials/ASSOCIATE.md) | Attach uniquely matched event metadata and coordinates to an ObsPy Trace or Stream in place; returns `None`. |
-| [`geocsv.write_sac(trace, path)`](docs/tutorials/WRITE_SAC.md) | Export one associated original MiniSEED segment to a new SAC file; returns `None` and leaves the trace unchanged. |
+| [`geocsv.write_sac(trace, path)`](docs/tutorials/WRITE_SAC.md) | Export one associated MiniSEED-derived waveform to a new SAC file; returns `None` and leaves the trace unchanged. |
 
 Fetching and reading do not require ObsPy. Association defaults to original
-segments; longer traces require the explicit `allow_first_segment=True`
-option. SAC export requires an original segment. See the linked guides for
-signatures, matching rules, units, provenance, and limitations.
+segments. With `allow_first_segment=True`, clipped or combined windows may use
+one same-SNCL source segment containing the waveform start, provided GeoCSV
+sample ranges cover every downloaded sample after clipping and counting overlaps
+once. Zero or multiple containing anchors raise; no nearest-prior row is assumed.
+Errors identify affected traces, source records, and physical starting lines.
 
-EarthScope downloads must retain the original segment's complete SNCL,
-start, sample count, and compatible measured rate. Arbitrary time-window
-downloads may trim or combine acquisitions and fail association. The explicit
-first-segment fallback supplies location only; it does not enable SAC export
-of longer traces or reconstruct acquisition lineage. Production GeoCSV
-hosting is still pending.
+Both association labels can be exported to SAC. For `first_segment`, the anchor's
+STLA/STLO/STDP/STEL apply to the entire waveform under the supplied MERMAID
+negligible-drift convention. Missing REQ pressure remains undefined. This does
+not reconstruct acquisition lineage. Production GeoCSV hosting is still pending.
 
-Export before waveform processing. SAC output has float32 precision and no
+Associate the final downloaded/clipped/combined window before export. Avoid
+changing its samples, start, count, or sampling rate after association. SAC
+output has float32 precision and no
 serialized GeoCSV provenance; nonfinite or unrepresentable values and identity
 codes that cannot survive SAC storage are rejected. No response correction or
 counts-to-pressure calibration is supplied.

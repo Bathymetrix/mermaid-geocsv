@@ -262,8 +262,11 @@ citations still need the verification listed in the
 
 How should trimmed, split, or resampled inputs be recognized and related to
 their original acquisitions without guessing? The current public associator
-targets original MiniSEED-derived segments plus the explicit longer-trace
-fallback. It rejects zero/multiple eligible matches; it does not use quality
+targets original MiniSEED-derived segments plus the explicit containing-anchor
+fallback for clipped/combined windows. The fallback still requires full source
+sample coverage after clipping. Geographic SAC export of either label is
+supported under the user's negligible-drift convention; resampling and original
+sample-contribution reconstruction remain outside this decision. It rejects zero/multiple eligible matches; it does not use quality
 to select a candidate or combine competing metadata rows.
 
 The [original July 13 inspection](OBSPY_RETRIEVAL_OBSERVATIONS.md#original-july-13-waveforms-2026-10-15)
@@ -271,8 +274,11 @@ established that three repeated REQ waveforms have equal sample arrays,
 starts, rates, and counts and share one source row. This supports multiple
 traces independently using one row; it does not establish a transformed-input
 or archive-reconstruction policy. GeoCSV SampleCount already represents NPTS;
-no extra count column is required. Position remains the interpolated receiver
-position at the first sample time, independent of duration or request date.
+no extra source count column is required. The separate attachment
+`waveform_sample_count` records the downloaded window's count for export checks.
+Position remains the interpolated receiver position at the source segment's
+first sample time, adopted for a clipped/combined window under the MERMAID
+negligible-drift convention, independent of duration or request date.
 
 Package promotion, fresh destinations, source preflight, batch validation,
 and per-call SNCL/time indexing are implemented rather than pending research

@@ -66,9 +66,15 @@ def test_tutorial_examples(name, working_directory, monkeypatch):
              namespace)
     if name == "PLOTTING":
         namespace["plt"].close("all")
+    if name == "ASSOCIATE":
+        window = namespace["window"]
+        assert window.stats.geocsv.association == "first_segment"
+        assert window.stats.geocsv.starttime_difference_seconds > 0.9
+        assert window.stats.geocsv.waveform_sample_count == window.stats.npts
     if name == "WRITE_SAC":
         assert namespace["trace"].stats.geocsv.association == "one_segment"
         assert namespace["written"].stdp is not None
         assert namespace["request_sac"].stdp is None
         assert namespace["merged"].stats.geocsv.association == "first_segment"
-        assert not namespace["rejected_path"].exists()
+        assert namespace["merged_sac"].npts == namespace["merged"].stats.npts
+        assert namespace["merged_sac"].stdp is None

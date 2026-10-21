@@ -208,8 +208,10 @@ native headers. Their timing controls compare different quantities:
 For a seconds tolerance `t` at rate `f`, `t * f` gives the same numeric
 fraction of a sample interval, **not an equivalent test**. At 20 Hz, 1 ms
 corresponds to 0.02 of an interval. Starts seconds apart may share a sampling
-grid; association still compares each waveform's first sample to its source
-start. The two appearances of 0.01 in cleanup's fraction and association's
+grid; strict association compares each waveform's first sample to its source
+start. The opt-in containing-anchor policy instead requires that sample to lie
+within one unique source interval and validates clipped source-grid coverage.
+The two appearances of 0.01 in cleanup's fraction and association's
 Hz bound are dimensionally unrelated. Neither threshold measures clock accuracy.
 The queried `misalign_tolerance` is not an option in the inspected merge code.
 
@@ -233,7 +235,8 @@ Ordering has consequences:
 Quality is not part of either grouping/matching identity. Calling association
 again on retained destinations raises; there is no implicit clearing or
 reconciliation workflow. SAC export is a separate operation for associated
-original segments, not a merge option. Use the
+waveforms with either association label, not a merge option. Associate the
+final clipped/combined window first. Use the
 [association guide](tutorials/ASSOCIATE.md) for the complete public contract.
 
 ## Verification limits

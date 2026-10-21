@@ -57,6 +57,8 @@ class GeoCSVMetadata:
     zeros; seconds-only, minutes-only, and dates have nominal resolutions of
     one second, one minute, and one day. It describes notation, not clock
     accuracy. Both mapping levels are read-only; timestamp values are unchanged.
+    ``record_line_numbers`` maps source record indices to their one-based
+    physical starting line numbers, including for multiline CSV records.
     """
 
     source_path: Path | None
@@ -69,6 +71,7 @@ class GeoCSVMetadata:
     delimiter: str
     datetime_resolution_ns: Mapping[str, Mapping[int, int]] = field(default_factory=dict)
     download: GeoCSVDownload | None = None
+    record_line_numbers: Mapping[int, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "comments", tuple(self.comments))
@@ -78,6 +81,7 @@ class GeoCSVMetadata:
             "field_long_names",
             "field_standard_names",
             "field_missing",
+            "record_line_numbers",
         ):
             object.__setattr__(self, name, MappingProxyType(dict(getattr(self, name))))
         object.__setattr__(self, "datetime_resolution_ns", MappingProxyType({
@@ -449,6 +453,7 @@ def _read_datasets(
             ),
             delimiter=delimiter,
             datetime_resolution_ns=datetime_resolutions,
+            record_line_numbers=dict(enumerate(data_lines, start=source_record_start)),
         )
         return frame
 

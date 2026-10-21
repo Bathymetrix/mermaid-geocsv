@@ -1,7 +1,7 @@
 # Write associated waveforms to SAC
 
-`geocsv.write_sac(trace, path)` writes one already-associated original MiniSEED
-segment to a new binary SAC file and returns `None`. It fills receiver
+`geocsv.write_sac(trace, path)` writes one already-associated MiniSEED-derived
+waveform to a new binary SAC file and returns `None`. It fills receiver
 latitude, longitude, approximate depth when available, and the adopted
 sea-level elevation. The input trace is unchanged. The companion files
 [`WRITE_SAC.md`](WRITE_SAC.md) and [`WRITE_SAC.ipynb`](WRITE_SAC.ipynb) contain
@@ -202,7 +202,7 @@ raises `ValueError`. Source quality identifies this exception; native MiniSEED
 quality does not override it and is not used to infer depth. When pressure is
 present, its declared units must be mbar even for REQ records.
 
-## 5. Handle existing files and unsupported merged associations
+## 5. Handle existing files and export a clipped combined window
 
 Output paths must not exist; parent directories must already exist. All input
 validation and SAC construction finish before exclusive file creation.
@@ -220,10 +220,12 @@ else:
 assert output.read_bytes() == saved_bytes
 ```
 
-A `first_segment` association describes only an anchor row of a longer trace.
-One SAC geographic header cannot represent its receiver trajectory. The writer
-rejects this association rather than exporting anchor pressure and coordinates
-as metadata for the longer waveform or inventing an average position.
+A `first_segment` association retains one source anchor for a clipped or
+combined window. Under the user's MERMAID negligible-drift convention, its
+STLA/STLO/STDP/STEL are valid for the entire window. Missing REQ pressure stays
+undefined; later rows never fill it. Both association labels can be exported.
+The source row retains its original start/count and does not become an account
+of every contributing acquisition.
 
 The following real P0045 example merges two original request segments on the
 first segment's sample grid, takes later values in their overlap, and allows
@@ -239,25 +241,33 @@ for path in sorted(merge_dir.glob("*.mseed")):
     segments += read_waveforms(str(path))
 segments.merge(method=1, interpolation_samples=0, misalignment_threshold=0)
 merged, = segments
+# Clip before association; retain a first sample inside the first source segment.
+merged.trim(starttime=merged.stats.starttime + 1,
+            endtime=merged.stats.endtime - 1)
 merged_tables = geocsv.read(root / "tests" / "fixtures" / "geocsv" / "P0045.geocsv")
 geocsv.associate(merged, merged_tables, time_tolerance=0.025, allow_first_segment=True)
 assert merged.stats.geocsv.association == "first_segment"
-assert merged.stats.npts == 45683
-rejected_path = output_dir / "merged.sac"
-try:
-    geocsv.write_sac(merged, rejected_path)
-except ValueError as error:
-    assert "one_segment" in str(error)
-    print(error)
-else:
-    raise AssertionError("Expected first_segment rejection")
-assert not rejected_path.exists()
+assert merged.stats.npts < 45683
+assert merged.stats.geocsv.SampleCount == 9696
+assert merged.stats.geocsv.waveform_sample_count == merged.stats.npts
+assert merged.stats.geocsv.starttime_difference_seconds > 0.9
+merged_path = output_dir / "merged.sac"
+geocsv.write_sac(merged, merged_path)
+merged_sac = SACTrace.read(str(merged_path))
+assert merged_sac.stla == np.float32(merged.stats.geocsv.Latitude)
+assert merged_sac.stlo == np.float32(merged.stats.geocsv.Longitude)
+assert merged_sac.stel == 0
+assert merged_sac.stdp is None  # The REQ anchor has no pressure.
+np.testing.assert_array_equal(merged_sac.data, merged.data.astype(np.float32))
 workspace.cleanup()
 ```
 
-Export original segments before trimming, merging, resampling, or other sample
-processing. The writer checks identity, initial start-time offset, original
-sample count, and source rate agreement under association's 0.01 Hz threshold.
+Associate the final downloaded/clipped/combined window before export. The writer
+checks identity, initial start-time offset, association-time waveform sample
+count, and source rate agreement under association's 0.01 Hz threshold. Original
+source SampleCount must equal waveform count only for `one_segment`. Source
+coverage was checked at association; the writer does not reopen source files.
+Later count/start changes require a fresh association on an unassociated trace.
 It also rejects empty data and masked gaps. These checks cannot detect all
 sample transformations, including filtering or changes within the rate
 threshold; they do not prove an unchanged processing history. A `one_segment`
@@ -270,7 +280,7 @@ DET.WLT2, DET.WLT5, REQ.WLT3, REQ.WLT4, REQ.WLT5 and REQ.RAW. It compares
 geographic headers against independent SAC references and verifies waveform
 round trips and no input mutation. Other product groups have no paired
 examples in this collection; see the manifest's population counts. The P0045
-merge above exercises actual `first_segment` rejection. Synthetic tests cover
+window above exercises actual `first_segment` export after clipping both ends. Synthetic tests cover
 invalid units, missing DET pressure, source-quality independence, destination
 conflicts, and source-field validation; these are distinct from the real-data
 comparisons.
