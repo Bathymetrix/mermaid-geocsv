@@ -228,8 +228,9 @@ The source row retains its original start/count/rate and does not become an acco
 of every contributing acquisition.
 
 The following real P0045 example merges two original request segments on the
-first segment's sample grid, takes later values in their overlap, and allows
-25 ms source-grid alignment. These are explicit demonstration choices, not a
+first segment's sample grid and takes later values in their overlap. Association
+uses unique half-sample source-grid placement, independently of the absolute
+start/containment tolerance. The merge is a demonstration choice, not a
 reconstruction of acquisition lineage. The [association tutorial](ASSOCIATE.md)
 explains the source ranges, 13-sample overlap, and approximately 24.8 ms grid
 shift. No gap filling is used.
@@ -245,7 +246,7 @@ merged, = segments
 merged.trim(starttime=merged.stats.starttime + 1,
             endtime=merged.stats.endtime - 1)
 merged_tables = geocsv.read(root / "tests" / "fixtures" / "geocsv" / "P0045.geocsv")
-geocsv.associate(merged, merged_tables, time_tolerance=0.025, allow_first_segment=True)
+geocsv.associate(merged, merged_tables, allow_first_segment=True)
 assert merged.stats.geocsv.association.type == "anchor_segment"
 assert merged.stats.npts < 45683
 assert merged.stats.geocsv.SampleCount == 9696

@@ -318,8 +318,8 @@ failure.
 The fallback retains exact gap-free source sample coverage over the downloaded
 window, counting overlaps once. Source ranges are clipped to that window,
 allowing either edge to fall inside a source segment. Retained first/last
-samples must align within the timing tolerance without ambiguous sample
-placement. Missing source coverage, masked waveform gaps, incompatible rates,
+samples must have unique nearest-sample placement within half a waveform
+interval, independently of the absolute start/containment tolerance. Missing source coverage, masked waveform gaps, incompatible rates,
 or incomplete coordinates still raise. Raw anchor fields remain unchanged;
 `association.waveform.sample_count` records the downloaded count separately.
 Under the user's
@@ -384,43 +384,46 @@ at the measured rate of 20.006973266601562 Hz. Original input traces and
 GeoCSV rows remain unchanged. This is an explicit overlap-handling choice,
 not a reconstruction of which original acquisition supplied each sample.
 
-Strict association rejects its enlarged sample count. Even with
-`allow_first_segment=True`, the 1 ms tolerance used earlier is too small for this
-sample-grid placement. Demonstrate both failures before increasing the option:
+Strict association rejects its enlarged sample count:
 
 ```python
-for options in (
-    {"time_tolerance": 0.001},
-    {"time_tolerance": 0.001, "allow_first_segment": True},
-):
-    try:
-        geocsv.associate(merged_trace, p0045_tables, **options)
-    except ValueError as error:
-        print(error)
-    else:
-        raise AssertionError("Expected strict count or 1 ms grid validation to fail")
+try:
+    geocsv.associate(merged_trace, p0045_tables, time_tolerance=0.001)
+except ValueError as error:
+    print(error)
+else:
+    raise AssertionError("Expected strict count validation to fail")
 assert "geocsv" not in merged_trace.stats
 assert "coordinates" not in merged_trace.stats
 ```
 
-For this example only, explicitly allow 25 ms for source start and last-sample
-alignment. This is close to half a sample at the measured rate; the associator
-still requires exactly one eligible sample index for every source start.
-The millisecond-rendered GeoCSV starts and rounded rates pass that uniqueness
-check at 25 ms. This tolerance is a declared example policy, not a claim about
-clock accuracy or a new default. Do not increase tolerance blindly for other
-waveforms.
+With `allow_first_segment=True`, source ranges are placed on the waveform grid
+to their unique nearest samples. The offset must be strictly less than half
+the waveform sample interval, approximately 24.991 ms here. Its approximately 24.8 ms grid offset
+therefore succeeds without increasing `time_tolerance`.
+
+This separates two checks: `time_tolerance` controls absolute strict-start
+matching and containing-anchor boundaries; the half-sample rule controls source
+coverage placement. Even `time_tolerance=0` leaves the half-sample coverage rule
+in place. Exact half-sample ties raise, as does accumulated rate drift beyond
+half an interval at a retained boundary. Source counts fix each placed range's
+length; boundaries are not independently rounded to invent extra coverage.
+The rule accepts different grid phases and small timing discontinuities;
+it does not establish exact time agreement or physical clock accuracy.
+
+The half-sample scale mirrors ObsPy's own MiniSEED reader,
+`obspy/io/mseed/src/obspy-readbuffer.c`. Our strict inequality rejects midpoint
+ties; the reader uses an inclusive join limit. See the [policy and source rationale](../OBSPY_MERGED_TRACES.md#separate-absolute-matching-from-grid-placement).
 
 ```python
 before_merge_association = merged_trace.copy()
-geocsv.associate(merged_trace, p0045_tables,
-                  time_tolerance=0.025, allow_first_segment=True)
+geocsv.associate(merged_trace, p0045_tables, allow_first_segment=True)
 assert merged_trace.stats.geocsv.association.type == "anchor_segment"
 merged_report = merged_trace.stats.geocsv.association
 assert len(merged_report.coverage_segments) == 2
 assert [segment.source_record_index for segment in merged_report.coverage_segments] == [101433, 101434]
 assert merged_report.max_sample_grid_offset.seconds > 0.001
-assert merged_report.max_sample_grid_offset.seconds <= 0.025
+assert merged_report.max_sample_grid_offset.seconds < merged_trace.stats.delta / 2
 print(merged_report.coverage_segments)
 print(merged_report.max_sample_grid_offset)
 assert merged_trace.stats.geocsv.source_record_index == 101433
@@ -460,8 +463,8 @@ downstream transformations when you need the original segment relationship.
 Clip the unassociated originals after merging, then associate that final window.
 This real example starts inside the first REQ segment and ends inside the second.
 Both source ranges extend outside the window; their clipped union must still
-cover every downloaded sample. The earlier 25 ms alignment choice remains
-explicit for this merge, rather than a new default.
+cover every downloaded sample. Half-sample placement also applies after
+clipping; neither source counts nor native waveform times are rewritten.
 
 ```python
 window, = segments.copy().merge(method=1, interpolation_samples=0,
@@ -469,8 +472,7 @@ window, = segments.copy().merge(method=1, interpolation_samples=0,
 window.trim(starttime=window.stats.starttime + 1,
             endtime=window.stats.endtime - 1)
 window_before = window.copy()
-geocsv.associate(window, p0045_tables,
-                  time_tolerance=0.025, allow_first_segment=True)
+geocsv.associate(window, p0045_tables, allow_first_segment=True)
 assert window.stats.geocsv.association.type == "anchor_segment"
 assert window.stats.geocsv.source_record_index == 101433
 assert window.stats.geocsv.association.waveform.sample_count == window.stats.npts
@@ -494,7 +496,7 @@ The real P0030 fixture exercises `single_segment`, the explicit time tolerance,
 repeated-row batch association, and rejection of existing destinations.
 The real P0045 example merges two original MiniSEED request segments and
 explicitly asserts `anchor_segment`, unchanged anchor fields and waveform data,
-and failure at the earlier 1 ms tolerance. The largest continuous span is
+and automatic half-sample coverage placement. The largest continuous span is
 limited by the following real gap; no gap filling, resampling, or mixing of
 location codes is used. The additional real window clips both ends and checks
 containment, unchanged anchor values and preserved samples. Synthetic coverage

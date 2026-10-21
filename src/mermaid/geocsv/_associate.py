@@ -141,7 +141,7 @@ def _association_details(trace, anchor, association_type, ranges):
     })
 
 
-def _validate_coverage(trace, overlapping, tolerance_ns):
+def _validate_coverage(trace, overlapping):
     """Require gap-free source sample coverage, clipped to the waveform grid."""
     rate = Decimal(str(trace.stats.sampling_rate))
     intervals = []
@@ -171,14 +171,15 @@ def _validate_coverage(trace, overlapping, tolerance_ns):
         for sample in (clipped_first, clipped_stop - 1):
             source_ns = offset_ns + round(
                 Decimal(sample - first_sample) * 1_000_000_000 / Decimal(str(source_rate)))
-            waveform_ns = round(Decimal(sample) * 1_000_000_000 / rate)
-            if abs(source_ns - waveform_ns) > tolerance_ns:
+            # Compare in sample units before rounding the waveform time to ns.
+            # A half-sample tie has no unique placement, even at a window edge.
+            displacement = Decimal(source_ns) * rate / 1_000_000_000 - sample
+            if abs(displacement) == Decimal("0.5"):
+                raise ValueError(f"{context}: retained sample {sample} is exactly halfway "
+                                 "between waveform sample indices; source coverage is ambiguous")
+            if abs(displacement) > Decimal("0.5"):
                 raise ValueError(f"{context}: retained sample {sample} is off the waveform "
-                                 "sample grid beyond time_tolerance")
-            if any(abs(source_ns - round(Decimal(index) * 1_000_000_000 / rate))
-                   <= tolerance_ns for index in (sample - 1, sample + 1)):
-                raise ValueError(f"{context}: time_tolerance permits multiple waveform "
-                                 "sample indices; source coverage is ambiguous")
+                                 "sample grid by more than half a sample interval")
         intervals.append((clipped_first, clipped_stop))
         ranges.append(((dataset_index, record_index, row, metadata),
                        first_sample, clipped_first, clipped_stop))
@@ -216,7 +217,10 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
     ``allow_first_segment=True`` requires a unique same-SNCL source interval
     containing the first sample, never merely the nearest preceding row.
     Require gap-free source sample coverage after clipping to the waveform
-    grid and counting overlaps once. Multiple containing anchors raise.
+    grid and counting overlaps once. Retained boundaries must have unique
+    nearest-sample placement within half a waveform interval, independent of
+    time_tolerance. Exact half-sample ties and accumulated drift beyond the
+    allowance raise. Multiple containing anchors raise.
     No waveform merging is performed. ``stats.geocsv.association`` contains a
     fresh report with type ``single_segment`` or ``anchor_segment``, waveform
     and source snapshots, clipped ranges, and measured alignment differences.
@@ -408,7 +412,11 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
                 continue
             if not matches and len(anchors) == 1:
                 try:
-                    ranges = _validate_coverage(trace, overlapping, tolerance_ns)
+                    # Coverage selection uses half a waveform sample at either
+                    # edge, independently of the absolute anchor time tolerance.
+                    grid_tolerance_ns = Decimal(500_000_000) / Decimal(str(rate))
+                    coverage = _overlapping_events(trace, datasets, grid_tolerance_ns)
+                    ranges = _validate_coverage(trace, coverage)
                 except ValueError as exc:
                     failures.append(f"trace {trace_index} {trace.id}: {exc}")
                     continue

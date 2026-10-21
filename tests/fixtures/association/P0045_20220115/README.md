@@ -38,13 +38,15 @@ falls about 24.8 ms off the first trace's grid and is placed at integer sample
 between first and last samples). This timing placement is explicit and is not
 a statement that the original grids were identical.
 
-Association fails with the earlier tutorial's 1 ms tolerance, including with
-`allow_first_segment=True`. It succeeds with explicit `time_tolerance=0.025` and
-`allow_first_segment=True`, uniquely placing the source ranges `[0, 9696)` and
-`[9683, 45683)`. It attaches row 101433 and the `first_segment` label without
-changing the source row or merged samples. The 25 ms tolerance is an example
-policy close to half a sample; it does not establish clock accuracy. No
-acquisition lineage is inferred from the overlap.
+Strict association rejects the changed count. Since 0.21.0,
+`allow_first_segment=True` succeeds without a time-tolerance override:
+source ranges `[0, 9696)` and `[9683, 45683)` uniquely fit within half a
+waveform interval, approximately 24.991 ms. It attaches row 101433 with type
+`anchor_segment` without changing the source row or merged samples. Earlier
+probes needed explicit 25 ms because source-grid validation then reused the
+absolute `time_tolerance`; that is no longer the current policy. Strict start
+matching, containing-anchor uniqueness, counts, rates and full coverage still
+apply. No clock accuracy or acquisition reconstruction is inferred.
 
 ObsPy behavior and merge tests were inspected read-only at checkout commit
 `50033e1daf95233cd4f30e95a49c37fd50be2ccd`, including Stream merging, overlap

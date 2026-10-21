@@ -1,6 +1,6 @@
 # Clipped and combined MiniSEED windows: containing anchors and source coverage
 
-Current opt-in policy, revised 2026-10-21 in version 0.20.0 following the user's
+Current opt-in policy, revised 2026-10-21 in version 0.21.0 following the user's
 MERMAID scientific clarification. The [association tutorial](tutorials/ASSOCIATE.md)
 and [SAC tutorial](tutorials/WRITE_SAC.md) give runnable real-data examples.
 
@@ -60,13 +60,20 @@ For `allow_first_segment=True`:
    allowing the explicit `time_tolerance` at interval boundaries. A preceding
    interval that ended earlier is not an anchor. Zero or multiple anchors raise.
 3. For a nonstandard match, collect same-SNCL source intervals intersecting the
-   waveform window, including intervals beginning before the waveform. Required
+   waveform window expanded by half a waveform interval at each edge, including
+   intervals beginning before the waveform. Required
    counts/rates must be valid. Rates retain the provisional inclusive 0.01 Hz
    agreement check around the waveform rate.
 4. Place each source's integer sample range on the waveform grid. Clip it to
    `[0, npts)`; source samples outside the downloaded window are permitted.
-   Retained first and last source samples must align within `time_tolerance`
-   with exactly one waveform sample index. Off-grid or ambiguous placement raises.
+   Round the source-start displacement to its nearest waveform sample index;
+   the original source count fixes the range length. Retained first and last
+   source samples must each remain within half a waveform interval of their
+   assigned indices. Exact half-sample ties raise rather than using a rounding
+   convention to choose a side. Accumulated drift beyond half an interval raises;
+   do not independently round the last boundary to create additional coverage.
+   Comparison is in sample units before rounding waveform times to nanoseconds;
+   the report retains the existing nanosecond-rounded boundary measurements.
 5. Require the union of those clipped integer ranges to cover every waveform
    sample without gaps, counting overlaps once. Source SampleCount is not
    rewritten and need not equal waveform `npts`. Full source metadata coverage
@@ -76,11 +83,35 @@ For `allow_first_segment=True`:
    `npts == len(data)` remains required. All matches and projections validate
    before any trace is modified.
 
-The default timing tolerance remains 100 microseconds. Source lexical
-resolution does not enlarge it. A window can fail containment or sample-grid
-checks even with superficially nearby metadata; do not increase tolerance
-blindly. Resampling and reconstruction of altered sampling grids remain
-outside this change.
+### Separate absolute matching from grid placement
+
+`time_tolerance` retains its 100 microsecond default for strict original-start
+matching and containing-anchor boundaries. It never controls coverage-grid
+placement; even zero does not require coincident grids in the anchor fallback.
+The rule is strictly `abs(grid offset) < 0.5 / waveform_sampling_rate`.
+It is fixed, rate-dependent, and has no separate public knob:
+approximately 12.5 ms at 40 Hz, 25 ms at 20 Hz, and 200 ms at 2.5 Hz.
+
+This explicitly accepts different grid phases and sub-sample timing
+discontinuities. It establishes compatible sample coverage, not exact timing
+agreement, absence of physical gaps, an unmodified acquisition, or reconstruction
+of original overlap values. No waveform sample or timestamp is moved or
+interpolated. Exact SNCL (including Location), unique anchor, source rate
+agreement, source counts and complete union coverage remain required. Strict
+`single_segment` acceptance does not gain a new endpoint check.
+
+The half-interval scale is chosen to mirror ObsPy's MiniSEED reader in
+`obspy/io/mseed/src/obspy-readbuffer.c`: it sets
+`hptimetol = (hptime_t) (0.5 * segmentCurrent->hpdelta)` and accepts record
+joins within that limit. Association uses a strict inequality because an exact
+midpoint has two equally near sample indices. Thus we mirror the reader's
+half-sample scale, not its inclusive endpoint or complete joining algorithm:
+association compares whole source ranges to an already assembled Trace.
+Several record-join errors may accumulate, so a Trace accepted by the reader
+can still fail coverage. The inspected checkout is
+`50033e1daf95233cd4f30e95a49c37fd50be2ccd`; installed ObsPy is separately 1.5.1.
+
+See [reader and merge distinctions](STREAM.md#comparison-with-geocsv-association).
 
 ## Ambiguity diagnostics and provenance
 
@@ -120,11 +151,22 @@ Neither matching nor export proves an unmodified sample history.
 
 ## Real-data evidence and limits
 
+A tracked [raw P0006 EarthScope response](../tests/fixtures/association/P0006_20180713_earthscope/README.md)
+now complements the constructed example below. Its request starts inside the
+2018-07-13 DET segment and ends inside the overlapping REQ segment. Reading the
+unmodified response produces one 9,403-sample trace. Strict association rejects;
+the fallback now succeeds without a timing override, with a
+measured 21.813578 ms maximum retained boundary-grid offset. Its coverage ranges
+`[0, 4630)` and `[438, 9403)` overlap by 4,192 samples. Offline tests verify
+coverage, the association report, unchanged waveform data and anchor SAC export.
+This is one preserved service response, not a general archive reconstruction
+or overlap-precedence policy. Absolute start and rate thresholds are unchanged.
+
 The tracked P0045 tutorial merges two original REQ segments and then clips a
 second example at both ends. The anchor is source record 101433; record 101434
-covers the later portion. Source ranges overlap by 13 samples. The explicit
-25 ms grid tolerance accommodates the documented approximately 24.8 ms placement
-of the second segment; 1 ms still rejects the grid. The cropped example proves
+covers the later portion. Source ranges overlap by 13 samples. The automatic
+half-sample allowance accommodates the documented approximately 24.8 ms placement
+of the second segment without an absolute timing override. The cropped example proves
 containment and complete clipped coverage without rewriting anchor fields.
 The SAC tutorial exports that clipped window with undefined REQ depth.
 

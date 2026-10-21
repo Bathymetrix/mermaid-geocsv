@@ -192,7 +192,9 @@ interior start; a nearest-prior row is insufficient. Multiple containing rows
 raise even if one passes strict count matching. Errors list affected traces,
 source records and one-based physical starting lines; no headers are filled.
 A nonstandard match must have complete gap-free source-grid coverage after
-clipping to the downloaded window and counting overlaps once. Shorter windows
+clipping to the downloaded window and counting overlaps once. Retained boundaries
+use unique nearest-sample placement within half a waveform interval, independently
+of `time_tolerance`; exact ties and drift beyond that placement raise. Shorter windows
 and source ranges extending beyond either edge are allowed. The raw source
 count stays unchanged; `association.waveform.sample_count` records the actual window count.
 The `anchor_segment` label retains one anchor, without reconstructing acquisition
@@ -232,6 +234,14 @@ Scientific fields need context before projection or interpretation:
 These are interpretation requirements, not a general validation framework.
 
 ## Migration and related references
+
+Version 0.21.0 separates coverage-grid placement from `time_tolerance`. Anchor
+coverage uses a fixed unique nearest-sample rule within half a waveform interval;
+no explicit 25 ms recipe is needed for the documented P0006/P0045 examples.
+Absolute start/containment and Hz thresholds are unchanged. This accepts differing
+grid phases without altering data or promising exact timing agreement; measured
+offsets remain in the nested report. Exact half-sample ties, excessive accumulated
+drift and incomplete coverage still raise. See the [coverage policy](OBSPY_MERGED_TRACES.md).
 
 Version 0.20.0 replaces the string `association` with the nested report above.
 Use `.association.type`: `one_segment` becomes `single_segment` and

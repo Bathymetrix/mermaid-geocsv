@@ -214,3 +214,52 @@ an association policy for the legacy EarthScope response's one 10176-sample
 M trace spanning these overlapping source windows. The response's loss of
 Q/D distinctions, possible coverage combination, and quality-based validation
 remain open. No functional code or matching policy changed for this inspection.
+
+
+## Preserved clipped P0006 EarthScope response, 2026-10-21
+
+A live HTTPS dataselect request for `MH.P0006.00.BDH` from
+2018-07-13T09:48:10Z through 09:56:00Z returned HTTP 200 and 45,056 bytes.
+Unlike the older ignored probes, its exact response is now a tracked portable
+[fixture with request provenance and original comparison pairs](../tests/fixtures/association/P0006_20180713_earthscope/README.md).
+The request clips the start of original DET row 237 and the end of overlapping
+REQ row 238. The existing full P0006 fixture supplies unedited source metadata.
+
+ObsPy 1.5.1 reads one unmasked quality-M trace with 9,403 samples at
+20.007052186177717 Hz, from 09:48:10.037533 to 09:55:59.971830 UTC.
+No client trim, explicit merge, filling or resampling is needed. Independent
+sample comparison finds DET samples `[138, 4768)` followed by REQ samples
+`[4192, 8965)` in this response. This observation does not establish a general
+archive precedence policy or identify which service/archive layer assembled it.
+
+Strict association rejects the changed start/count. The containing-anchor
+fallback rejects at 1 ms but succeeds with explicit 25 ms tolerance: its
+clipped ranges `[0, 4630)` and `[438, 9403)` have a 4,192-sample overlap and
+cover the complete returned grid. The association report measures a maximum
+21.813578 ms boundary-grid difference at sample 438/source row 238 and a
+maximum rate difference of approximately 0.00000118618 Hz. These observations
+do not change package defaults or establish clock accuracy.
+
+The offline test also exports SAC with DET anchor geography and verifies
+returned samples plus STLA/STLO/STDP/STEL against the original DET reference.
+It checks unchanged waveform state on rejection, association and export.
+Version 0.20.0's public behavior is unchanged by this fixture/test addition.
+
+
+### Half-sample coverage policy adopted, 2026-10-21 (0.21.0)
+
+The prior 0.20.0 rejection/25 ms probes above retain their dated meaning.
+The same captured response now associates with `allow_first_segment=True`
+and no absolute timing override. Its unchanged 21.813578 ms maximum grid offset
+fits half the waveform interval, approximately 24.991188 ms. Start/containment
+and rate thresholds are unchanged. The report still records the measured
+coverage ranges and differences, and SAC export remains checked against the
+association-time waveform snapshot.
+
+A record-by-record read also shows that not all timing disagreement originates
+in EarthScope timestamp changes: local original DET and REQ grids already differ
+by 21.040431 ms in phase. The first retained REQ response record starts
+21.140718 ms before its corresponding sample on the assembled Trace grid.
+ObsPy joins those records within half an interval. Archive overlap selection
+and reader assembly are distinct; the legacy LOG/MER correction's contribution
+has not been isolated. See the [source-based comparison](STREAM.md#miniseed-record-assembly-and-half-sample-association-coverage).

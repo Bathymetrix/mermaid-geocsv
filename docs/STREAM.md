@@ -247,3 +247,36 @@ overlap methods, masks/filling, timing shifts, zero-threshold behavior,
 header inheritance, and exact rate/calibration/dtype requirements. It did
 not build the ObsPy checkout or run its full test suite. No ObsPy source or
 association behavior was changed.
+
+
+### MiniSEED record assembly and half-sample association coverage
+
+Rechecked 2026-10-21 at ObsPy source commit
+`50033e1daf95233cd4f30e95a49c37fd50be2ccd`, separately from installed 1.5.1:
+`obspy/io/mseed/src/obspy-readbuffer.c` sets its record-join tolerance to half
+an interval. This reader behavior is separate from `Stream.merge` cleanup's
+`misalignment_threshold`. A single parsed Trace does not prove all input record
+timestamps lay on that Trace's ideal grid.
+
+The preserved P0006 response demonstrates this distinction. The first record
+in its retained REQ portion starts at 09:52:01.434792000 UTC; its corresponding
+sample on the parsed Trace grid is 09:52:01.455932718, a -21.140718 ms offset.
+The local original DET/REQ starts already have a 21.040431 ms phase difference
+at identical rates. Thus the association offset cannot be assigned wholly to
+an EarthScope timestamp change. Archive overlap selection and reader assembly
+are separate stages; the legacy LOG/MER correction's contribution is not
+established by this comparison.
+
+Since 0.21.0, association uses unique nearest-sample placement within half a
+waveform interval for source coverage, not `time_tolerance`, with strict
+`abs(offset) < 0.5 / waveform_sampling_rate` and exact midpoint rejection. This resembles
+reader joining but compares source ranges to the assembled Trace's grid, not
+successive record joins. Source counts fix the placed ranges; excessive retained
+endpoint drift, midpoint ambiguity and uncovered waveform samples still raise.
+Native times and samples remain unchanged, and measured boundary offsets are
+recorded. This policy does not modify strict start matching, anchor containment,
+source rate agreement, or quality handling. See the [coverage policy](OBSPY_MERGED_TRACES.md).
+
+The half-sample scale comes from `obspy-readbuffer.c`'s `0.5 * hpdelta`
+record-join rule. Association's rejection of exact midpoint ties is stricter
+than the reader's inclusive join comparison.

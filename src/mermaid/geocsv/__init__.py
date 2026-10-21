@@ -12,7 +12,7 @@ from .read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.20.0"
+__version__ = "0.21.0"
 
 __all__ = [
     "__version__",
@@ -42,8 +42,8 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
         Tables returned by :func:`read`, retaining their source indices and
         immutable ``frame.attrs["geocsv"]`` provenance. May span datasets/files.
     time_tolerance : float, optional
-        Inclusive absolute timing tolerance in seconds. Default is 0.0001
-        (100 microseconds); zero requires exact matching. Must be finite and
+        Inclusive absolute start/containment tolerance in seconds. Default is 0.0001
+        (100 microseconds); zero removes absolute timing slack. Must be finite and
         nonnegative. Full UTC nanosecond values are compared; source lexical
         resolution does not enlarge the tolerance.
     allow_first_segment : bool, optional
@@ -93,6 +93,12 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
     retained segment boundary samples, in seconds, with its source and waveform
     sample index. ``max_sample_rate_difference`` reports the largest absolute
     rate difference in hertz with its source. No tolerances are stored.
+    Coverage boundaries use unique nearest-sample placement within half a
+    waveform sample interval, independent of ``time_tolerance``. Source counts
+    fix the range length: retained last-sample drift must also fit the same
+    placement. Exact half-sample ties raise. Native times and samples are not
+    shifted or interpolated; full coverage is still required. This resembles
+    ObsPy record joining but compares source ranges to the assembled trace.
     All nested mappings, including coverage entries, support attribute access.
     These keys and ObsPy AttribDict attributes/methods are reserved against
     source-column collisions. Coordinates require latitude/longitude declared

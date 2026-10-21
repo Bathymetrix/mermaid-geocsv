@@ -1,0 +1,154 @@
+{
+  "description": "Unmodified live EarthScope response clipped inside two overlapping original P0006 segments",
+  "request": {
+    "url": "https://service.earthscope.org/fdsnws/dataselect/1/query?network=MH&station=P0006&location=00&channel=BDH&starttime=2018-07-13T09%3A48%3A10&endtime=2018-07-13T09%3A56%3A00&format=miniseed&nodata=404",
+    "final_url": "https://service.earthscope.org/fdsnws/dataselect/1/query?network=MH&station=P0006&location=00&channel=BDH&starttime=2018-07-13T09%3A48%3A10&endtime=2018-07-13T09%3A56%3A00&format=miniseed&nodata=404",
+    "status": 200,
+    "retrieved_utc": "2026-10-21T22:54:03.166810+00:00",
+    "parameters": {
+      "network": "MH",
+      "station": "P0006",
+      "location": "00",
+      "channel": "BDH",
+      "starttime": "2018-07-13T09:48:10",
+      "endtime": "2018-07-13T09:56:00",
+      "format": "miniseed",
+      "nodata": "404"
+    },
+    "response_headers": {
+      "Content-Type": "application/vnd.fdsn.mseed",
+      "Date": "Wed, 21 Oct 2026 22:54:03 GMT",
+      "content-disposition": "attachment; filename=fdsnws-dataselect_2026-10-21t22:54:03z.mseed"
+    },
+    "size_bytes": 45056,
+    "sha256": "6124b6e4014c87a3ac6e600334480cf74244a9372fd6247a9c8e9d9debacdef4",
+    "path": "earthscope.mseed"
+  },
+  "response_waveform": {
+    "id": "MH.P0006.00.BDH",
+    "starttime": "2018-07-13T09:48:10.037533Z",
+    "starttime_ns": 1531475290037533000,
+    "endtime": "2018-07-13T09:55:59.971830Z",
+    "endtime_ns": 1531475759971829792,
+    "sample_count": 9403,
+    "sampling_rate_hz": 20.007052186177717,
+    "dataquality": "M"
+  },
+  "geocsv": {
+    "path": "../../geocsv/P0006.geocsv",
+    "size_bytes": 3001102,
+    "sha256": "07dfbbe639bacde403bb2b9d15eaf5d3ea8840ad17f11e3dde36d52ccbd17fa3",
+    "provenance": "Existing tracked full history; no new subset or edits"
+  },
+  "originals": [
+    {
+      "source_record_index": 237,
+      "mseed": {
+        "path": "20180713T094803.06_5B4C1D4F.MER.DET.WLT5.mseed",
+        "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20180713T094803.06_5B4C1D4F.MER.DET.WLT5.mseed",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0004_20180712-12h26m18s/20180713T094803.06_5B4C1D4F.MER.DET.WLT5.mseed",
+        "size_bytes": 20480,
+        "sha256": "2969994b1b1a8aff994b25f77018a5a104634b83fa40aaa03e3b5b51f05de9c1"
+      },
+      "sac": {
+        "path": "20180713T094803.06_5B4C1D4F.MER.DET.WLT5.sac",
+        "source_path": "/Users/jdsimon/mermaid/waveforms/sac/20180713T094803.06_5B4C1D4F.MER.DET.WLT5.sac",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0004_20180712-12h26m18s/20180713T094803.06_5B4C1D4F.MER.DET.WLT5.sac",
+        "size_bytes": 19704,
+        "sha256": "545a55a5ba608ea35d4ee32186bec669034b206295ae6701e6182535821a57d4"
+      },
+      "waveform": {
+        "id": "MH.P0006.00.BDH",
+        "starttime": "2018-07-13T09:48:03.139974Z",
+        "starttime_ns": 1531475283139974000,
+        "endtime": "2018-07-13T09:52:01.405959Z",
+        "endtime_ns": 1531475521405959196,
+        "sample_count": 4768,
+        "sampling_rate_hz": 20.007052186177717,
+        "dataquality": "Q"
+      }
+    },
+    {
+      "source_record_index": 238,
+      "mseed": {
+        "path": "20180713T094831.06_5B6DEF16.MER.REQ.WLT5.mseed",
+        "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20180713T094831.06_5B6DEF16.MER.REQ.WLT5.mseed",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0004_20180712-12h26m18s/20180713T094831.06_5B6DEF16.MER.REQ.WLT5.mseed",
+        "size_bytes": 40960,
+        "sha256": "67aa6498381691fd603ccc6b21315dff2be98fbf7139ac2b347715aaf08def01"
+      },
+      "sac": {
+        "path": "20180713T094831.06_5B6DEF16.MER.REQ.WLT5.sac",
+        "source_path": "/Users/jdsimon/mermaid/waveforms/sac/20180713T094831.06_5B6DEF16.MER.REQ.WLT5.sac",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0004_20180712-12h26m18s/20180713T094831.06_5B6DEF16.MER.REQ.WLT5.sac",
+        "size_bytes": 39032,
+        "sha256": "a1d2c873baa35ccd4910d52f0996c415ff52934277965c322d5af4063abae959"
+      },
+      "waveform": {
+        "id": "MH.P0006.00.BDH",
+        "starttime": "2018-07-13T09:48:31.908782Z",
+        "starttime_ns": 1531475311908782000,
+        "endtime": "2018-07-13T09:56:31.689607Z",
+        "endtime_ns": 1531475791689606815,
+        "sample_count": 9600,
+        "sampling_rate_hz": 20.007052186177717,
+        "dataquality": "D"
+      }
+    }
+  ],
+  "verification": {
+    "obspy_version": "1.5.1",
+    "package_version": "0.20.0",
+    "obspy_source_commit": "50033e1daf95233cd4f30e95a49c37fd50be2ccd",
+    "strict_association": "reject: no matching original start/count",
+    "anchor_association_1ms": "reject: second source range is off the waveform grid",
+    "anchor_association_25ms": "accept: unique containing anchor and complete source coverage",
+    "coverage_ranges": [
+      [
+        0,
+        4630
+      ],
+      [
+        438,
+        9403
+      ]
+    ],
+    "overlap_sample_count": 4192,
+    "waveform_start_offset_seconds": 6.898533,
+    "max_sample_grid_offset_seconds": 0.021813578,
+    "max_sample_grid_offset_waveform_sample_index": 438,
+    "max_sample_rate_difference_hz": 1.1861777160504516e-06,
+    "sample_comparison": [
+      {
+        "response_range": [
+          0,
+          4630
+        ],
+        "source_record_index": 237,
+        "original_sample_range": [
+          138,
+          4768
+        ]
+      },
+      {
+        "response_range": [
+          4630,
+          9403
+        ],
+        "source_record_index": 238,
+        "original_sample_range": [
+          4192,
+          8965
+        ]
+      }
+    ],
+    "interpretation": "Observed sample equality only; no general archive overlap precedence or reconstruction claim"
+  },
+  "current_policy_verification": {
+    "package_version": "0.21.0",
+    "coverage_grid_policy": "unique nearest-sample placement within half the waveform interval; midpoint ties rejected",
+    "anchor_association": "accept with allow_first_segment=True and no time_tolerance override",
+    "strict_association": "reject: no matching original start/count",
+    "measured_offsets_and_coverage": "unchanged from the recorded 0.20.0 verification above"
+  }
+}

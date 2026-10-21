@@ -90,7 +90,9 @@ inside source segments and longer combined windows. Source `SampleCount` remains
 necessary to establish intervals, but need not equal downloaded `npts`.
 Retain complete, gap-free source sample coverage after clipping ranges to the
 waveform bounds and counting overlaps once. Retained boundary samples must
-align within the explicit tolerance; counts have no tolerance. Multiple
+have unique nearest-sample placement within half a waveform interval, independent
+of the absolute start/containment tolerance. Exact half-sample ties and drift
+beyond the placement allowance raise; counts have no tolerance. Multiple
 containing anchors raise, even when one would pass strict matching, with clear
 source record/physical line numbers and affected traces. Do not choose an
 anchor or fill headers automatically. Label standard matches

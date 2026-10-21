@@ -500,13 +500,16 @@ def test_earlier_containing_row_wins_over_a_nearer_row_that_already_ended(record
     assert tr.stats.coordinates.latitude == 10
 
 
-def test_containment_does_not_accept_an_off_grid_start(records):
+def test_containment_accepts_nearest_sample_start_with_exact_time_tolerance(records):
     tr = trace()
     tr.stats.starttime = obspy.UTCDateTime(ns=tr.stats.starttime.ns + 50_100_001)
     tr.data = np.arange(2, dtype=np.float32)
-    with pytest.raises(ValueError, match='source coverage.*off the waveform sample grid'):
-        associate(tr, records, allow_first_segment=True)
-    assert 'geocsv' not in tr.stats
+    original = tr.copy()
+    associate(tr, records, allow_first_segment=True, time_tolerance=0)
+    assert tr.stats.geocsv.association.type == 'anchor_segment'
+    assert tr.stats.geocsv.association.max_sample_grid_offset.seconds == 0.000100001
+    assert tr.stats.starttime.ns == original.stats.starttime.ns
+    np.testing.assert_array_equal(tr.data, original.data)
 
 
 def test_containing_anchor_ambiguity_lists_all_affected_traces_and_source_lines():
@@ -556,8 +559,9 @@ def test_overlapping_source_ranges_count_each_sample_once(records):
 def test_merged_coverage_rejects_ambiguous_grid_alignment(records):
     tr = trace()
     tr.data = np.arange(10, dtype=np.float32)
-    with pytest.raises(ValueError, match='multiple waveform sample indices'):
-        associate(tr, records, allow_first_segment=True, time_tolerance=0.05)
+    records[0].loc[7, 'StartTime'] += pd.Timedelta(milliseconds=25)
+    with pytest.raises(ValueError, match='exactly halfway.*ambiguous'):
+        associate(tr, records, allow_first_segment=True, time_tolerance=0)
     assert 'geocsv' not in tr.stats
 
 
@@ -596,7 +600,7 @@ def test_merge_requires_exact_grid_coverage(records, problem):
         records[0].loc[7, 'StartTime'] += pd.Timedelta(milliseconds=50)
         tr.data = np.arange(11, dtype=np.float32)
     elif problem == 'off_grid':
-        records[0].loc[7, 'StartTime'] += pd.Timedelta(nanoseconds=100_001)
+        records[0].loc[7, 'StartTime'] += pd.Timedelta(milliseconds=25)
     elif problem == 'overlap_sum':
         records[0].loc[7, 'StartTime'] -= pd.Timedelta(milliseconds=100)
         # The sum is 4 + 6 = 10, but the union contains only 8 samples.
@@ -605,8 +609,10 @@ def test_merge_requires_exact_grid_coverage(records, problem):
     elif problem == 'rate':
         records[0].loc[7, 'SampleRate'] = 21
     elif problem == 'rate_drift':
-        # Within 0.01 Hz, but six samples accumulate more than 100 us of drift.
+        # Within 0.01 Hz, but accumulated drift exceeds half a waveform sample.
         records[0].loc[7, 'SampleRate'] = 19.991
+        records[0].loc[7, 'SampleCount'] = 2000
+        tr.data = np.arange(2004, dtype=np.float32)
     before = tr.copy()
     with pytest.raises(ValueError, match='source coverage'):
         associate(tr, records, allow_first_segment=True)
@@ -816,3 +822,39 @@ def test_anchor_report_retains_original_segments_and_clipped_ranges(records):
     assert report.max_sample_rate_difference.hz == abs(20.000001 - 20.)
     assert report.max_sample_rate_difference.source_record_index == 7
     assert report.max_sample_rate_difference.source_line_number == 13
+
+
+@pytest.mark.parametrize('rate', [20., 40.])
+@pytest.mark.parametrize('boundary_offset_ns', [-1, 0, 1])
+def test_half_sample_placement_boundary(records, rate, boundary_offset_ns):
+    tr = trace()
+    tr.stats.sampling_rate = rate
+    tr.data = np.arange(10, dtype=np.float32)
+    records[0].loc[[1, 7], 'SampleRate'] = rate
+    interval_ns = int(1_000_000_000 / rate)
+    records[0].loc[7, 'StartTime'] = (
+        pd.Timestamp(TIMES['SYN01'])
+        + pd.Timedelta(nanoseconds=4 * interval_ns + interval_ns // 2 + boundary_offset_ns))
+    original = tr.copy()
+    if boundary_offset_ns < 0:
+        associate(tr, records, allow_first_segment=True, time_tolerance=0)
+        report = tr.stats.geocsv.association
+        assert report.coverage_segments[1].waveform_sample_start == 4
+        assert report.max_sample_grid_offset.seconds == (interval_ns // 2 - 1) / 1e9
+    else:
+        message = 'exactly halfway' if boundary_offset_ns == 0 else 'gap at sample 4'
+        with pytest.raises(ValueError, match=message):
+            associate(tr, records, allow_first_segment=True, time_tolerance=0)
+        assert tr.stats == original.stats
+    np.testing.assert_array_equal(tr.data, original.data)
+
+
+def test_coverage_includes_source_start_just_beyond_waveform_end(records):
+    tr = trace()
+    tr.data = np.arange(5, dtype=np.float32)
+    records[0].loc[7, 'StartTime'] += pd.Timedelta(milliseconds=20)
+    associate(tr, records, allow_first_segment=True, time_tolerance=0)
+    segment = tr.stats.geocsv.association.coverage_segments[1]
+    assert segment.starttime > tr.stats.endtime
+    assert (segment.waveform_sample_start, segment.waveform_sample_stop) == (4, 5)
+    assert tr.stats.geocsv.association.max_sample_grid_offset.seconds == 0.02

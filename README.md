@@ -53,7 +53,11 @@ Fetching and reading do not require ObsPy. Association defaults to original
 segments. With `allow_first_segment=True`, clipped or combined windows may use
 one same-SNCL source segment containing the waveform start, provided GeoCSV
 sample ranges cover every downloaded sample after clipping and counting overlaps
-once. Zero or multiple containing anchors raise; no nearest-prior row is assumed.
+once. Coverage uses unique nearest-sample placement strictly below half a waveform
+interval. This follows the half-sample scale of ObsPy's MiniSEED reader;
+absolute start/containment tolerance is separate. Measured offsets
+remain in the association report; waveform samples and times are unchanged.
+Zero or multiple containing anchors raise; no nearest-prior row is assumed.
 Errors identify affected traces, source records, and physical starting lines.
 
 `trace.stats.geocsv.association` is a nested ObsPy `AttribDict` with

@@ -73,7 +73,7 @@ def test_tutorial_examples(name, working_directory, monkeypatch):
         assert window.stats.geocsv.association.waveform.sample_count == window.stats.npts
         assert len(window.stats.geocsv.association.coverage_segments) == 2
         assert window.stats.geocsv.association.coverage_segments[0].source_record_index == 101433
-        assert window.stats.geocsv.association.max_sample_grid_offset.seconds > 0.001
+        assert 0.001 < window.stats.geocsv.association.max_sample_grid_offset.seconds < window.stats.delta / 2
     if name == "WRITE_SAC":
         assert namespace["trace"].stats.geocsv.association.type == "single_segment"
         assert namespace["written"].stdp is not None
