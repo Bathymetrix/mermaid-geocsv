@@ -4,7 +4,7 @@ from bisect import bisect_left, bisect_right
 from decimal import Decimal, InvalidOperation
 from math import isfinite
 
-from obspy import Stream, Trace
+from obspy import Stream, Trace, UTCDateTime
 from obspy.core.util import AttribDict
 import numpy as np
 import pandas as pd
@@ -85,10 +85,67 @@ def _overlapping_events(trace, datasets, tolerance_ns):
             yield dataset_index, record_index, row, metadata
 
 
+def _association_details(trace, anchor, association_type, ranges):
+    """Snapshot the source ranges and alignment evidence used for this trace."""
+    rate = Decimal(str(trace.stats.sampling_rate))
+    segments = []
+    max_grid = None
+    max_rate = None
+    # Stable ordering also determines the reported source/sample in a tie.
+    ranges = sorted(ranges, key=lambda item: (
+        pd.Timestamp(item[0][2]["StartTime"]).value, item[0][0], item[0][1]))
+    for match, first_sample, clipped_first, clipped_stop in ranges:
+        dataset_index, record_index, row, metadata = match
+        start_ns = pd.Timestamp(row["StartTime"]).value
+        source_rate = Decimal(str(row["SampleRate"]))
+        reference = {"dataset_index": dataset_index,
+                     "source_record_index": int(record_index),
+                     "source_line_number": metadata.record_line_numbers.get(record_index)}
+        segments.append(AttribDict({
+            **{key: row[field] for field, key in IDENTITY.items()},
+            "starttime": UTCDateTime(ns=start_ns),
+            "endtime": UTCDateTime(ns=_source_last_sample_ns(start_ns, row)),
+            "sampling_rate_hz": float(source_rate),
+            "sample_count": int(row["SampleCount"]),
+            **reference,
+            "waveform_sample_start": clipped_first,
+            "waveform_sample_stop": clipped_stop,
+        }))
+        offset_ns = start_ns - trace.stats.starttime.ns
+        for sample in (clipped_first, clipped_stop - 1):
+            source_ns = offset_ns + round(
+                Decimal(sample - first_sample) * 1_000_000_000 / source_rate)
+            waveform_ns = round(Decimal(sample) * 1_000_000_000 / rate)
+            difference_ns = abs(source_ns - waveform_ns)
+            if max_grid is None or difference_ns > max_grid[0]:
+                max_grid = (difference_ns, {**reference, "waveform_sample_index": sample})
+        difference_hz = abs(float(source_rate) - trace.stats.sampling_rate)
+        if max_rate is None or difference_hz > max_rate[0]:
+            max_rate = (difference_hz, reference)
+    return AttribDict({
+        "type": association_type,
+        "waveform": {
+            **{key: trace.stats[key] for key in IDENTITY.values()},
+            "starttime": UTCDateTime(ns=trace.stats.starttime.ns),
+            "endtime": UTCDateTime(ns=trace.stats.endtime.ns),
+            "sampling_rate_hz": trace.stats.sampling_rate,
+            "sample_count": trace.stats.npts,
+        },
+        "coverage_segments": tuple(segments),
+        "waveform_start_offset_seconds": (
+            trace.stats.starttime.ns - pd.Timestamp(anchor[2]["StartTime"]).value
+        ) / 1_000_000_000,
+        "max_sample_grid_offset": {"seconds": max_grid[0] / 1_000_000_000,
+                                   **max_grid[1]},
+        "max_sample_rate_difference": {"hz": max_rate[0], **max_rate[1]},
+    })
+
+
 def _validate_coverage(trace, overlapping, tolerance_ns):
     """Require gap-free source sample coverage, clipped to the waveform grid."""
     rate = Decimal(str(trace.stats.sampling_rate))
     intervals = []
+    ranges = []
     for dataset_index, record_index, row, metadata in overlapping:
         context = (f"{trace.id}: source coverage "
                    f"{_record_context(dataset_index, record_index, metadata)}")
@@ -123,6 +180,8 @@ def _validate_coverage(trace, overlapping, tolerance_ns):
                 raise ValueError(f"{context}: time_tolerance permits multiple waveform "
                                  "sample indices; source coverage is ambiguous")
         intervals.append((clipped_first, clipped_stop))
+        ranges.append(((dataset_index, record_index, row, metadata),
+                       first_sample, clipped_first, clipped_stop))
     covered = 0
     for first_sample, stop_sample in sorted(intervals):
         if first_sample > covered:
@@ -133,6 +192,8 @@ def _validate_coverage(trace, overlapping, tolerance_ns):
         raise ValueError(f"{trace.id}: source coverage contains {covered} unique samples "
                          f"after clipping and overlap removal; requires exactly "
                          f"npts={trace.stats.npts}")
+
+    return ranges
 
 
 def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=False):
@@ -152,14 +213,13 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
     SNCL/UTC-time/count/rate keys. All trace matches resolve before projections.
     ``time_tolerance`` is finite nonnegative seconds, including
     zero for exact matching. Comparisons preserve full nanosecond values.
-    ``stats.geocsv.starttime_difference_seconds`` records waveform minus source
-    start time, computed in integer nanoseconds before conversion to seconds.
     ``allow_first_segment=True`` requires a unique same-SNCL source interval
     containing the first sample, never merely the nearest preceding row.
     Require gap-free source sample coverage after clipping to the waveform
     grid and counting overlaps once. Multiple containing anchors raise.
-    No waveform merging is performed. ``stats.geocsv.association`` records
-    ``one_segment`` for a standard match or ``first_segment`` for this fallback.
+    No waveform merging is performed. ``stats.geocsv.association`` contains a
+    fresh report with type ``single_segment`` or ``anchor_segment``, waveform
+    and source snapshots, clipped ranges, and measured alignment differences.
     In the latter case, source fields describe only the anchor; its location
     is adopted for the entire trace without reconstructing merge provenance.
     Source record indices and physical starting line numbers identify failures.
@@ -203,8 +263,8 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
             raise ValueError(f"dataset {dataset_index} lacks geocsv.read provenance")
         if metadata.field_units.get("SampleRate") != "hertz":
             raise ValueError(f"dataset {dataset_index}: SampleRate requires declared units hertz")
-        reserved = {"source_record_index", "dataset_index", "metadata", "association",
-                    "starttime_difference_seconds", "waveform_sample_count"} & set(frame.columns)
+        reserved = {"source_record_index", "dataset_index", "metadata",
+                    "association"} & set(frame.columns)
         if reserved:
             raise ValueError(f"event columns collide with attachment keys: {sorted(reserved)}")
         container_conflicts = set(frame.columns) & set(dir(AttribDict))
@@ -321,7 +381,8 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
                 if reasons:
                     continue
                 matches.append(match)
-        association = "one_segment"
+        association_type = "single_segment"
+        ranges = None
         if allow_first_segment:
             overlapping = list(_overlapping_events(trace, datasets, tolerance_ns))
             anchors = []
@@ -347,12 +408,12 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
                 continue
             if not matches and len(anchors) == 1:
                 try:
-                    _validate_coverage(trace, overlapping, tolerance_ns)
+                    ranges = _validate_coverage(trace, overlapping, tolerance_ns)
                 except ValueError as exc:
                     failures.append(f"trace {trace_index} {trace.id}: {exc}")
                     continue
                 matches = anchors
-                association = "first_segment"
+                association_type = "anchor_segment"
         if len(matches) != 1:
             outcome = "no match" if not matches else f"ambiguous ({len(matches)} matches)"
             if not matches and allow_first_segment and not anchors:
@@ -365,22 +426,21 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
                 f"SNCL/time candidates (source, dataset, record, line, reasons): {candidates}; "
                 f"incomplete event rows (source, dataset, record, reason): {incomplete_events}")
             continue
-        associations.append((trace, matches[0], association))
+        if ranges is None:
+            ranges = [(matches[0], 0, 0, trace.stats.npts)]
+        associations.append((trace, matches[0], association_type, ranges))
 
     if failures:
         raise ValueError("GeoCSV association failed; no traces were modified:\n"
                          + "\n".join(failures))
 
     plans = []
-    for trace, (dataset_index, record_index, row, metadata), association in associations:
-        starttime_difference_seconds = (
-            trace.stats.starttime.ns - pd.Timestamp(row["StartTime"]).value
-        ) / 1_000_000_000
+    for trace, anchor, association_type, ranges in associations:
+        dataset_index, record_index, row, metadata = anchor
         attachment = AttribDict({**row.to_dict(), "source_record_index": record_index,
                                  "dataset_index": dataset_index, "metadata": metadata,
-                                 "association": association,
-                                 "waveform_sample_count": trace.stats.npts,
-                                 "starttime_difference_seconds": starttime_difference_seconds})
+                                 "association": _association_details(
+                                     trace, anchor, association_type, ranges)})
         plans.append((trace, attachment, _coordinates(trace, row, metadata)))
 
     for trace, attachment, coordinates in plans:

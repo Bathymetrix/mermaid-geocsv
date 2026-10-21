@@ -12,7 +12,7 @@ from .read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.19.0"
+__version__ = "0.20.0"
 
 __all__ = [
     "__version__",
@@ -82,18 +82,25 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
     fail source preflight; multiple traces may independently use the same row.
 
     ``stats.geocsv`` preserves all source columns and adds ``dataset_index``,
-    ``source_record_index``, immutable ``metadata``, ``association``
-    (``one_segment`` or ``first_segment``),
-    ``starttime_difference_seconds`` (waveform minus matched source start), and
-    ``waveform_sample_count`` (the count at association, independent of the
-    anchor's original SampleCount).
+    ``source_record_index``, immutable ``metadata``, and a nested ``association``
+    AttribDict. Its ``type`` is ``single_segment`` or ``anchor_segment``. It
+    snapshots ``waveform`` identity, start/end times, rate and count, and a
+    chronological tuple of ``coverage_segments`` with complete source segment
+    descriptions, dataset/record/line references and clipped waveform sample
+    ranges [start, stop). The first segment supplies geographic metadata.
+    ``waveform_start_offset_seconds`` is signed waveform minus anchor start.
+    ``max_sample_grid_offset`` reports the largest absolute difference at the
+    retained segment boundary samples, in seconds, with its source and waveform
+    sample index. ``max_sample_rate_difference`` reports the largest absolute
+    rate difference in hertz with its source. No tolerances are stored.
+    All nested mappings, including coverage entries, support attribute access.
     These keys and ObsPy AttribDict attributes/methods are reserved against
     source-column collisions. Coordinates require latitude/longitude declared
     in degrees_north/degrees_east; elevation is the adopted sea-level reference
     0.0, with no geoid model. Zero is the same in metres and kilometres; no
     nonzero elevation unit convention is established here. Position refers to
     the source segment's first sample, not an average over the trace. For
-    first_segment, the anchor's geographic metadata is adopted for the whole
+    anchor_segment, the anchor's geographic metadata is adopted for the whole
     waveform under the MERMAID negligible-drift convention; raw fields still
     describe only the anchor row. Association guarantees end at initial
     attachment; later waveform processing does not refresh it. Use :func:`write_sac` separately
@@ -119,7 +126,7 @@ def write_sac(trace, path):
     ----------
     trace : obspy.Trace
         MiniSEED-derived trace with loaded, unmasked, finite real samples and
-        a ``one_segment`` or ``first_segment`` attachment from :func:`associate`.
+        a ``single_segment`` or ``anchor_segment`` attachment from :func:`associate`.
         Associate the final downloaded/clipped/combined window before export.
     path : str or os.PathLike
         Explicit output filename in an existing directory. Must not exist.
@@ -164,7 +171,7 @@ def write_sac(trace, path):
     reconstructed, and GeoCSV provenance is not serialized into SAC.
     Identity, start, sample count and source rate agreement are checked, but
     these checks cannot establish an unmodified sample history. For
-    first_segment, anchor geography and approximate depth describe the whole
+    anchor_segment, anchor geography and approximate depth describe the whole
     waveform by the MERMAID negligible-drift convention. Each call writes one file;
     loop over a Stream with explicit distinct paths for multiple traces.
     """

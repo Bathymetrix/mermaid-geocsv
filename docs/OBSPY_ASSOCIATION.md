@@ -88,20 +88,65 @@ original field names, values, and missingness, plus:
 | `source_record_index` | Original file-wide data-record index, not a physical line number. |
 | `dataset_index` | Position of the matched table in the supplied records list. |
 | `metadata` | That table's immutable `GeoCSVMetadata`, including units and source/download provenance. |
-| `association` | `one_segment` for a standard match, or `first_segment` for the explicit fallback. |
-| `starttime_difference_seconds` | Waveform start minus matched source start, computed from integer UTC nanoseconds. Positive means the waveform starts later, including an interior start. |
-| `waveform_sample_count` | Loaded waveform count at association; independent of the source anchor's unchanged SampleCount. |
+| `association` | Nested association report described below. |
 
 These keys and ObsPy `AttribDict` attribute/method names are reserved against
 source-column collisions. A collision raises before mutation; fields are
-never silently renamed or discarded. The signed start difference describes
-the initial match, not a correction or an uncertainty estimate.
+never silently renamed or discarded.
 
 Coordinates require a complete finite latitude/longitude pair, within
 [-90, 90] and [-180, 180], declared in `degrees_north` and `degrees_east`.
 Missing either component raises; there are no per-field missing-data switches.
 The ten core Stats defaults, optional namespaces, and processing history are
 distinguished in the [source-based Stats reference](OBSPY_STATS_REFERENCE.md).
+
+### Association report
+
+`stats.geocsv.association` is a fresh nested ObsPy `AttribDict` for each trace.
+All nested mappings, including entries in the `coverage_segments` tuple, support
+both key and attribute access. It contains outputs only, not input tolerances.
+
+| Field | Meaning |
+| --- | --- |
+| `type` | `single_segment` for strict original-segment matching; `anchor_segment` for the explicit containing-anchor fallback. A clipped window within one source segment can have type `anchor_segment`. |
+| `waveform` | Association-time snapshot: `network`, `station`, `location`, `channel`, `starttime`, `endtime`, `sampling_rate_hz`, and `sample_count`. Times are fresh ObsPy `UTCDateTime` values preserving nanoseconds. |
+| `coverage_segments` | Chronological tuple of contributing source-segment descriptions; the first entry is the geographic anchor. For a strict match, contains only the matched source segment. |
+| `waveform_start_offset_seconds` | Signed waveform start minus anchor start, computed using integer nanoseconds. An interior window can have a large positive offset; this is not its sample-grid error, a clock correction, or an uncertainty. |
+| `max_sample_grid_offset` | `seconds`, `dataset_index`, `source_record_index`, `source_line_number`, and `waveform_sample_index` identifying the largest absolute timing difference among retained first/last sample pairs of contributing source ranges. |
+| `max_sample_rate_difference` | `hz`, `dataset_index`, `source_record_index`, and `source_line_number` identifying the largest absolute source/waveform rate difference. |
+
+Each `coverage_segments` entry contains:
+
+| Fields | Meaning |
+| --- | --- |
+| `network`, `station`, `location`, `channel` | Complete source identity, including a known empty location. |
+| `starttime`, `endtime` | Full original source segment bounds as UTCDateTime values. End is the last sample, computed as `StartTime + (SampleCount - 1) / SampleRate`, rounded to integer nanoseconds. |
+| `sampling_rate_hz`, `sample_count` | Original source rate/count, not a clipped count. |
+| `dataset_index` | Zero-based position of the dataset in the supplied DataFrame list. |
+| `source_record_index` | Zero-based file-wide data-record index, excluding headers and comments; it does not restart for each dataset. |
+| `source_line_number` | One-based physical starting line in that source file, counting headers, comments and blank lines; `None` if the row has no recorded physical line. |
+| `waveform_sample_start`, `waveform_sample_stop` | Clipped contributing waveform range, zero-based, start inclusive and stop exclusive. Overlaps may appear in different entries and are counted once for coverage. |
+
+`len(association.coverage_segments)` gives the source segment count. Source
+record and line numbers refer to the file actually parsed, including a fixture
+subset; they are not indices into an unparsed full history. Dataset indices
+refer to the supplied list, which can combine files.
+
+Grid diagnostics use the retained boundary pairs evaluated by the coverage
+check, with the same integer-nanosecond arithmetic. The per-segment grids have
+constant rates; these endpoints characterize their accumulated linear drift,
+subject to nanosecond rounding. This is not a comparison of waveform sample
+values. Strict matching still validates start/count/rate only: its reported
+last-sample disagreement does not introduce a new endpoint acceptance check.
+For equal maxima, select the first segment in chronological order (ties by
+dataset then record index), and its first boundary sample before its last.
+
+The report is a mutable association-time snapshot. Later changes to waveform
+Stats, source tables, or other traces do not refresh it. Association never
+moves or interpolates samples. Coverage rows are evidence that the supplied
+waveform grid is supported, not proof that these rows were actually concatenated
+or supplied particular values in an overlap. Arbitrary GeoCSV reports are not
+serialized into SAC or MiniSEED headers.
 
 ### Adopted sea-level reference
 
@@ -149,8 +194,8 @@ source records and one-based physical starting lines; no headers are filled.
 A nonstandard match must have complete gap-free source-grid coverage after
 clipping to the downloaded window and counting overlaps once. Shorter windows
 and source ranges extending beyond either edge are allowed. The raw source
-count stays unchanged; `waveform_sample_count` records the actual window count.
-The `first_segment` label retains one anchor, without reconstructing acquisition
+count stays unchanged; `association.waveform.sample_count` records the actual window count.
+The `anchor_segment` label retains one anchor, without reconstructing acquisition
 contributions or performing any waveform merge. The
 [merged-trace policy](OBSPY_MERGED_TRACES.md) specifies all coverage checks,
 observed examples, and limits.
@@ -158,13 +203,13 @@ observed examples, and limits.
 Association guarantees end at initial attachment. Later trimming, resampling,
 merging, or manual edits do not refresh the row or projections. In particular,
 ObsPy can inherit an earlier row while changing `npts` and `endtime`; a
-retained `one_segment` label is not revalidated. See [Stream merging and
+retained `single_segment` label is not revalidated. See [Stream merging and
 association](STREAM.md#comparison-with-geocsv-association).
 
 Association does not create SAC headers. Separate
 [`geocsv.write_sac`](tutorials/WRITE_SAC.md) exports either association label to
 a new file, constructing fresh headers from the attached GeoCSV values and
-units. For `first_segment`, the anchor's receiver position, approximate depth,
+units. For `anchor_segment`, the anchor's receiver position, approximate depth,
 and sea-level reference apply to the whole window under the user's MERMAID
 negligible-drift convention. Missing REQ pressure remains undefined. Arbitrary GeoCSV
 provenance is not serialized by MiniSEED or SAC export.
@@ -188,10 +233,17 @@ These are interpretation requirements, not a general validation framework.
 
 ## Migration and related references
 
-Version 0.19.0 extends `allow_first_segment=True` to containing anchors and
-clipped source-grid coverage, accepts both labels for SAC export, and adds
-`waveform_sample_count` to attachments. Reassociate final waveform windows to
-obtain the new attachment before export; no old attachment is silently upgraded.
+Version 0.20.0 replaces the string `association` with the nested report above.
+Use `.association.type`: `one_segment` becomes `single_segment` and
+`first_segment` becomes `anchor_segment`. Former top-level
+`starttime_difference_seconds` moves to
+`association.waveform_start_offset_seconds`; `waveform_sample_count` moves to
+`association.waveform.sample_count`. No compatibility aliases are provided.
+`write_sac` requires the new report and validates identity/start/count/rate
+against its waveform snapshot. Reassociate an unassociated final waveform to
+obtain it. The `allow_first_segment` argument and matching tolerances are
+unchanged. Version 0.19.0 introduced containing anchors, clipped source-grid
+coverage, and SAC export for either association type.
 
 Version 0.18.0 renamed `allow_merge` to `allow_first_segment` without changing
 association behavior. Update existing keyword calls. The unused

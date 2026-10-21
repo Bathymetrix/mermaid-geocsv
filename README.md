@@ -56,7 +56,13 @@ sample ranges cover every downloaded sample after clipping and counting overlaps
 once. Zero or multiple containing anchors raise; no nearest-prior row is assumed.
 Errors identify affected traces, source records, and physical starting lines.
 
-Both association labels can be exported to SAC. For `first_segment`, the anchor's
+`trace.stats.geocsv.association` is a nested ObsPy `AttribDict` with
+`.type` (`single_segment` or `anchor_segment`), a waveform snapshot, source
+coverage segments with record/line references and clipped sample ranges, and
+measured timing/rate differences. It records association-time evidence, not
+waveform construction history; see the [report schema](docs/OBSPY_ASSOCIATION.md#association-report).
+
+Both association types can be exported to SAC. For `anchor_segment`, the anchor's
 STLA/STLO/STDP/STEL apply to the entire waveform under the supplied MERMAID
 negligible-drift convention. Missing REQ pressure remains undefined. This does
 not reconstruct acquisition lineage. Production GeoCSV hosting is still pending.

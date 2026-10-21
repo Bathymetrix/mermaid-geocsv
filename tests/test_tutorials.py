@@ -68,13 +68,16 @@ def test_tutorial_examples(name, working_directory, monkeypatch):
         namespace["plt"].close("all")
     if name == "ASSOCIATE":
         window = namespace["window"]
-        assert window.stats.geocsv.association == "first_segment"
-        assert window.stats.geocsv.starttime_difference_seconds > 0.9
-        assert window.stats.geocsv.waveform_sample_count == window.stats.npts
+        assert window.stats.geocsv.association.type == "anchor_segment"
+        assert window.stats.geocsv.association.waveform_start_offset_seconds > 0.9
+        assert window.stats.geocsv.association.waveform.sample_count == window.stats.npts
+        assert len(window.stats.geocsv.association.coverage_segments) == 2
+        assert window.stats.geocsv.association.coverage_segments[0].source_record_index == 101433
+        assert window.stats.geocsv.association.max_sample_grid_offset.seconds > 0.001
     if name == "WRITE_SAC":
-        assert namespace["trace"].stats.geocsv.association == "one_segment"
+        assert namespace["trace"].stats.geocsv.association.type == "single_segment"
         assert namespace["written"].stdp is not None
         assert namespace["request_sac"].stdp is None
-        assert namespace["merged"].stats.geocsv.association == "first_segment"
+        assert namespace["merged"].stats.geocsv.association.type == "anchor_segment"
         assert namespace["merged_sac"].npts == namespace["merged"].stats.npts
         assert namespace["merged_sac"].stdp is None

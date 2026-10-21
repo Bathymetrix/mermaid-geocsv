@@ -5,7 +5,7 @@ from math import isfinite
 from pathlib import Path
 
 import numpy as np
-from obspy import Trace
+from obspy import Trace, UTCDateTime
 from obspy.io.sac import SACTrace
 import pandas as pd
 
@@ -29,8 +29,12 @@ def write_sac(trace, path):
     if not isinstance(source, Mapping):
         raise ValueError("write_sac requires stats.geocsv from geocsv.associate")
     association = source.get("association")
-    if association not in {"one_segment", "first_segment"}:
-        raise ValueError("write_sac requires a one_segment or first_segment association")
+    if (not isinstance(association, Mapping)
+            or association.get("type") not in {"single_segment", "anchor_segment"}):
+        raise ValueError("write_sac requires a single_segment or anchor_segment association")
+    waveform = association.get("waveform")
+    if not isinstance(waveform, Mapping):
+        raise ValueError("write_sac requires an association-time waveform snapshot")
     metadata = source.get("metadata")
     if not isinstance(metadata, GeoCSVMetadata):
         raise ValueError("write_sac requires attached GeoCSV dataset metadata")
@@ -39,21 +43,22 @@ def write_sac(trace, path):
     for field, key in (("Network", "network"), ("Station", "station"),
                        ("Location", "location"), ("Channel", "channel")):
         code = source.get(field)
-        if not isinstance(code, str) or code != trace.stats[key]:
+        if (not isinstance(code, str) or code != trace.stats[key]
+                or waveform.get(key) != trace.stats[key]):
             raise ValueError(f"{trace.id}: waveform {key} differs from its association")
         if (not code.isascii() or len(code) > 8 or code.strip() != code
                 or code == "-12345"):
             raise ValueError(f"{trace.id}: {key} cannot be preserved in an "
                              "eight-byte ASCII SAC identity header")
     count = source.get("SampleCount")
-    associated_count = source.get("waveform_sample_count")
+    associated_count = waveform.get("sample_count")
     if (not len(trace.data) or np.ma.is_masked(trace.data)
             or len(trace.data) != trace.stats.npts
             or associated_count is None or pd.isna(associated_count)
             or associated_count != trace.stats.npts
             or count is None or pd.isna(count) or count <= 0
             or not float(count).is_integer()
-            or (association == "one_segment" and count != trace.stats.npts)):
+            or (association["type"] == "single_segment" and count != trace.stats.npts)):
         raise ValueError(f"{trace.id}: requires the association-time loaded sample count "
                          "without masked gaps")
     if trace.data.dtype.kind not in "iuf" or not np.isfinite(trace.data).all():
@@ -64,14 +69,18 @@ def write_sac(trace, path):
             or np.any((trace.data != 0) & (samples == 0))):
         raise ValueError(f"{trace.id}: samples cannot be represented in SAC float32 storage")
     source_start = pd.Timestamp(source.get("StartTime"))
-    difference = source.get("starttime_difference_seconds")
-    if (pd.isna(source_start) or source_start.tzinfo is None
+    difference = association.get("waveform_start_offset_seconds")
+    associated_start = waveform.get("starttime")
+    if (not isinstance(associated_start, UTCDateTime)
+            or trace.stats.starttime.ns != associated_start.ns
+            or pd.isna(source_start) or source_start.tzinfo is None
             or difference is None or pd.isna(difference) or not isfinite(float(difference))
             or trace.stats.starttime.ns != source_start.value + round(difference * 1e9)):
         raise ValueError(f"{trace.id}: waveform start differs from its association")
     rate = source.get("SampleRate")
     if (metadata.field_units.get("SampleRate") != "hertz"
             or rate is None or pd.isna(rate) or not isfinite(float(rate))
+            or waveform.get("sampling_rate_hz") != trace.stats.sampling_rate
             or not isfinite(trace.stats.sampling_rate) or trace.stats.sampling_rate <= 0
             or not trace.stats.sampling_rate - 0.01 <= rate <= trace.stats.sampling_rate + 0.01):
         raise ValueError(f"{trace.id}: waveform rate disagrees with its association")

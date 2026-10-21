@@ -274,8 +274,8 @@ established that three repeated REQ waveforms have equal sample arrays,
 starts, rates, and counts and share one source row. This supports multiple
 traces independently using one row; it does not establish a transformed-input
 or archive-reconstruction policy. GeoCSV SampleCount already represents NPTS;
-no extra source count column is required. The separate attachment
-`waveform_sample_count` records the downloaded window's count for export checks.
+no extra source count column is required. The nested report field
+`association.waveform.sample_count` records the downloaded window's count for export checks.
 Position remains the interpolated receiver position at the source segment's
 first sample time, adopted for a clipped/combined window under the MERMAID
 negligible-drift convention, independent of duration or request date.

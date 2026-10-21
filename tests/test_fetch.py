@@ -341,7 +341,7 @@ def test_real_download_read_associate_write_sac_pipeline(collection, memory, cli
         trace.data = trace.data[10:110].copy()
     geocsv.associate(trace, tables, time_tolerance=0.001, allow_first_segment=clipped)
     assert trace.stats.geocsv.metadata.download is downloads[0].provenance
-    assert trace.stats.geocsv.association == ('first_segment' if clipped else 'one_segment')
+    assert trace.stats.geocsv.association.type == ('anchor_segment' if clipped else 'single_segment')
     output = collection.client / 'located.sac'
     geocsv.write_sac(trace, output)
     actual = SACTrace.read(str(output))

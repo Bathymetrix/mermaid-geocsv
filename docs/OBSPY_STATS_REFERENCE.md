@@ -98,7 +98,7 @@ create, reconstruct, append to, or clear it. Existing history remains unchanged.
 
 ## Explicit non-core destinations
 
-The current adapter adds only `stats.geocsv` (source row, provenance, and association label) and
+The current adapter adds only `stats.geocsv` (source row, provenance, and nested association report) and
 `stats.coordinates` (complete source latitude/longitude plus the adopted
 sea-level reference elevation). The separate `geocsv.write_sac` operation
 writes geographic SAC headers on a fresh SACTrace for comparison against independently read SAC fixtures. No SAC
@@ -114,7 +114,15 @@ whole batch, then attach. No merge, overwrite, deletion, fallback, or per-field
 missing-data policy switches. Missing required inputs raise. Source fields
 that have no agreed projection remain faithfully available under stats.geocsv.
 
-`stats.geocsv.association` records `one_segment` or `first_segment` at initial
+`stats.geocsv.association.type` records `single_segment` or `anchor_segment` at initial
 association. The latter requires explicit `allow_first_segment=True`; see the
 [merged-trace policy](OBSPY_MERGED_TRACES.md). It adopts the containing source anchor's geographic metadata
 without rewriting native waveform fields or source-row values.
+
+Rechecked 2026-10-21 against ObsPy checkout commit
+`50033e1daf95233cd4f30e95a49c37fd50be2ccd`, including Stats/AttribDict,
+nearby tests, contribution guidance and coding style. The `.venv` separately
+uses ObsPy 1.5.1. Association reports explicitly allocate AttribDict entries
+inside the coverage tuple: ObsPy converts nested mappings on assignment but
+does not recursively convert mappings contained in tuples. Time snapshots
+are freshly constructed from nanoseconds rather than shared with native Stats.

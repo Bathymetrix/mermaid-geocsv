@@ -112,7 +112,7 @@ def test_requires_one_trace(value, tmp_path):
     assert not list(tmp_path.iterdir())
 
 
-@pytest.mark.parametrize("attachment", [None, {}, {"association": "first_segment"}])
+@pytest.mark.parametrize("attachment", [None, {}, {"association": "anchor_segment"}])
 def test_requires_standard_association(trace, attachment, tmp_path):
     trace.stats.geocsv = attachment
     with pytest.raises(ValueError, match="requires"):
@@ -216,8 +216,7 @@ Algorithm(event):synthetic:v0,2025-01-01T00:00:00.123456789Z,MH,SYN01,,BDH,Q,0,0
     np.testing.assert_array_equal(waveform.data, before.data)
 
 
-@pytest.mark.parametrize("field", ["Station", "SampleCount", "waveform_sample_count", "StartTime",
-                                   "starttime_difference_seconds", "DataQuality"])
+@pytest.mark.parametrize("field", ["Station", "SampleCount", "StartTime", "DataQuality"])
 def test_incomplete_attachment_is_rejected(trace, field, tmp_path):
     trace.stats.geocsv[field] = pd.NA
     if field == "DataQuality":
@@ -244,8 +243,8 @@ def test_clipped_real_det_uses_containing_anchor_geography(subsets, tmp_path, st
     geocsv.associate(trace, subsets[example['geocsv']],
                      allow_first_segment=True, time_tolerance=0.001)
     source = trace.stats.geocsv
-    assert source.association == 'first_segment'
-    assert source.SampleCount != trace.stats.npts == source.waveform_sample_count == count
+    assert source.association.type == 'anchor_segment'
+    assert source.SampleCount != trace.stats.npts == source.association.waveform.sample_count == count
     path = tmp_path / 'clipped.sac'
     geocsv.write_sac(trace, path)
     actual = SACTrace.read(str(path))
@@ -288,6 +287,7 @@ def test_large_finite_float32_samples_have_finite_summary_headers(trace, tmp_pat
 @pytest.mark.parametrize('code', ['ABCDEFGHI', 'SYNé', ' PAD ', '-12345'])
 def test_identity_must_survive_sac_serialization(trace, tmp_path, code):
     trace.stats.station = trace.stats.geocsv.Station = code
+    trace.stats.geocsv.association.waveform.station = code
     with pytest.raises(ValueError, match='ASCII SAC identity'):
         geocsv.write_sac(trace, tmp_path / 'invalid.sac')
     assert not list(tmp_path.iterdir())
@@ -306,6 +306,22 @@ def test_unrepresentable_numeric_headers_fail_before_file_creation(trace, tmp_pa
         trace.stats.geocsv[field] = value
         if field == 'SampleRate':
             trace.stats.sampling_rate = value
+            trace.stats.geocsv.association.waveform.sampling_rate_hz = value
     with pytest.raises(ValueError, match='float32|undefined'):
         geocsv.write_sac(trace, tmp_path / 'invalid.sac')
+    assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize("field", ["type", "waveform", "waveform_start_offset_seconds"])
+def test_incomplete_association_report_is_rejected(trace, tmp_path, field):
+    del trace.stats.geocsv.association[field]
+    with pytest.raises(ValueError):
+        geocsv.write_sac(trace, tmp_path / "invalid.sac")
+    assert not list(tmp_path.iterdir())
+
+
+def test_changed_rate_within_source_tolerance_is_rejected(trace, tmp_path):
+    trace.stats.sampling_rate += 0.000001
+    with pytest.raises(ValueError, match="rate disagrees with its association"):
+        geocsv.write_sac(trace, tmp_path / "changed.sac")
     assert not list(tmp_path.iterdir())

@@ -125,7 +125,7 @@ def test_known_empty_location_associates_exactly(tmp_path, location, allow_first
     associate(tr, records, allow_first_segment=allow_first_segment)
     assert tr.stats.geocsv.Location == ''
     assert tr.stats.geocsv.source_record_index == 1
-    assert tr.stats.geocsv.association == ('first_segment' if allow_first_segment else 'one_segment')
+    assert tr.stats.geocsv.association.type == ('anchor_segment' if allow_first_segment else 'single_segment')
     assert all(tr.stats[key] == value for key, value in before.stats.items())
     np.testing.assert_array_equal(tr.data, before.data)
 
@@ -400,7 +400,7 @@ def test_index_selects_expected_row_among_unsorted_competitors():
     # Expected from the invented input, independently of the returned selection.
     assert tr.stats.geocsv.source_record_index == 1
     assert tr.stats.coordinates.latitude == 10.0
-    assert tr.stats.geocsv.starttime_difference_seconds == 0.0001
+    assert tr.stats.geocsv.association.waveform_start_offset_seconds == 0.0001
 
 
 def test_index_does_not_prefer_exact_time_over_another_eligible_row():
@@ -431,7 +431,7 @@ def test_standard_match_label_with_or_without_first_segment_permission(records, 
     tr = trace()
     tr.stats.mseed = {'dataquality': 'M'}
     associate(tr, records, allow_first_segment=allow_first_segment)
-    assert tr.stats.geocsv.association == 'one_segment'
+    assert tr.stats.geocsv.association.type == 'single_segment'
     assert tr.stats.mseed.dataquality == 'M'
 
 
@@ -447,7 +447,7 @@ def test_first_segment_requires_opt_in_and_preserves_anchor_and_waveform(records
     assert "'record': 1" in str(exc.value)
     assert tr.stats == before.stats
     associate(tr, records, allow_first_segment=True)
-    assert tr.stats.geocsv.association == 'first_segment'
+    assert tr.stats.geocsv.association.type == 'anchor_segment'
     assert tr.stats.geocsv.SampleCount == 4
     assert tr.stats.geocsv.DataQuality == 'Q'
     assert tr.stats.geocsv.source_record_index == 1
@@ -468,10 +468,10 @@ def test_clipped_windows_require_containing_anchor_and_complete_coverage(
     with pytest.raises(ValueError, match='no match'):
         associate(tr, records)
     associate(tr, records, allow_first_segment=True, time_tolerance=0)
-    assert tr.stats.geocsv.association == 'first_segment'
+    assert tr.stats.geocsv.association.type == 'anchor_segment'
     assert tr.stats.geocsv.source_record_index == anchor_index
     assert tr.stats.geocsv.SampleCount == records[0].loc[anchor_index, 'SampleCount']
-    assert tr.stats.geocsv.waveform_sample_count == count
+    assert tr.stats.geocsv.association.waveform.sample_count == count
     assert tr.stats.coordinates.latitude == records[0].loc[anchor_index, 'Latitude']
     assert tr.stats == {**before.stats, 'geocsv': tr.stats.geocsv,
                         'coordinates': tr.stats.coordinates}
@@ -544,7 +544,10 @@ def test_overlapping_source_ranges_count_each_sample_once(records):
     tr, = stream
     assert tr.stats.npts == 8
     associate(tr, records, allow_first_segment=True)
-    assert tr.stats.geocsv.association == 'first_segment'
+    report = tr.stats.geocsv.association
+    assert [(segment.waveform_sample_start, segment.waveform_sample_stop)
+            for segment in report.coverage_segments] == [(0, 4), (2, 8)]
+    assert report.type == 'anchor_segment'
     assert tr.stats.geocsv.SampleCount == 4  # Anchor remains unchanged.
     assert tr.stats.coordinates.latitude == 10.0
     np.testing.assert_array_equal(tr.data, np.arange(8, dtype=np.float32))
@@ -566,8 +569,8 @@ def test_exact_merged_alignment_uses_integer_nanosecond_sample_times(records):
     tr.stats.sampling_rate = 3.0
     tr.data = np.arange(10, dtype=np.float32)
     associate(tr, records, allow_first_segment=True, time_tolerance=0)
-    assert tr.stats.geocsv.association == 'first_segment'
-    assert tr.stats.geocsv.starttime_difference_seconds == 0
+    assert tr.stats.geocsv.association.type == 'anchor_segment'
+    assert tr.stats.geocsv.association.waveform_start_offset_seconds == 0
 
 
 def test_later_merged_count_failure_leaves_entire_batch_unchanged(records):
@@ -617,7 +620,7 @@ def test_merged_segment_alignment_accepts_timing_boundary(records, offset_ns):
     tr = trace()
     tr.data = np.arange(10, dtype=np.float32)
     associate(tr, records, allow_first_segment=True)
-    assert tr.stats.geocsv.association == 'first_segment'
+    assert tr.stats.geocsv.association.type == 'anchor_segment'
 
 
 @pytest.mark.parametrize('problem', ['rate', 'time', 'sncl', 'ambiguous',
@@ -668,13 +671,13 @@ def test_mixed_batch_labels_and_failure_atomicity(records):
         associate(st, records, allow_first_segment=True)
     assert [tr.stats for tr in st] == before
     associate(obspy.Stream([first, second]), records, allow_first_segment=True)
-    assert first.stats.geocsv.association == 'one_segment'
-    assert second.stats.geocsv.association == 'first_segment'
+    assert first.stats.geocsv.association.type == 'single_segment'
+    assert second.stats.geocsv.association.type == 'anchor_segment'
     assert first.stats.geocsv is not second.stats.geocsv
 
 
-@pytest.mark.parametrize('column', ['association', 'starttime_difference_seconds',
-                                    'waveform_sample_count'])
+@pytest.mark.parametrize('column', ['association', 'metadata', 'dataset_index',
+                                    'source_record_index'])
 def test_association_columns_are_reserved(records, column):
     records[0][column] = 'source value'
     tr = trace()
@@ -740,9 +743,76 @@ def test_batch_starttime_differences_are_signed_and_independent(records, allow_f
     associate(st, records, allow_first_segment=allow_first_segment)
 
     for tr, offset_ns, original in zip(st, offsets_ns, before):
-        assert tr.stats.geocsv.starttime_difference_seconds == offset_ns / 1_000_000_000
+        assert tr.stats.geocsv.association.waveform_start_offset_seconds == offset_ns / 1_000_000_000
         assert tr.stats.geocsv.StartTime == source_time
         assert tr.stats.geocsv.source_record_index == 1
-        assert tr.stats.geocsv.association == ('first_segment' if allow_first_segment else 'one_segment')
+        assert tr.stats.geocsv.association.type == ('anchor_segment' if allow_first_segment else 'single_segment')
         assert all(tr.stats[key] == value for key, value in original.items())
     assert len({id(tr.stats.geocsv) for tr in st}) == len(st)
+
+
+def test_single_segment_report_is_complete_and_independent(records):
+    first, second = trace(), trace()
+    associate(obspy.Stream([first, second]), records)
+    report = first.stats.geocsv.association
+    assert set(report) == {
+        'type', 'waveform', 'coverage_segments', 'waveform_start_offset_seconds',
+        'max_sample_grid_offset', 'max_sample_rate_difference'}
+    assert report.type == 'single_segment'
+    assert dict(report.waveform) == {
+        'network': 'MH', 'station': 'SYN01', 'location': '00', 'channel': 'BDH',
+        'starttime': first.stats.starttime, 'endtime': first.stats.endtime,
+        'sampling_rate_hz': 20., 'sample_count': 4}
+    assert report.waveform.starttime is not first.stats.starttime
+    assert report.waveform.endtime is not first.stats.endtime
+    segment, = report.coverage_segments
+    assert dict(segment) == {
+        **dict(report.waveform), 'dataset_index': 0, 'source_record_index': 1,
+        'source_line_number': 7, 'waveform_sample_start': 0, 'waveform_sample_stop': 4}
+    assert dict(report.max_sample_grid_offset) == {
+        'seconds': 0., 'dataset_index': 0, 'source_record_index': 1,
+        'source_line_number': 7, 'waveform_sample_index': 0}
+    assert dict(report.max_sample_rate_difference) == {
+        'hz': 0., 'dataset_index': 0, 'source_record_index': 1,
+        'source_line_number': 7}
+    other = second.stats.geocsv.association
+    assert report is not other
+    for key in ('waveform', 'max_sample_grid_offset', 'max_sample_rate_difference'):
+        assert report[key] is not other[key]
+    assert segment is not other.coverage_segments[0]
+    segment.station = 'CHANGED'
+    report.waveform.station = 'CHANGED'
+    assert second.stats.geocsv.association.coverage_segments[0].station == 'SYN01'
+    assert second.stats.geocsv.association.waveform.station == 'SYN01'
+    first.stats.starttime += 1
+    records[0].loc[1, 'SampleCount'] = 99
+    assert report.waveform.starttime.ns == pd.Timestamp(TIMES['SYN01']).value
+    assert report.waveform.sample_count == segment.sample_count == 4
+
+
+def test_anchor_report_retains_original_segments_and_clipped_ranges(records):
+    # Start inside the first source segment; clip the second at the output end.
+    records[0].loc[7, 'StartTime'] += pd.Timedelta(nanoseconds=50_000)
+    records[0].loc[7, 'SampleRate'] = 20.000001
+    tr = trace()
+    tr.stats.starttime += 0.05
+    tr.data = np.arange(6, dtype=np.float32)
+    associate(tr, records, allow_first_segment=True)
+    report = tr.stats.geocsv.association
+    assert report.type == 'anchor_segment'
+    assert report.waveform_start_offset_seconds == 0.05
+    first, second = report.coverage_segments
+    assert (first.source_record_index, first.source_line_number) == (1, 7)
+    assert (second.source_record_index, second.source_line_number) == (7, 13)
+    assert (first.waveform_sample_start, first.waveform_sample_stop) == (0, 3)
+    assert (second.waveform_sample_start, second.waveform_sample_stop) == (3, 6)
+    assert first.sample_count == 4 and second.sample_count == 6
+    assert first.starttime.ns == pd.Timestamp(TIMES['SYN01']).value
+    assert first.endtime.ns == first.starttime.ns + 150_000_000
+    assert second.endtime.ns > tr.stats.endtime.ns
+    assert dict(report.max_sample_grid_offset) == {
+        'seconds': 0.00005, 'dataset_index': 0, 'source_record_index': 7,
+        'source_line_number': 13, 'waveform_sample_index': 3}
+    assert report.max_sample_rate_difference.hz == abs(20.000001 - 20.)
+    assert report.max_sample_rate_difference.source_record_index == 7
+    assert report.max_sample_rate_difference.source_line_number == 13

@@ -50,7 +50,7 @@ The implemented mapping is `stla`/`stlo` from attached receiver coordinates
 in declared degrees, `stel=0` metres at the adopted sea-level reference, and
 approximate `stdp=WaterPressure[mbar]/100` metres. Missing REQ pressure
 (DataQuality D) leaves stdp undefined; missing DET pressure fails. SAC
-references never supply source values. `first_segment` exports adopt all four
+references never supply source values. `anchor_segment` exports adopt all four
 anchor geographic headers for the window; missing anchor pressure is not filled
 from later rows. Further processed-waveform semantics remain undecided.
 

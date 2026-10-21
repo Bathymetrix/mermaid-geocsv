@@ -57,7 +57,7 @@ subset_paths = {item["path"]: item["subset"]["path"]
 trace, = read_waveforms(str(fixtures / example["mseed"]))
 tables = geocsv.read(fixtures / subset_paths[example["geocsv"]])
 geocsv.associate(trace, tables, time_tolerance=0.001)
-assert trace.stats.geocsv.association == "one_segment"
+assert trace.stats.geocsv.association.type == "single_segment"
 
 workspace = TemporaryDirectory(prefix="geocsv-sac-")
 output_dir = Path(workspace.name)
@@ -220,11 +220,11 @@ else:
 assert output.read_bytes() == saved_bytes
 ```
 
-A `first_segment` association retains one source anchor for a clipped or
+An `anchor_segment` association retains one source anchor for a clipped or
 combined window. Under the user's MERMAID negligible-drift convention, its
 STLA/STLO/STDP/STEL are valid for the entire window. Missing REQ pressure stays
-undefined; later rows never fill it. Both association labels can be exported.
-The source row retains its original start/count and does not become an account
+undefined; later rows never fill it. Both association types can be exported.
+The source row retains its original start/count/rate and does not become an account
 of every contributing acquisition.
 
 The following real P0045 example merges two original request segments on the
@@ -246,11 +246,11 @@ merged.trim(starttime=merged.stats.starttime + 1,
             endtime=merged.stats.endtime - 1)
 merged_tables = geocsv.read(root / "tests" / "fixtures" / "geocsv" / "P0045.geocsv")
 geocsv.associate(merged, merged_tables, time_tolerance=0.025, allow_first_segment=True)
-assert merged.stats.geocsv.association == "first_segment"
+assert merged.stats.geocsv.association.type == "anchor_segment"
 assert merged.stats.npts < 45683
 assert merged.stats.geocsv.SampleCount == 9696
-assert merged.stats.geocsv.waveform_sample_count == merged.stats.npts
-assert merged.stats.geocsv.starttime_difference_seconds > 0.9
+assert merged.stats.geocsv.association.waveform.sample_count == merged.stats.npts
+assert merged.stats.geocsv.association.waveform_start_offset_seconds > 0.9
 merged_path = output_dir / "merged.sac"
 geocsv.write_sac(merged, merged_path)
 merged_sac = SACTrace.read(str(merged_path))
@@ -265,12 +265,12 @@ workspace.cleanup()
 Associate the final downloaded/clipped/combined window before export. The writer
 checks identity, initial start-time offset, association-time waveform sample
 count, and source rate agreement under association's 0.01 Hz threshold. Original
-source SampleCount must equal waveform count only for `one_segment`. Source
+source SampleCount must equal waveform count only for `single_segment`. Source
 coverage was checked at association; the writer does not reopen source files.
 Later count/start changes require a fresh association on an unassociated trace.
 It also rejects empty data and masked gaps. These checks cannot detect all
 sample transformations, including filtering or changes within the rate
-threshold; they do not prove an unchanged processing history. A `one_segment`
+threshold; they do not prove an unchanged processing history. A `single_segment`
 label is not refreshed by later waveform processing.
 
 ## Verification and fixture coverage
@@ -280,7 +280,7 @@ DET.WLT2, DET.WLT5, REQ.WLT3, REQ.WLT4, REQ.WLT5 and REQ.RAW. It compares
 geographic headers against independent SAC references and verifies waveform
 round trips and no input mutation. Other product groups have no paired
 examples in this collection; see the manifest's population counts. The P0045
-window above exercises actual `first_segment` export after clipping both ends. Synthetic tests cover
+window above exercises actual `anchor_segment` export after clipping both ends. Synthetic tests cover
 invalid units, missing DET pressure, source-quality independence, destination
 conflicts, and source-field validation; these are distinct from the real-data
 comparisons.
@@ -293,3 +293,15 @@ Source inspection used `/Users/jdsimon/programs/obspy/` commit
 array writing and nearby tests; the repository environment separately uses
 ObsPy 1.5.1. The pressure convention follows automaid's
 `scripts/events.py` and `scripts/geocsv.py`.
+
+## Association report compatibility
+
+Version 0.20.0 requires the nested `stats.geocsv.association` report created by
+current association. Its `.type` is `single_segment` or `anchor_segment`;
+`.waveform` records identity, start/end time, rate and count. SAC export checks
+identity/start/count/rate against this snapshot and retains the source rate and
+unit checks. A later rate change is rejected even when it remains within the
+source-rate tolerance. Reassociate the final waveform on an unassociated copy.
+The report's coverage segments and alignment diagnostics stay in memory and
+are not serialized into SAC. See the
+[report schema](../OBSPY_ASSOCIATION.md#association-report).

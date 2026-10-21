@@ -215,7 +215,7 @@ The two appearances of 0.01 in cleanup's fraction and association's
 Hz bound are dimensionally unrelated. Neither threshold measures clock accuracy.
 The queried `misalign_tolerance` is not an option in the inspected merge code.
 
-`stats.geocsv.starttime_difference_seconds` records waveform minus source
+`stats.geocsv.association.waveform_start_offset_seconds` records waveform minus source
 start at initial association. It is a diagnostic, not an applied alignment
 shift. Raw source names such as `StartTime` remain intentional provenance,
 not alternate spellings to replace with core Stats names.
@@ -223,8 +223,8 @@ not alternate spellings to replace with core Stats names.
 Ordering has consequences:
 
 1. **Associate, then merge:** ObsPy may inherit only the earlier source row
-   and coordinates while increasing count/duration. A retained `one_segment`
-   label is not revalidated or converted to `first_segment`; contributing rows
+   and coordinates while increasing count/duration. A retained `single_segment`
+   label is not revalidated or converted to `anchor_segment`; contributing rows
    are not collected.
 2. **Merge, then associate:** strict matching normally rejects the changed
    count. `allow_first_segment=True` can adopt a unique anchor's location only

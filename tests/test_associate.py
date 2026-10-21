@@ -250,3 +250,20 @@ def test_bad_rate_units_are_rejected(subsets):
     with pytest.raises(ValueError, match="SampleRate requires declared units hertz"):
         associate(trace, [frame], time_tolerance=0.001)
     assert "geocsv" not in trace.stats
+
+
+def test_real_report_keeps_measured_start_and_rate_differences(subsets):
+    tr = load_trace()
+    associate(tr, subsets[EXAMPLES[0]['geocsv']], time_tolerance=0.001)
+    report = tr.stats.geocsv.association
+    segment, = report.coverage_segments
+    assert report.type == 'single_segment'
+    assert report.waveform_start_offset_seconds == 0.000349
+    assert segment.source_record_index == EXAMPLES[0]['subset_record_index']
+    source = subsets[EXAMPLES[0]['geocsv']][0]
+    assert segment.source_line_number == source.attrs['geocsv'].record_line_numbers[segment.source_record_index]
+    assert segment.starttime.ns == source.loc[segment.source_record_index, 'StartTime'].value
+    assert (segment.waveform_sample_start, segment.waveform_sample_stop) == (0, tr.stats.npts)
+    assert report.max_sample_rate_difference.hz == abs(segment.sampling_rate_hz - tr.stats.sampling_rate)
+    assert report.max_sample_grid_offset.seconds == pytest.approx(0.000412318, abs=1e-9)
+    assert report.max_sample_grid_offset.waveform_sample_index == tr.stats.npts - 1

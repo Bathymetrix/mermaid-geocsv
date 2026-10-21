@@ -1,6 +1,6 @@
 # Clipped and combined MiniSEED windows: containing anchors and source coverage
 
-Current opt-in policy, revised 2026-10-21 in version 0.19.0 following the user's
+Current opt-in policy, revised 2026-10-21 in version 0.20.0 following the user's
 MERMAID scientific clarification. The [association tutorial](tutorials/ASSOCIATE.md)
 and [SAC tutorial](tutorials/WRITE_SAC.md) give runnable real-data examples.
 
@@ -30,16 +30,16 @@ reconstruction is performed by association.
 
 ## Matching and labels
 
-| stats.geocsv.association | Initial association performed |
+| stats.geocsv.association.type | Initial association performed |
 | --- | --- |
-| `one_segment` | One row passes strict complete SNCL, start-time, source-count and rate checks. |
-| `first_segment` | One containing anchor supplies metadata; clipped source sample ranges cover the downloaded grid without gaps after overlaps are counted once. |
+| `single_segment` | One row passes strict complete SNCL, start-time, source-count and rate checks. |
+| `anchor_segment` | One containing anchor supplies metadata; clipped source sample ranges cover the downloaded grid without gaps after overlaps are counted once. |
 
 With opt-in enabled, require a unique containing anchor even if one candidate
 would also pass strict matching. Two containing rows are ambiguous; do not
 prefer the nearer start, identical count, quality, or a row with more metadata.
-If the anchor is unique and strict matching passes, retain `one_segment`.
-Otherwise use `first_segment` only after coverage validation. Multiple traces
+If the anchor is unique and strict matching passes, retain `single_segment`.
+Otherwise use `anchor_segment` only after coverage validation. Multiple traces
 may independently use the same unique source row.
 
 Source preflight still rejects invalid identities and duplicate complete
@@ -99,20 +99,23 @@ filling or partial association occurs. Exact duplicate matching keys still
 fail source preflight and identify the affected traces and both source rows.
 
 Every attachment retains unchanged raw anchor fields and dataset provenance.
-`starttime_difference_seconds` is waveform minus source start; an interior
+`association.waveform_start_offset_seconds` is waveform minus anchor start; an interior
 start can legitimately produce a difference of seconds or minutes.
-`waveform_sample_count` records the waveform's count at association, separately
+`association.waveform.sample_count` records the waveform's count at association, separately
 from the anchor's original SampleCount. Later processing does not refresh
-these values or the geographic projection.
+these values or the geographic projection. The nested report records full
+source segments, clipped coverage ranges, physical line references and measured
+grid/rate differences; see the [report schema](OBSPY_ASSOCIATION.md#association-report).
+These are coverage evidence, not a reconstruction of concatenation history.
 
 ## SAC export
 
 `write_sac` accepts both association labels. It constructs fresh geographic
 headers from the anchor and declared units, preserving missing REQ depth.
-Identity, association-time start/count, source rate agreement and SAC storage
+Identity, association-time start/count/rate, source rate agreement and SAC storage
 validity are checked before file creation. No GeoCSV file is reopened.
 Associate the final downloaded/clipped/combined window before export; later
-length/start changes require a fresh association on an unassociated waveform.
+length/start/rate changes require a fresh association on an unassociated waveform.
 Neither matching nor export proves an unmodified sample history.
 
 ## Real-data evidence and limits

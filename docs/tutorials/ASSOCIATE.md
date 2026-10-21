@@ -112,8 +112,8 @@ result = geocsv.associate(trace, tables, time_tolerance=0.001)
 assert result is None
 assert np.array_equal(trace.data, original.data)
 assert all(trace.stats[key] == value for key, value in original.stats.items())
-print(trace.stats.geocsv.association)  # one_segment
-print(trace.stats.geocsv.starttime_difference_seconds)  # 0.000349
+print(trace.stats.geocsv.association.type)  # single_segment
+print(trace.stats.geocsv.association.waveform_start_offset_seconds)  # 0.000349
 ```
 
 The function modifies the supplied Trace or the traces inside the supplied
@@ -158,21 +158,67 @@ coordinate fails the association. To export an associated waveform
 with geographic SAC headers, use the separate [SAC writing tutorial](WRITE_SAC.md).
 Association itself does not create or modify `stats.sac`.
 
-The attachment also has six association-owned keys:
+The attachment also has four association-owned keys:
 
 | Key | Meaning |
 | --- | --- |
 | `dataset_index` | Zero-based position in the supplied list of DataFrames. |
-| `source_record_index` | Original DataFrame row label, counting data records rather than physical file lines. |
+| `source_record_index` | Zero-based file-wide data-record index, excluding headers/comments; does not restart for each dataset. |
 | `metadata` | Immutable GeoCSV dataset metadata, including source path, units, and comments. |
-| `association` | `one_segment` for standard matching, or `first_segment` for the explicit fallback below. |
-| `waveform_sample_count` | Loaded waveform count when association was performed; independent of source SampleCount. |
-| `starttime_difference_seconds` | Waveform start minus matched source start, calculated from integer UTC nanoseconds before conversion to seconds. |
+| `association` | Nested ObsPy AttribDict report of the association-time waveform, coverage and alignment evidence. |
 
-Positive start differences mean the waveform begins later. This records the
-initial match; it is neither a clock correction nor an uncertainty estimate.
-Source columns colliding with these keys or with `AttribDict` attributes and
-methods raise before mutation; they are never silently renamed or discarded.
+Inspect the report using either attribute or dictionary access:
+
+```python
+report = attached.association
+assert report.type == "single_segment"
+assert report["type"] == report.type
+print(report.waveform)
+segment, = report.coverage_segments
+print(segment)
+assert segment.sample_count == report.waveform.sample_count == trace.stats.npts
+assert segment.waveform_sample_start == 0
+assert segment.waveform_sample_stop == trace.stats.npts
+assert report.waveform.starttime.ns == trace.stats.starttime.ns
+assert report.waveform.endtime.ns == trace.stats.endtime.ns
+print(report.max_sample_grid_offset)
+print(report.max_sample_rate_difference)
+```
+
+`waveform` snapshots SNCL, `starttime`, `endtime`, `sampling_rate_hz` and
+`sample_count`. Each coverage entry describes the full original source segment
+using those same fields, plus `dataset_index`, `source_record_index`,
+`source_line_number`, `waveform_sample_start` and `waveform_sample_stop`.
+Source line numbers are one-based physical starting lines, counting headers,
+comments and blank lines, or `None` if unavailable. Sample ranges are zero-based,
+start inclusive and stop exclusive. They describe the clipped portion supporting
+the waveform, while source times/count remain those of the complete segment.
+All end times mean the last sample, not an exclusive window boundary.
+
+`waveform_start_offset_seconds` is signed waveform start minus the first
+coverage segment's start. A positive offset can be large for an interior
+window; it is not the sample-grid error, a clock correction or an uncertainty.
+`max_sample_grid_offset` records the largest absolute retained boundary-sample
+time difference in `seconds`, its source dataset/record/line, and the
+`waveform_sample_index`. `max_sample_rate_difference` records the largest
+absolute rate difference in `hz` and its source dataset/record/line. Ties select
+the first chronological segment (dataset then record index break time ties),
+then its first boundary sample before its last. No input tolerances are stored.
+See the [complete report definitions](../OBSPY_ASSOCIATION.md#association-report).
+
+Coverage segments are chronological, with the geographic anchor first.
+`len(report.coverage_segments)` gives their count; overlaps count once toward
+coverage but may appear in multiple entries. A clipped window within one source
+segment still has type `anchor_segment`. These are coverage evidence, not proof
+of how a waveform was concatenated. The report is an independent snapshot;
+later processing does not refresh it. Strict matching still checks only
+start/count/rate, without adding an endpoint acceptance check.
+
+Source columns colliding with the four attachment keys or with `AttribDict`
+attributes and methods raise before mutation; they are never silently renamed
+or discarded. Version 0.20.0 replaces the former string association labels and
+moves the former top-level count/start-difference fields into this report; no
+compatibility aliases are retained.
 
 ## 4. Follow provenance back to the source record
 
@@ -275,7 +321,8 @@ allowing either edge to fall inside a source segment. Retained first/last
 samples must align within the timing tolerance without ambiguous sample
 placement. Missing source coverage, masked waveform gaps, incompatible rates,
 or incomplete coordinates still raise. Raw anchor fields remain unchanged;
-`waveform_sample_count` records the downloaded count separately. Under the user's
+`association.waveform.sample_count` records the downloaded count separately.
+Under the user's
 MERMAID negligible-drift convention, the anchor's position and approximate depth
 may also supply the whole window's geographic SAC headers.
 
@@ -368,7 +415,14 @@ waveforms.
 before_merge_association = merged_trace.copy()
 geocsv.associate(merged_trace, p0045_tables,
                   time_tolerance=0.025, allow_first_segment=True)
-assert merged_trace.stats.geocsv.association == "first_segment"
+assert merged_trace.stats.geocsv.association.type == "anchor_segment"
+merged_report = merged_trace.stats.geocsv.association
+assert len(merged_report.coverage_segments) == 2
+assert [segment.source_record_index for segment in merged_report.coverage_segments] == [101433, 101434]
+assert merged_report.max_sample_grid_offset.seconds > 0.001
+assert merged_report.max_sample_grid_offset.seconds <= 0.025
+print(merged_report.coverage_segments)
+print(merged_report.max_sample_grid_offset)
 assert merged_trace.stats.geocsv.source_record_index == 101433
 assert merged_trace.stats.geocsv.SampleCount == 9696
 assert merged_trace.stats.npts == 45683
@@ -390,7 +444,7 @@ sample; it does not average drift over the merged waveform.
 The function performs no waveform merge and reconstructs no acquisition
 lineage. All attached raw fields still describe the anchor row only; its
 count, quality, pressure, and rate do not become whole-trace measurements.
-A standard match remains `one_segment` with `allow_first_segment=True` only
+A standard match remains `single_segment` with `allow_first_segment=True` only
 when its containing anchor is also unique.
 MiniSEED quality M neither enables nor prevents the fallback. Coverage cannot
 detect gaps already filled upstream or determine which overlapping samples
@@ -417,11 +471,11 @@ window.trim(starttime=window.stats.starttime + 1,
 window_before = window.copy()
 geocsv.associate(window, p0045_tables,
                   time_tolerance=0.025, allow_first_segment=True)
-assert window.stats.geocsv.association == "first_segment"
+assert window.stats.geocsv.association.type == "anchor_segment"
 assert window.stats.geocsv.source_record_index == 101433
-assert window.stats.geocsv.waveform_sample_count == window.stats.npts
+assert window.stats.geocsv.association.waveform.sample_count == window.stats.npts
 assert window.stats.geocsv.SampleCount == 9696
-assert window.stats.geocsv.starttime_difference_seconds > 0.9
+assert window.stats.geocsv.association.waveform_start_offset_seconds > 0.9
 np.testing.assert_array_equal(window.data, window_before.data)
 assert window.stats.coordinates.latitude == anchor.Latitude
 print(window.stats.coordinates)
@@ -436,10 +490,10 @@ association from an unassociated waveform. Source SampleCount is never rewritten
 
 ## Fixture coverage
 
-The real P0030 fixture exercises `one_segment`, the explicit time tolerance,
+The real P0030 fixture exercises `single_segment`, the explicit time tolerance,
 repeated-row batch association, and rejection of existing destinations.
 The real P0045 example merges two original MiniSEED request segments and
-explicitly asserts `first_segment`, unchanged anchor fields and waveform data,
+explicitly asserts `anchor_segment`, unchanged anchor fields and waveform data,
 and failure at the earlier 1 ms tolerance. The largest continuous span is
 limited by the following real gap; no gap filling, resampling, or mixing of
 location codes is used. The additional real window clips both ends and checks

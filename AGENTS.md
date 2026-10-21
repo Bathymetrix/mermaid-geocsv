@@ -94,8 +94,12 @@ align within the explicit tolerance; counts have no tolerance. Multiple
 containing anchors raise, even when one would pass strict matching, with clear
 source record/physical line numbers and affected traces. Do not choose an
 anchor or fill headers automatically. Label standard matches
-`stats.geocsv.association = "one_segment"`
-and fallback matches `"first_segment"`; never change raw anchor row values.
+`stats.geocsv.association.type = "single_segment"`
+and fallback types `"anchor_segment"`; never change raw anchor row values.
+Association is a nested AttribDict report with a fresh waveform snapshot,
+chronological source coverage descriptions/ranges, signed waveform-start offset,
+and maximum measured grid/rate differences. Follow the schema in
+`docs/OBSPY_ASSOCIATION.md`; do not store input tolerances or a segment ordinal.
 
 Retain DET Q and REQ D as useful lineage/validation evidence, independent of
 rate. Loss of these distinctions in EarthScope M data, overlaps, contiguity,
@@ -274,7 +278,7 @@ order. Keep committed notebook outputs empty and execution counts unset.
 Extend `tests/test_tutorials.py` whenever a public operation or tutorial pair
 is added; verify content parity and run each tutorial's Python examples in
 order after changing them. Verify that each example actually exercises its
-stated behavior (for example, `allow_first_segment=True` must reach `first_segment`
+stated behavior (for example, `allow_first_segment=True` must reach `anchor_segment`
 in its fallback example). Report missing fixture coverage explicitly, and
 distinguish real-data examples from synthetic demonstrations so suitable
 fixtures can be added.
