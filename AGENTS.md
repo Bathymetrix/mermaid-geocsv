@@ -133,7 +133,10 @@ SAC-header equivalence for fields without a GeoCSV source or agreed mapping.
 Supporting association of SAC-derived input traces is outside current scope.
 The separate `write_sac(trace, path)` operation exports associated
 MiniSEED waveforms with either association label using fresh SAC headers
-without mutating `stats.sac`. Preserve association-time waveform sample count
+without mutating `stats.sac`. SAC waveform samples remain raw counts, subject
+to SAC storage precision. Expect uncalibrated input; instrument correction,
+response removal and counts-to-pressure calibration are outside repository scope.
+Preserve association-time waveform sample count
 separately from raw source SampleCount so later length changes fail export.
 The unused `project_sac` option was removed on 2026-10-16 before package
 exposure. Keep deferred mappings in `docs/FUTURE.md`; do not

@@ -78,8 +78,9 @@ output has float32 precision and no
 serialized GeoCSV provenance. Association provenance is guaranteed only in
 memory; users may write their own sidecars in any format. Nonfinite or
 unrepresentable values and identity
-codes that cannot survive SAC storage are rejected. No response correction or
-counts-to-pressure calibration is supplied.
+codes that cannot survive SAC storage are rejected. SAC waveform samples
+remain raw counts; instrument correction, response removal and counts-to-pressure
+calibration are outside this repository's scope.
 
 ## Learn more
 

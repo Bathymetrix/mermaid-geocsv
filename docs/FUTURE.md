@@ -72,7 +72,7 @@ Additional mappings remain deferred:
 | `MethodIdentifier` | No faithful dedicated SAC field; extracting a version loses part of the source value. |
 | `DataQuality` | SAC `iqual` has different categories; no direct Q/D/M equivalent. |
 | Orientation | No GeoCSV source or agreed projection; scalar-hydrophone zeros would be an explicit convention. North azimuth is 0, east 90; vertical has no meaningful horizontal projection. |
-| Calibration | GeoCSV supplies no counts-to-Pa factor; do not infer `scale` or change native `calib`. |
+| Calibration | Outside repository scope: SAC waveform samples remain raw counts. GeoCSV supplies no counts-to-Pa factor; do not infer `scale` or change native `calib`. |
 
 Automaid reserves `user0`–`user2` for SNR, criterion, and trigger index,
 `user3` for clock correction, and its own `kuser0`–`kuser2` meanings. SNR,

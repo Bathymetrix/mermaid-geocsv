@@ -116,7 +116,11 @@ constructs a fresh `SACTrace` with `keep_sac_header=False`. Existing containers
 on the input trace remain untouched.
 
 ObsPy supplies ordinary waveform identity, sampling, timing, calibration
-metadata, and default SAC headers. Samples are not scaled or calibrated.
+metadata, and default SAC headers. SAC waveform samples remain raw counts,
+subject to float32 storage. Input is expected to be uncalibrated MiniSEED-derived
+samples; the writer does not determine or undo earlier processing. Instrument
+correction, response removal and counts-to-pressure calibration are outside
+this repository's scope. Samples are not scaled or calibrated.
 Output is little-endian binary SAC, with float32 samples and floating headers.
 Integer samples outside the exactly representable float32 range can lose
 precision. Export requires finite real samples. Overflow and nonzero values
