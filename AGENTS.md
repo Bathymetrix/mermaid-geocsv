@@ -149,6 +149,25 @@ When MERMAID waveform-processing behavior needs verification, use
 inspect. Inspection is authorized; do not modify files in that repository
 unless the user separately and explicitly requests those changes.
 
+### Hosting Workflow and Related Repositories
+
+`docs/HOSTING.md` records the hosting design, Mermaid workflow diagram, script
+ownership, and implementation checklist. Consult it before hosting, snapshot,
+release-protocol, or full-archive validation work. Keep this work aware of
+current changes in `/Users/jdsimon/programs/automaid/` and
+`/Users/jdsimon/programs/bathymetrix-site/`: inspect their relevant source,
+instructions and publication contract rather than assuming the recorded paths
+or behavior are still current. Inspection is authorized; changes there require
+separate authorization.
+
+Update the diagram, relative paths, script names, implementation status and
+checklist when those scripts or responsibilities change. Distinguish existing
+tools from planned tools. Keep upstream timestamp/format changes and website
+URL/manifest changes coordinated with this package's fetch/validation contract;
+do not silently change scientific comparison rules. Unchanged historical data
+with changed comments and a new shared `#created` timestamp is a valid new
+snapshot; published bytes under an existing release ID remain immutable.
+
 ### Fresh Association State for Every Trace
 
 Every trace association must start with empty, newly allocated association

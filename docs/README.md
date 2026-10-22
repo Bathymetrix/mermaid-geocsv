@@ -23,7 +23,10 @@ Each pair contains the same prose and Python examples and runs independently.
   including known empty SEED location codes.
 - [Fetch guide](tutorials/FETCH.md): release discovery, checksums, storage,
   memory use, provenance, failure behavior, and the test collection layout.
-  The production collection URL is undecided; callers supply `base_url`.
+  Production hosting is not deployed; callers supply `base_url`.
+- [Hosting workflow and build checklist](HOSTING.md): planned
+  `bathymetrix.com/geocsv/` publication, the cross-repository Mermaid diagram,
+  timestamp-based releases, and full-archive scientific acceptance.
 - [Association guide](tutorials/ASSOCIATE.md): matching tolerances, source-row
   attachments, coordinate projections, validation, and processing limitations.
 - [Merged-trace policy](OBSPY_MERGED_TRACES.md): explicit first-segment location
