@@ -38,22 +38,20 @@ After proxy activation, apex/www HTTPS validated through Cloudflare, HTTP and
 200 with Cloudflare edge responses. The Universal edge certificate is Active and
 covers apex/www. Fresh post-proxy email sending and receiving both passed.
 
-Default Python urllib user-agent requests currently receive 403 on the website,
-GeoCSV landing page and test manifest. Requests differing only by an explicit
-verification-tool user agent pass. The fetch client and publisher use urllib
-without an explicit user agent. Cloudflare Security Events identified Browser
-Integrity Check as the blocking feature. The proposed configuration rule disables
-only BIC for public GET/HEAD requests on apex/www under `/geocsv/`, retaining
-the existing policy elsewhere. Deployment and normal-client verification
-remain pending. Verify the unmodified fetch client
-against an illustrative release under `/geocsv/` after R2/Worker test hosting
-is prepared, before production data publication. This is an edge policy adjustment;
-package HTTP behavior remains unchanged. Keep actual rule/account configuration
+Browser Integrity Check initially blocked normal Python requests under
+`/geocsv/`. The scoped configuration rule is now deployed: BIC is disabled only
+for GET/HEAD on apex/www under `/geocsv/`, retaining the existing policy elsewhere.
+On 2026-10-22, ordinary urllib GET/HEAD returned 200 for the landing page and the
+expected 404 for the unpublished latest manifest on both hostnames. The unmodified
+fetch client also reached the expected manifest 404 rather than a security 403.
+Complete download and publisher HTTP verification remain pending until an
+illustrative release is hosted under the same base after R2/Worker preparation.
+Package HTTP behavior remains unchanged. Keep actual rule/account configuration
 outside the repository. See the website runbook and
 [Cloudflare selective BIC configuration](https://developers.cloudflare.com/waf/tools/browser-integrity-check/).
 
-The next coordinated steps are to resolve automated-client access, prepare
-private R2 storage and Worker hosting, verify downloads, and restore DNSSEC.
+The next coordinated steps are to prepare private R2 storage and Worker
+hosting, verify complete downloads and publication transport, and restore DNSSEC.
 Production data activation still requires current scientific acceptance and
 explicit authorization.
 
@@ -378,8 +376,10 @@ GeoCSV hosting and production publication remain inactive.
 - [x] Verify fresh email sending and receiving after proxy activation.
 - [x] Identify Browser Integrity Check as the feature blocking default Python
   requests through Cloudflare Security Events.
-- [ ] Coordinate a download-path BIC exception and verify normal urllib and
-  unmodified fetch/publisher HTTP clients.
+- [x] Deploy the scoped download-path BIC exception; verify ordinary urllib
+  GET/HEAD and unmodified fetch access to the expected unpublished manifest 404.
+- [ ] Verify full unmodified fetch downloads and publisher HTTP checks against
+  hosted test objects after R2/Worker deployment.
 - [ ] Restore and verify DNSSEC after hosting verification; it is currently disabled.
 - [ ] **Website:** configure R2 and Cloudflare routing/TLS for
   `bathymetrix.com/geocsv/`, including the landing page at `/geocsv/`.
