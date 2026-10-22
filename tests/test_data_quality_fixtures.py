@@ -40,7 +40,8 @@ def test_mermaid_geocsv_event_quality_values_follow_stream_map() -> None:
 
     # The fixture has both streams at the same nominal rate. This guards the
     # documented rule that data quality identifies stream type, not frequency.
-    at_20_hz = events.loc[events["SampleRate"].eq(20.0), "DataQuality"]
+    # Current GeoCSV retains measured rates rather than rounding them to 20 Hz.
+    at_20_hz = events.loc[events["SampleRate"].round().eq(20.0), "DataQuality"]
     assert set(at_20_hz.unique()) == {"Q", "D"}
 
 

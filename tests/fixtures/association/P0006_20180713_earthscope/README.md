@@ -17,13 +17,15 @@ The manifest is sufficient to repeat the request as a separate live experiment;
 a later service response need not have identical bytes or segmentation.
 
 The source metadata is the existing tracked full
-[`P0006.geocsv`](../../geocsv/P0006.geocsv), with its hash retained in the
-manifest. No subset is created. Its unchanged rows 237 and 238 (zero-based
+[`P0006.geocsv`](../../../../data/fixtures/P0006/P0006.geocsv), refreshed
+verbatim from the current processed automaid v4.5.14 export on 2026-10-21,
+with its source path and hash retained in the manifest. No subset is created.
+Rows 237 and 238 (zero-based
 file-wide records, physical starting lines 247 and 248) describe overlapping
 DET and REQ segments. Row 236 is nearby pressure context; row 239 is the next
 event. Full-history matching, including competing rows, runs in the test.
-This is the established fixture snapshot, independent of the pending new
-GeoCSV release.
+The same current snapshot supplies the parser and download examples; no older
+GeoCSV export is required for this response test.
 
 | Original | Start UTC | Last sample UTC | Samples | Quality |
 | --- | --- | --- | ---: | --- |
@@ -53,19 +55,21 @@ The request times need not themselves lie on a sample grid.
   allowance of approximately 24.991 ms. Strict start/containment tolerance is
   separate; it no longer controls source-grid placement. Exact midpoint ties,
   excessive endpoint drift and incomplete coverage still raise.
-- Earlier 0.20.0 probes rejected the fallback at 1 ms and accepted explicit
-  25 ms. Those historical results remain recorded in the manifest; the current
-  test exercises automatic placement and does not claim physical clock accuracy.
 - The geographic anchor is DET row 237. Clipped source ranges are `[0, 4630)`
   and `[438, 9403)`. Their 4,192-sample overlap is counted once, leaving exactly
   9,403 covered samples. Source counts remain 4,768 and 9,600.
 - The association report records a 6.898533 s waveform-minus-anchor start
   offset, a maximum boundary-grid difference of 0.021813578 s at waveform
   sample 438 / source row 238, and a maximum rate difference of approximately
-  0.00000118618 Hz. These are different quantities.
+  0.000000186178 Hz against the refreshed GeoCSV. These are different quantities.
 - SAC export preserves the returned samples at SAC float32 precision and uses
   the DET anchor's STLA/STLO/STDP/STEL, compared with its independently read
-  paired SAC reference. It does not reconstruct other original SAC headers.
+  paired SAC reference. Latitude/longitude must exactly equal the current
+  GeoCSV values rounded to SAC float32, and may differ from the independent
+  reference by at most one float32 representable step (one ULP). This allows
+  the current float64 calculation to round differently without a general
+  relative-error allowance. Depth and elevation still require exact equality.
+  It does not reconstruct other original SAC headers.
 
 For this specific response, the first 4,630 samples equal DET samples
 `[138, 4768)`; the remaining 4,773 equal REQ samples `[4192, 8965)`. This is

@@ -47,12 +47,24 @@ provenance; replacing or regenerating fixtures requires a separately chosen
 snapshot and a complete provenance/audit update. Do not remove the current
 fixture directory to run it.
 
-## Deferred general-fixture consolidation
+## Current fixture snapshots
 
-The older general fixture `data/fixtures/P0006/P0006.geocsv` and current
-real fixtures under `tests/fixtures/geocsv/` still need consolidation. Choose
-one authoritative copy of each instrument file; update parser tests,
-reading/plotting tutorial pairs, provenance notes, and all path references
-before removing superseded copies. Do not retain different exports under
-the same purported fixture identity. This task remains deferred; the docs
-cleanup does not replace or delete any fixture.
+The shared complete instrument files are
+[`P0006`](../../data/fixtures/P0006/README.md) and
+[`P0045`](../../data/fixtures/P0045/README.md), copied verbatim from current
+`$MERMAID/processed/` GeoCSV on 2026-10-21 (automaid v4.5.14). Parser,
+fetch, plotting, association and export examples use these canonical paths.
+The older general/download exports were replaced, not retained as alternate
+versions. Existing website test releases are independent of these local tests.
+
+The 14 tracked association subsets were refreshed from the same current
+processed snapshot, retaining original headers/records and nearby candidates.
+The manifest records new full/subset hashes and index maps. Optional ignored
+full-history copies were replaced as part of this explicitly authorized update;
+ordinary restore commands still refuse to overwrite a differing snapshot.
+The sampled waveform pairs remain byte-identical to the current processed
+sources, so the original waveform sampling and header audit remain applicable.
+
+Future refreshes must replace superseded snapshots, check all dependent
+tests/tutorials, and update source hashes, record maps and provenance together.
+Never rewrite protected processed inputs or regenerate fixtures during tests.

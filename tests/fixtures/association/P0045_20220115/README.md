@@ -25,7 +25,9 @@ segments span only about 31 minutes 53 seconds. Earlier RAW data has location
 resample simply to obtain a longer example.
 
 The association source is the single shared
-[`P0045.geocsv`](../../geocsv/P0045.geocsv) fixture. Rows 101433 and 101434 are
+[`P0045.geocsv`](../../../../data/fixtures/P0045/P0045.geocsv) fixture,
+refreshed verbatim from the current processed automaid v4.5.14 export on
+2026-10-21. Rows 101433 and 101434 are
 zero-based **data-record indices in that full file**, not subset indices.
 Its source timestamp, rate, count, and position values are never edited.
 

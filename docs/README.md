@@ -51,4 +51,4 @@ Each pair contains the same prose and Python examples and runs independently.
   tracked files; complete histories are optional local references.
 - [Fixture maintenance](../scripts/fixtures/README.md): complete-history
   restoration, corpus checks, and collection provenance.
-- [Deferred fixture consolidation](../scripts/fixtures/README.md#deferred-general-fixture-consolidation).
+- [Current fixture snapshots](../scripts/fixtures/README.md#current-fixture-snapshots).

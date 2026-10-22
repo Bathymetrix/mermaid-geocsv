@@ -92,7 +92,7 @@ def test_clipped_earthscope_response_association_and_sac_export(tmp_path):
         "seconds": 0.021813578, "dataset_index": 0, "source_record_index": 238,
         "source_line_number": 248, "waveform_sample_index": 438}
     assert report.max_sample_grid_offset.seconds < waveform.stats.delta / 2
-    assert report.max_sample_rate_difference.hz == pytest.approx(1.1861777160504516e-6, abs=1e-15)
+    assert report.max_sample_rate_difference.hz == pytest.approx(1.8617771502249525e-7, abs=1e-15)
     assert all(waveform.stats[key] == value for key, value in original.stats.items())
     np.testing.assert_array_equal(waveform.data, original.data)
 
@@ -101,7 +101,15 @@ def test_clipped_earthscope_response_association_and_sac_export(tmp_path):
     assert geocsv.write_sac(waveform, output) is None
     actual = SACTrace.read(str(output))
     reference = SACTrace.read(str(FIXTURE / MANIFEST["originals"][0]["sac"]["path"]))
-    for key in ("stla", "stlo", "stdp", "stel"):
+    for key, field in (("stla", "Latitude"), ("stlo", "Longitude")):
+        # The export must exactly reflect the current source at SAC precision.
+        assert getattr(actual, key) == np.float32(attached[field])
+        # GeoCSV's float64 calculation and the independent float32 SAC
+        # reference may round to adjacent representable float32 values.
+        np.testing.assert_array_max_ulp(
+            np.float32(getattr(actual, key)),
+            np.float32(getattr(reference, key)), maxulp=1)
+    for key in ("stdp", "stel"):
         assert getattr(actual, key) == getattr(reference, key)
     assert actual.npts == waveform.stats.npts
     assert actual.delta == np.float32(waveform.stats.delta)

@@ -52,7 +52,7 @@ if repository_root.name == "tutorials":
     repository_root = repository_root.parent.parent
 elif repository_root.name == "docs":
     repository_root = repository_root.parent
-fixture_path = repository_root / "tests/fixtures/geocsv/P0006.geocsv"
+fixture_path = repository_root / "data/fixtures/P0006/P0006.geocsv"
 
 
 @contextmanager
@@ -64,7 +64,7 @@ def local_collection():
         release_directory.mkdir(parents=True)
         entries = []
         for instrument in ("P0006", "P0045"):
-            source = fixture_path.with_name(f"{instrument}.geocsv")
+            source = fixture_path.parent.parent / instrument / f"{instrument}.geocsv"
             content = source.read_bytes()
             (release_directory / source.name).write_bytes(content)
             entries.append({
@@ -166,7 +166,7 @@ The full signature is
 `fetch(instrument_ids=None, *, base_url, output_dir=".", release=None, timeout=30)`.
 For an actual collection, supply its publisher-provided URL as `base_url`.
 The local fixture provenance is documented in the
-[fixture notes](../../tests/fixtures/geocsv/README.md).
+[fixture notes](../../data/fixtures/P0006/README.md).
 
 Production hosting is undecided, so `base_url` is required. It must be an
 HTTP(S) collection URL without query parameters or a fragment; a trailing slash
@@ -316,7 +316,7 @@ or download URL in its message.
 loopback HTTP server. It verifies real P0006 bytes and parsed tables, complete
 release discovery, selection order, pinned releases, disk reuse, integrity and
 batch failures, provenance, and in-memory association. The fixture provenance
-and fixed checksum are recorded in `tests/fixtures/geocsv/README.md`.
+and fixed checksum are recorded in `data/fixtures/P0006/README.md`.
 
 ObsPy source conventions were inspected at checkout commit
 `50033e1daf95233cd4f30e95a49c37fd50be2ccd`, including the generic reader and

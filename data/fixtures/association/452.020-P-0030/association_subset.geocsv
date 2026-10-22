@@ -1,34 +1,31 @@
 #dataset: GeoCSV
-#created: 2026-10-13T20:48:01.378Z
+#created: 2026-10-21T22:48:33.277Z
 #description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org
-#attribution: automaid v4.5.11 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])
-#matlab_reader: https://github.com/joelsimon/GeoCSV/blob/master/readGeoCSV.m
-#waterpressure2depth: 100 mbar is approximately equal to the pressure of 1 meter of water
-#frequency_response: http://ds.iris.edu/data/reports/MH/MH.Mermaids.Response.V3.pdf
+#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])
 #lineterminator: '\n'
 #delimiter: ','
 #field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
 #field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
 MethodIdentifier,StartTime,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,TimeDelay,TimeCorrection
 Measurement:GPS:u-blox_NEO-M8N,2021-05-27T12:36:11.000Z,MH,P0030,nan,nan,nan,43.682533,7.319600,nan,nan,MERMAIDHydrophone(452.020),nan,nan,-0.000000,nan
-Algorithm(thermocline):automaid:v4.5.11,2021-05-27T12:45:03.000Z,MH,P0030,nan,nan,nan,43.682518,7.319617,nan,5000,MERMAIDHydrophone(452.020),nan,nan,nan,nan
+Algorithm(thermocline):automaid:v4.5.14,2021-05-27T12:45:03.000Z,MH,P0030,nan,nan,nan,43.682517,7.319617,nan,5000,MERMAIDHydrophone(452.020),nan,nan,nan,nan
 Measurement:Pressure:KELLER_Series_6,2021-05-27T12:45:24.000Z,MH,P0030,nan,nan,nan,nan,nan,nan,-1,MERMAIDHydrophone(452.020),nan,nan,nan,nan
 Measurement:Pressure:KELLER_Series_6,2021-05-27T15:36:02.000Z,MH,P0030,nan,nan,nan,nan,nan,nan,5287,MERMAIDHydrophone(452.020),nan,nan,nan,nan
-Algorithm(event):automaid:v4.5.11,2021-05-27T15:38:55.504Z,MH,P0030,10,MDH,Q,43.682533,7.319633,nan,5300,MERMAIDHydrophone(452.020),2.500913,852,nan,-0.000370
-Algorithm(event):automaid:v4.5.11,2021-05-27T15:44:41.628Z,MH,P0030,10,MDH,Q,43.682533,7.319633,nan,5300,MERMAIDHydrophone(452.020),2.500913,584,nan,-0.000405
-Algorithm(event):automaid:v4.5.11,2021-05-27T15:48:36.542Z,MH,P0030,10,MDH,Q,43.682533,7.319633,nan,5300,MERMAIDHydrophone(452.020),2.500913,732,nan,-0.000428
+Algorithm(event):automaid:v4.5.14,2021-05-27T15:38:55.504Z,MH,P0030,10,MDH,Q,43.682533,7.319633,nan,5300,MERMAIDHydrophone(452.020),2.500913,852,nan,-0.000370
+Algorithm(event):automaid:v4.5.14,2021-05-27T15:44:41.628Z,MH,P0030,10,MDH,Q,43.682533,7.319633,nan,5300,MERMAIDHydrophone(452.020),2.500913,584,nan,-0.000405
+Algorithm(event):automaid:v4.5.14,2021-05-27T15:48:36.542Z,MH,P0030,10,MDH,Q,43.682533,7.319633,nan,5300,MERMAIDHydrophone(452.020),2.500913,732,nan,-0.000428
 Measurement:Pressure:KELLER_Series_6,2021-05-27T15:54:33.000Z,MH,P0030,nan,nan,nan,nan,nan,nan,5317,MERMAIDHydrophone(452.020),nan,nan,nan,nan
-Algorithm(event):automaid:v4.5.11,2021-05-27T23:22:31.554Z,MH,P0030,10,MDH,Q,43.682499,7.319633,nan,4200,MERMAIDHydrophone(452.020),2.500914,752,nan,0.000068
+Algorithm(event):automaid:v4.5.14,2021-05-27T23:22:31.554Z,MH,P0030,10,MDH,Q,43.682500,7.319633,nan,4200,MERMAIDHydrophone(452.020),2.500914,752,nan,0.000068
 Measurement:Pressure:KELLER_Series_6,2021-05-27T23:35:22.000Z,MH,P0030,nan,nan,nan,nan,nan,nan,5849,MERMAIDHydrophone(452.020),nan,nan,nan,nan
 Measurement:Pressure:KELLER_Series_6,2021-05-27T23:36:49.000Z,MH,P0030,nan,nan,nan,nan,nan,nan,5789,MERMAIDHydrophone(452.020),nan,nan,nan,nan
-Algorithm(event):automaid:v4.5.11,2021-05-27T23:41:15.697Z,MH,P0030,10,MDH,Q,43.682499,7.319633,nan,5700,MERMAIDHydrophone(452.020),2.500914,2848,nan,0.000093
+Algorithm(event):automaid:v4.5.14,2021-05-27T23:41:15.697Z,MH,P0030,10,MDH,Q,43.682500,7.319633,nan,5700,MERMAIDHydrophone(452.020),2.500914,2848,nan,0.000093
 Measurement:Pressure:KELLER_Series_6,2021-05-27T23:42:28.000Z,MH,P0030,nan,nan,nan,nan,nan,nan,5729,MERMAIDHydrophone(452.020),nan,nan,nan,nan
 Measurement:Pressure:KELLER_Series_6,2021-05-27T23:45:31.000Z,MH,P0030,nan,nan,nan,nan,nan,nan,5669,MERMAIDHydrophone(452.020),nan,nan,nan,nan
-Algorithm(event):automaid:v4.5.11,2021-05-28T01:26:50.074Z,MH,P0030,10,MDH,Q,43.682484,7.319667,nan,6100,MERMAIDHydrophone(452.020),2.500914,2232,nan,0.000060
-Algorithm(event):automaid:v4.5.11,2021-05-28T03:41:35.449Z,MH,P0030,10,MDH,Q,43.682499,7.319650,nan,5400,MERMAIDHydrophone(452.020),2.500914,3000,nan,0.000038
+Algorithm(event):automaid:v4.5.14,2021-05-28T01:26:50.074Z,MH,P0030,10,MDH,Q,43.682483,7.319667,nan,6100,MERMAIDHydrophone(452.020),2.500914,2232,nan,0.000060
+Algorithm(event):automaid:v4.5.14,2021-05-28T03:41:35.449Z,MH,P0030,10,MDH,Q,43.682500,7.319650,nan,5400,MERMAIDHydrophone(452.020),2.500914,3000,nan,0.000038
 Measurement:Pressure:KELLER_Series_6,2021-05-28T05:24:36.000Z,MH,P0030,nan,nan,nan,nan,nan,nan,5407,MERMAIDHydrophone(452.020),nan,nan,nan,nan
 Measurement:Pressure:KELLER_Series_6,2021-05-28T05:26:06.000Z,MH,P0030,nan,nan,nan,nan,nan,nan,5517,MERMAIDHydrophone(452.020),nan,nan,nan,nan
-Algorithm(event):automaid:v4.5.11,2021-05-28T05:32:50.321Z,MH,P0030,10,MDH,Q,43.682533,7.319633,nan,5400,MERMAIDHydrophone(452.020),2.500914,3000,nan,0.000049
+Algorithm(event):automaid:v4.5.14,2021-05-28T05:32:50.321Z,MH,P0030,10,MDH,Q,43.682533,7.319633,nan,5400,MERMAIDHydrophone(452.020),2.500914,3000,nan,0.000049
 Measurement:Pressure:KELLER_Series_6,2021-05-28T05:33:26.000Z,MH,P0030,nan,nan,nan,nan,nan,nan,5457,MERMAIDHydrophone(452.020),nan,nan,nan,nan
 Measurement:Pressure:KELLER_Series_6,2021-05-28T05:47:35.000Z,MH,P0030,nan,nan,nan,nan,nan,nan,5387,MERMAIDHydrophone(452.020),nan,nan,nan,nan
-Algorithm(event):automaid:v4.5.11,2021-05-28T07:19:34.768Z,MH,P0030,10,MDH,Q,43.682499,7.319633,nan,5200,MERMAIDHydrophone(452.020),2.500914,1956,nan,0.000028
+Algorithm(event):automaid:v4.5.14,2021-05-28T07:19:34.768Z,MH,P0030,10,MDH,Q,43.682500,7.319633,nan,5200,MERMAIDHydrophone(452.020),2.500914,1956,nan,0.000028

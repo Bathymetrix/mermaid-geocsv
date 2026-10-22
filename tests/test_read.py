@@ -1059,18 +1059,18 @@ def test_canonical_p0006_content_metadata_and_provenance() -> None:
     assert frame["Latitude"].dtype == "Float64"
     metadata = frame.attrs["geocsv"]
     assert metadata.source_path == CANONICAL.resolve()
-    assert len(metadata.comments) == 11
+    assert len(metadata.comments) == 8
     assert all(comment.raw.startswith("#") for comment in metadata.comments)
     assert metadata.delimiter == ","
     description = next(comment for comment in metadata.comments if comment.key == "description")
     assert description.value.endswith("hydrophones, www.EarthScopeOceans.org")
     assert metadata.field_units["WaterPressure"] == "mbar"
     assert metadata.field_types["SampleCount"] == "integer"
-    assert any(comment.value == "2026-08-12T20:53:14.396Z" for comment in metadata.comments)
+    assert any(comment.value == "2026-10-21T22:48:33.277Z" for comment in metadata.comments)
     collision = frame.loc[frame["StartTime"].eq(pd.Timestamp("2019-04-23T19:31:14Z"))]
     assert collision.index.tolist() == [5536, 5537]
     assert collision["MethodIdentifier"].tolist() == [
-        "Measurement:Pressure:KELLER_Series_6", "Algorithm(thermocline):automaid:v4.5.9",
+        "Measurement:Pressure:KELLER_Series_6", "Algorithm(thermocline):automaid:v4.5.14",
     ]
     assert pd.isna(collision.iloc[0]["Latitude"])
     assert collision.iloc[1]["Latitude"] == -14.752247

@@ -1,20 +1,17 @@
 #dataset: GeoCSV
-#created: 2026-10-13T20:48:01.378Z
+#created: 2026-10-21T22:48:33.277Z
 #description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org
-#attribution: automaid v4.5.11 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])
-#matlab_reader: https://github.com/joelsimon/GeoCSV/blob/master/readGeoCSV.m
-#waterpressure2depth: 100 mbar is approximately equal to the pressure of 1 meter of water
-#frequency_response: http://ds.iris.edu/data/reports/MH/MH.Mermaids.Response.V3.pdf
+#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])
 #lineterminator: '\n'
 #delimiter: ','
 #field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
 #field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
 MethodIdentifier,StartTime,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,TimeDelay,TimeCorrection
-Measurement:GPS:u-blox_NEO-M8N,2023-05-03T09:28:24.000Z,MH,T0101,nan,nan,nan,43.108051,6.038033,nan,nan,MERMAIDHydrophone(467.174),nan,nan,-1681982592.000000,nan
+Measurement:GPS:u-blox_NEO-M8N,2023-05-03T09:28:24.000Z,MH,T0101,nan,nan,nan,43.108050,6.038033,nan,nan,MERMAIDHydrophone(467.174),nan,nan,-1681982607.482483,nan
 Measurement:Pressure:KELLER_Series_6,2023-06-01T07:13:12.000Z,MH,T0101,nan,nan,nan,nan,nan,nan,-82,MERMAIDHydrophone(467.174),nan,nan,nan,nan
-Algorithm(thermocline):automaid:v4.5.11,2023-06-20T07:06:19.840Z,MH,T0101,nan,nan,nan,29.649221,141.590729,nan,5000,MERMAIDHydrophone(467.174),nan,nan,nan,nan
+Algorithm(thermocline):automaid:v4.5.14,2023-06-20T07:06:19.840Z,MH,T0101,nan,nan,nan,29.649221,141.590726,nan,5000,MERMAIDHydrophone(467.174),nan,nan,nan,nan
 Measurement:Pressure:KELLER_Series_6,2023-06-21T19:58:52.000Z,MH,T0101,nan,nan,nan,nan,nan,nan,198477,MERMAIDHydrophone(467.174),nan,nan,nan,nan
 Measurement:Pressure:KELLER_Series_6,2023-06-21T20:08:55.000Z,MH,T0101,nan,nan,nan,nan,nan,nan,199287,MERMAIDHydrophone(467.174),nan,nan,nan,nan
-Algorithm(event):automaid:v4.5.11,2023-06-21T20:39:59.936Z,MH,T0101,10,BDH,D,29.607086,141.596924,nan,nan,MERMAIDHydrophone(467.174),40.014511,400,nan,-0.040107
+Algorithm(event):automaid:v4.5.14,2023-06-21T20:39:59.936Z,MH,T0101,10,BDH,D,29.607086,141.596921,nan,nan,MERMAIDHydrophone(467.174),40.014512,400,nan,-0.040107
 Measurement:Pressure:KELLER_Series_6,2023-06-22T11:30:52.000Z,MH,T0101,nan,nan,nan,nan,nan,nan,204317,MERMAIDHydrophone(467.174),nan,nan,nan,nan
-Algorithm(event):automaid:v4.5.11,2023-06-22T12:29:59.865Z,MH,T0101,10,BDH,D,29.607758,141.621170,nan,nan,MERMAIDHydrophone(467.174),40.014511,400,nan,-0.121422
+Algorithm(event):automaid:v4.5.14,2023-06-22T12:29:59.865Z,MH,T0101,10,BDH,D,29.607758,141.621168,nan,nan,MERMAIDHydrophone(467.174),40.014512,400,nan,-0.121422

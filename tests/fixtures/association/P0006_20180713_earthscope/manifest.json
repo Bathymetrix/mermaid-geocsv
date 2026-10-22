@@ -35,10 +35,11 @@
     "dataquality": "M"
   },
   "geocsv": {
-    "path": "../../geocsv/P0006.geocsv",
-    "size_bytes": 3001102,
-    "sha256": "07dfbbe639bacde403bb2b9d15eaf5d3ea8840ad17f11e3dde36d52ccbd17fa3",
-    "provenance": "Existing tracked full history; no new subset or edits"
+    "path": "../../../../data/fixtures/P0006/P0006.geocsv",
+    "size_bytes": 3001072,
+    "sha256": "93e8807306731191545845d58bb410480ed219b6e8129d381b22fcdcf9379080",
+    "provenance": "Verbatim current processed GeoCSV snapshot, automaid v4.5.14; no header or record edits",
+    "source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/geo_DET_REQ.csv"
   },
   "originals": [
     {
@@ -98,11 +99,9 @@
   ],
   "verification": {
     "obspy_version": "1.5.1",
-    "package_version": "0.20.0",
+    "package_version": "0.23.0",
     "obspy_source_commit": "50033e1daf95233cd4f30e95a49c37fd50be2ccd",
     "strict_association": "reject: no matching original start/count",
-    "anchor_association_1ms": "reject: second source range is off the waveform grid",
-    "anchor_association_25ms": "accept: unique containing anchor and complete source coverage",
     "coverage_ranges": [
       [
         0,
@@ -117,7 +116,7 @@
     "waveform_start_offset_seconds": 6.898533,
     "max_sample_grid_offset_seconds": 0.021813578,
     "max_sample_grid_offset_waveform_sample_index": 438,
-    "max_sample_rate_difference_hz": 1.1861777160504516e-06,
+    "max_sample_rate_difference_hz": 1.8617771502249525e-07,
     "sample_comparison": [
       {
         "response_range": [
@@ -142,13 +141,10 @@
         ]
       }
     ],
-    "interpretation": "Observed sample equality only; no general archive overlap precedence or reconstruction claim"
-  },
-  "current_policy_verification": {
-    "package_version": "0.21.0",
+    "interpretation": "Observed sample equality only; no general archive overlap precedence or reconstruction claim",
+    "verified_date": "2026-10-22",
+    "anchor_association": "accept with allow_first_segment=True and default tolerances",
     "coverage_grid_policy": "unique nearest-sample placement within half the waveform interval; midpoint ties rejected",
-    "anchor_association": "accept with allow_first_segment=True and no time_tolerance override",
-    "strict_association": "reject: no matching original start/count",
-    "measured_offsets_and_coverage": "unchanged from the recorded 0.20.0 verification above"
+    "sac_coordinate_comparison": "exact float32 projection of current GeoCSV; at most one float32 ULP from the independent SAC reference"
   }
 }

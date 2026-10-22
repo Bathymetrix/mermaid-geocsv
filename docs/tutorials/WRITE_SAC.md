@@ -248,7 +248,7 @@ merged, = segments
 # Clip before association; retain a first sample inside the first source segment.
 merged.trim(starttime=merged.stats.starttime + 1,
             endtime=merged.stats.endtime - 1)
-merged_tables = geocsv.read(root / "tests" / "fixtures" / "geocsv" / "P0045.geocsv")
+merged_tables = geocsv.read(root / "data" / "fixtures" / "P0045" / "P0045.geocsv")
 geocsv.associate(merged, merged_tables, allow_first_segment=True)
 assert merged.stats.geocsv.association.type == "anchor_segment"
 assert merged.stats.npts < 45683

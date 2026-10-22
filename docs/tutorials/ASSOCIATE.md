@@ -339,7 +339,7 @@ First load the original segments and inspect their overlap:
 ```python
 merge_directory = root / "tests/fixtures/association/P0045_20220115"
 merge_manifest = json.loads((merge_directory / "manifest.json").read_text())
-p0045_tables = geocsv.read(root / "tests/fixtures/geocsv/P0045.geocsv")
+p0045_tables = geocsv.read(root / "data/fixtures/P0045/P0045.geocsv")
 p0045_records = p0045_tables[0]
 segments = Stream()
 for item in merge_manifest["selected"]:

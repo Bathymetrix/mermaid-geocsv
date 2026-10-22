@@ -17,6 +17,7 @@ from mermaid import geocsv
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
+REAL_FIXTURES = Path(__file__).parents[1] / "data/fixtures"
 
 
 @pytest.fixture
@@ -27,9 +28,9 @@ def collection(tmp_path):
     entries = []
     # Two real instruments plus an invented entry for multiple-dataset parsing.
     # Keep the small synthetic entry second for the partial-batch failure test.
-    for instrument, source in [("P0006", FIXTURES / "geocsv/P0006.geocsv"),
+    for instrument, source in [("P0006", REAL_FIXTURES / "P0006/P0006.geocsv"),
                                ("P_TEST", FIXTURES / "typed.geocsv"),
-                               ("P0045", FIXTURES / "geocsv/P0045.geocsv")]:
+                               ("P0045", REAL_FIXTURES / "P0045/P0045.geocsv")]:
         destination = directory / f"{instrument}.geocsv"
         shutil.copyfile(source, destination)
         if instrument == "P_TEST":
@@ -91,15 +92,15 @@ def test_memory_all_real_fixture_and_metadata(collection, monkeypatch):
     assert list(collection.client.iterdir()) == []
     assert all(result.path is None and isinstance(result.content, bytes) for result in results)
     first = results[0]
-    assert len(first.content) == 3_001_102
-    assert first.provenance.sha256 == "07dfbbe639bacde403bb2b9d15eaf5d3ea8840ad17f11e3dde36d52ccbd17fa3"
+    assert len(first.content) == 3_001_072
+    assert first.provenance.sha256 == "93e8807306731191545845d58bb410480ed219b6e8129d381b22fcdcf9379080"
     assert first.provenance.manifest == collection.manifest_path.read_bytes()
     assert first.provenance.testing_only is True
     assert first.provenance.release_id == "test-001"
     assert json.loads(first.provenance.manifest)["files"][0]["provenance"]["manual_edits"] is False
     frames = geocsv.read(results)
     assert len(frames) == 4
-    assert len(results[2].content) == 18_031_573
+    assert len(results[2].content) == 18_031_322
     assert frames[3]["Station"].eq("P0045").all()
     assert frames[3].index.equals(pd.RangeIndex(len(frames[3]), name="source_record_index"))
     assert frames[3]["SampleCount"].dtype == pd.Int64Dtype()
@@ -120,7 +121,7 @@ def test_memory_all_real_fixture_and_metadata(collection, monkeypatch):
     assert deepcopy(metadata) is metadata
     with pytest.raises(FrozenInstanceError):
         metadata.download.release_id = "changed"
-    expected, = geocsv.read(FIXTURES / "geocsv/P0006.geocsv")
+    expected, = geocsv.read(REAL_FIXTURES / "P0006/P0006.geocsv")
     pd.testing.assert_frame_equal(frame, expected)
     assert frames[1].index.tolist() == [0, 1]
     assert frames[2].index.tolist() == [2, 3]
@@ -135,7 +136,7 @@ def test_default_local_output_and_reuse(collection, monkeypatch):
     first, = geocsv.fetch("P0006", base_url=collection.url.rstrip("/"))
     assert first.path == collection.client / "test-001/P0006.geocsv"
     assert first.content is None
-    assert first.path.read_bytes() == (FIXTURES / "geocsv/P0006.geocsv").read_bytes()
+    assert first.path.read_bytes() == (REAL_FIXTURES / "P0006/P0006.geocsv").read_bytes()
     assert (first.path.parent / "manifest.json").read_bytes() == first.provenance.manifest
     frame, = geocsv.read(first)
     assert frame.attrs["geocsv"].source_path == first.path

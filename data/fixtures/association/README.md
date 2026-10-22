@@ -1,11 +1,14 @@
 # Rebuilt processed waveform association fixtures
 
 Waveform pairs were copied on 2026-10-13 from `$MERMAID/processed/`
-(resolved source root in `manifest.json`). That source is read-only. The
-fixtures contain 18 MiniSEED/SAC pairs from automaid v4.5.11 and 14 tracked
-`association_subset.geocsv` files selected on 2026-10-16. The subsets contain
-137 records in 36,085 bytes in total, instead of the 159,821,516 bytes of full
-histories. All association tests run from distributed files when ObsPy is
+(resolved source root in `manifest.json`). That source is read-only. All 18
+MiniSEED/SAC pairs were verified byte-identical to the current processed copies
+on 2026-10-21. Their automaid v4.5.11 waveform headers remain unchanged.
+The 14 tracked `association_subset.geocsv` files and optional complete local
+histories were replaced with the current automaid v4.5.14 GeoCSV snapshot,
+created `2026-10-21T22:48:33.277Z`. The subsets contain
+137 records in 32,571 bytes in total, instead of the 159,852,063 bytes of full
+histories. No older GeoCSV version is retained. All association tests run from distributed files when ObsPy is
 installed; no ignored history is required.
 
 MiniSEED fixtures are association inputs. SAC fixtures are independent output
@@ -17,7 +20,7 @@ until further instruction. Separate `geocsv.write_sac` exports associated
 waveforms with either association label without changing `stats.sac`; see the
 [SAC writing tutorial](../../../docs/tutorials/WRITE_SAC.md).
 
-Complete `geo_DET_REQ.csv` histories remain unchanged, local, and Git-ignored.
+Complete `geo_DET_REQ.csv` histories are verbatim, local, and Git-ignored.
 They are optional corpus references, not test prerequisites. To restore and
 check them against the same processed snapshot, from the repository root:
 
@@ -106,7 +109,7 @@ The repeatable fixture tests compare all 18 copied MiniSEED/SAC pairs' SNCL,
 SAC `kuser1` product labels, MiniSEED quality flags, and their matched GeoCSV
 event quality values. All agree. All sampled waveforms match exactly one row
 in their tracked GeoCSV subset by complete SNCL, an explicit 1 ms time tolerance,
-original sample count, and the provisional 0.01 Hz rate check. The largest
+original sample count, and the 0.00001 Hz rate check. The largest
 sampled GeoCSV/MiniSEED rate difference is below 0.000002 Hz. Tracked subset
 GeoCSV event rows carry only Q/D values; independent DET/REQ labels are absent
 from GeoCSV, so code-domain validation alone cannot prove stream classification
