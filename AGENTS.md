@@ -282,6 +282,15 @@ Do not set the package version to 1.0.0, tag it, publish it, or otherwise
 release v1.0.0 until the user explicitly instructs you to do so. Version bumps
 do not authorize commits, tags, pushes, or publication.
 
+## Documentation Voice
+
+Write documentation in a direct, factual, statement-based voice. State the
+configuration, decisions and requirements without conversational attribution
+such as "the user reports", "you said" or "we agreed". Mark planned behavior,
+unverified information and uncertainty explicitly rather than presenting them
+as established facts. Omit personal account and billing details unless
+explicitly requested for the document.
+
 ## Development and Verification
 
 Every public function or method must have a dedicated, standalone tutorial

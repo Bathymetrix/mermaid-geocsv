@@ -16,14 +16,12 @@ modification of protected processed inputs, publication, or a package release.
 
 ## Current website and DNS
 
-The user reports a Squarespace domain registration costing $20/year, with no
-website hosting subscription identified. The live website is served by GitHub
-Pages; public A records match GitHub Pages and the HTTP response identifies
-GitHub. The user reports a custom CNAME target of `bathymetrix.github.io` and an
-inactive Squarespace preset. Public authoritative nameservers currently use
-`ns-cloud-c1.googledomains.com` through `ns-cloud-c4.googledomains.com`, consistent
-with the current Squarespace domain/DNS management. These observations were
-checked on 2026-10-22; recheck before deployment.
+The domain is registered with Squarespace. The website is hosted on GitHub
+Pages, with a custom CNAME target of `bathymetrix.github.io`. The Squarespace
+preset is inactive; custom DNS records provide the working configuration.
+DNS is managed through Squarespace, with authoritative nameservers
+`ns-cloud-c1.googledomains.com` through `ns-cloud-c4.googledomains.com`.
+Configuration verified on 2026-10-22; recheck before deployment.
 
 The chosen same-host `/geocsv/*` Worker route requires a Cloudflare zone and a
 proxied DNS record for the hostname; a DNS CNAME cannot route a URL subpath.
