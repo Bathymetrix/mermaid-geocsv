@@ -198,9 +198,9 @@ native headers. Their timing controls compare different quantities:
 
 | Concern | ObsPy merge/cleanup | `geocsv.associate` |
 | --- | --- | --- |
-| Timing control | `misalignment_threshold=0.01`, a fraction of sample interval. | `time_tolerance=0.0001`, inclusive absolute seconds between waveform and source starts. |
+| Timing control | `misalignment_threshold=0.01`, a fraction of sample interval. | `time_tolerance=0.001`, inclusive absolute seconds between waveform and source starts. |
 | Timing effect | Cleanup can shift starts; full merge rounds separation to sample counts. | Neither waveform nor source times change; comparison uses UTC integer nanoseconds. |
-| Rates | Exactly equal per trace ID. | Source rate within inclusive 0.01 Hz endpoint bounds, provisionally. |
+| Rates | Exactly equal per trace ID. | Source rate within inclusive 0.00001 Hz endpoint bounds. |
 | Counts and overlaps | Produces new coverage under `method`/`fill_value` choices. | Exact original count by default; explicit fallback validates coverage without combining samples. |
 | Metadata | Earlier headers can survive without reconciliation. | Fresh source-row and coordinate containers; existing destinations raise. |
 | Result | Mutates Stream/traces, returns `self`, and is not transactional. | Validates the full batch before attachment, returns `None`. |
@@ -211,8 +211,8 @@ corresponds to 0.02 of an interval. Starts seconds apart may share a sampling
 grid; strict association compares each waveform's first sample to its source
 start. The opt-in containing-anchor policy instead requires that sample to lie
 within one unique source interval and validates clipped source-grid coverage.
-The two appearances of 0.01 in cleanup's fraction and association's
-Hz bound are dimensionally unrelated. Neither threshold measures clock accuracy.
+Cleanup's 0.01 interval fraction and association's 0.00001 Hz bound
+compare different quantities. Neither threshold measures clock accuracy.
 The queried `misalign_tolerance` is not an option in the inspected merge code.
 
 `stats.geocsv.association.waveform_start_offset_seconds` records waveform minus source

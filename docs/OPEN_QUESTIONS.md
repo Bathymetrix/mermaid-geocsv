@@ -167,12 +167,14 @@ verify whether ObsPy changes the rate slightly or simply exposes an already
 different encoded rate. Separate upstream formatting loss from reader
 conversion and from nominal-versus-measured sampling.
 
-For now the public associator requires
-`abs(obspy_sps - geocsv_sps) <= 0.01` Hz. This is a minimum consistency check,
-explicitly provisional and potentially grossly relaxed. Return to the
-threshold after the comparison; do not treat it as established instrument
-accuracy or proof of association. Single-decimal output can itself hide
-differences larger than this threshold.
+Since 0.22.0 the public associator requires source rates within inclusive
+floating-point endpoint bounds of `waveform_rate +/- 0.00001` Hz. This replaces
+the former provisional 0.01 Hz check after successful fresh-source verification
+of 22 originals and three windows across 15 full histories. The largest observed
+original-segment rate difference was approximately 0.000001296 Hz. This is a
+bounded compatibility criterion, not instrument accuracy or proof that sampling
+grids coincide. Raw-MER/encoding investigations beyond that checked sample
+remain separate scientific work. See [audit 06](../audits/06.md).
 
 `geocsv.read` continues to parse the supplied value faithfully. Upstream
 writer corrections are outside this project; neither rounding downloaded
@@ -234,9 +236,10 @@ precision; stored fractional digits do not establish physical accuracy.
 Preserve the downloaded timing and measured rate. A rate calculated from
 ObsPy's rate-derived endtime would not provide independent timing evidence.
 
-The public default is a fixed 100-microsecond tolerance, with an explicit
-seconds override; source lexical resolution never enlarges it. Some
-millisecond-rendered histories need an explicit 1 ms tolerance. The retrieval
+The public absolute start/containment default is a fixed 1 ms tolerance, with
+an explicit seconds override; source lexical resolution never enlarges it.
+The checked fresh histories fit this default. Half-sample coverage placement
+is independent of that absolute tolerance. The retrieval
 scripts' one-second margin is unrelated to this matching tolerance. Revisit
 other producers using independent evidence, including the separate
 [sampling-rate investigation](#mermaid-sampling-rate-follow-up), rather than

@@ -320,12 +320,12 @@ def test_first_segment_permission_requires_a_boolean(records, value):
 
 
 @pytest.mark.parametrize('station', ['SYN01', 'SYN02'])
-@pytest.mark.parametrize('offset_ns', [-100_001, -100_000, 100_000, 100_001])
+@pytest.mark.parametrize('offset_ns', [-1_000_001, -1_000_000, 1_000_000, 1_000_001])
 def test_default_time_tolerance_is_fixed_and_inclusive(records, station, offset_ns):
     tr = trace(station)
     source_ns = tr.stats.starttime.ns
     tr.stats.starttime = obspy.UTCDateTime(ns=source_ns + offset_ns)
-    if abs(offset_ns) <= 100_000:
+    if abs(offset_ns) <= 1_000_000:
         associate(tr, records)
         assert tr.stats.geocsv.StartTime.value == source_ns
         assert tr.stats.starttime.ns == source_ns + offset_ns
@@ -372,7 +372,7 @@ def test_source_resolution_and_nanosecond_reader_metadata(records):
 @pytest.mark.parametrize('direction', [-1, 1])
 @pytest.mark.parametrize('position', ['inside', 'endpoint', 'outside'])
 def test_rate_tolerance_uses_inclusive_representable_endpoints(records, direction, position):
-    source_rate = 20.0 + direction * 0.01
+    source_rate = 20.0 + direction * 0.00001
     if position == 'inside':
         source_rate = np.nextafter(source_rate, 20.0)
     elif position == 'outside':
@@ -395,7 +395,14 @@ def test_index_selects_expected_row_among_unsorted_competitors():
     tr = trace()
     tr.stats.starttime = obspy.UTCDateTime(ns=1735689600000100000)
 
-    associate(tr, records)
+    associate(tr, records, time_tolerance=0.0001)
+
+    # The wider default correctly exposes three eligible rows in this toy table.
+    trace_with_default = trace()
+    trace_with_default.stats.starttime = obspy.UTCDateTime(ns=1735689600000100000)
+    with pytest.raises(ValueError, match=r'ambiguous \(3 matches\)'):
+        associate(trace_with_default, records)
+    assert 'geocsv' not in trace_with_default.stats
 
     # Expected from the invented input, independently of the returned selection.
     assert tr.stats.geocsv.source_record_index == 1
@@ -411,7 +418,7 @@ def test_index_does_not_prefer_exact_time_over_another_eligible_row():
     before = tr.copy()
 
     with pytest.raises(ValueError, match=r'ambiguous \(2 matches\)'):
-        associate(tr, records)
+        associate(tr, records, time_tolerance=0.0001)
 
     assert tr.stats == before.stats
     np.testing.assert_array_equal(tr.data, before.data)
@@ -609,10 +616,13 @@ def test_merge_requires_exact_grid_coverage(records, problem):
     elif problem == 'rate':
         records[0].loc[7, 'SampleRate'] = 21
     elif problem == 'rate_drift':
-        # Within 0.01 Hz, but accumulated drift exceeds half a waveform sample.
-        records[0].loc[7, 'SampleRate'] = 19.991
-        records[0].loc[7, 'SampleCount'] = 2000
-        tr.data = np.arange(2004, dtype=np.float32)
+        # Within 0.00001 Hz, but a long 1 Hz range drifts by more than half a sample.
+        tr.stats.sampling_rate = 1.
+        records[0].loc[1, 'SampleRate'] = 1.
+        records[0].loc[7, 'SampleRate'] = 0.999991
+        records[0].loc[7, 'StartTime'] = pd.Timestamp(TIMES['SYN01']) + pd.Timedelta(seconds=4)
+        records[0].loc[7, 'SampleCount'] = 60000
+        tr.data = np.arange(60004, dtype=np.float32)
     before = tr.copy()
     with pytest.raises(ValueError, match='source coverage'):
         associate(tr, records, allow_first_segment=True)

@@ -76,7 +76,7 @@ cannot establish uniqueness across omitted history records. Use your complete
 GeoCSV histories for research association. The [fixture manifest and provenance
 notes](../../data/fixtures/association/README.md) describe the subset extraction.
 
-## 2. Associate in place with an explicit time tolerance
+## 2. Associate in place with the default tolerances
 
 The public call is:
 
@@ -84,9 +84,9 @@ The public call is:
 help(geocsv.associate)
 ```
 
-Begin with one trace and the parsed tables. This fixture needs the explicit
-1 ms tolerance explained below; no other optional input is needed.
-Its signature is `associate(waveforms, records, *, time_tolerance=0.0001,
+Begin with one trace and the parsed tables. The default 1 ms start tolerance
+accepts this fixture; no optional input is needed.
+Its signature is `associate(waveforms, records, *, time_tolerance=0.001,
 allow_first_segment=False)`. The fallback flag must be a Python bool; strings
 such as `"False"` are rejected. Each trace must match exactly one `Algorithm(event):` row
 under these rules:
@@ -94,21 +94,20 @@ under these rules:
 - Network, Station, Location, and Channel (SNCL) match exactly. Only Location
   may be the known empty string `""`; no identity field may be missing.
 - Zoned source start times and waveform UTC times differ by no more than the
-  inclusive tolerance, in seconds. The default is 100 microseconds. Zero
+  inclusive tolerance, in seconds. The default is 1 millisecond. Zero
   requires exact equality; `None`, negative, and nonfinite values are invalid.
 - `SampleCount` equals both waveform `npts` and the number of loaded samples.
   Counts have no tolerance. Empty waveforms and masked sample gaps are rejected.
 - Source `SampleRate`, declared in hertz, differs from the waveform rate by at
-  most 0.01 Hz. This threshold remains provisional scientific policy.
+  most 0.00001 Hz. This is rate agreement, not physical clock accuracy.
 
 Source timestamp spelling does not enlarge the tolerance or establish clock
 accuracy. This real P0030 waveform begins **349 microseconds later** than its
-millisecond-rendered GeoCSV start. The default rejects it; explicitly allow
-1 ms for this Automaid history:
+millisecond-rendered GeoCSV start. The default 1 ms tolerance accepts it:
 
 ```python
 original = trace.copy()
-result = geocsv.associate(trace, tables, time_tolerance=0.001)
+result = geocsv.associate(trace, tables)
 assert result is None
 assert np.array_equal(trace.data, original.data)
 assert all(trace.stats[key] == value for key, value in original.stats.items())
@@ -259,7 +258,7 @@ requests for the same original segment. Rows are never consumed or reserved:
 
 ```python
 batch = Stream([original.copy(), original.copy()])
-geocsv.associate(batch, tables, time_tolerance=0.001)
+geocsv.associate(batch, tables)
 assert batch[0].stats.geocsv.source_record_index == batch[1].stats.geocsv.source_record_index
 assert batch[0].stats.geocsv is not batch[1].stats.geocsv
 assert batch[0].stats.coordinates is not batch[1].stats.coordinates
@@ -268,16 +267,16 @@ assert batch[0].stats.coordinates is not batch[1].stats.coordinates
 All trace matches resolve before coordinate projections are built, and all
 projections validate before any trace is modified. A failure leaves the
 entire supplied batch unchanged. These two unassociated copies demonstrate
-the too-small default tolerance:
+an explicitly tighter 100 microsecond tolerance:
 
 ```python
 unmatched = Stream([original.copy(), original.copy()])
 try:
-    geocsv.associate(unmatched, tables)
+    geocsv.associate(unmatched, tables, time_tolerance=0.0001)
 except ValueError as error:
     print(error)
 else:
-    raise AssertionError("Expected the default tolerance to reject this fixture")
+    raise AssertionError("Expected the explicit 100 microsecond tolerance to reject this fixture")
 assert all("geocsv" not in item.stats for item in unmatched)
 assert all("coordinates" not in item.stats for item in unmatched)
 ```
@@ -492,7 +491,7 @@ association from an unassociated waveform. Source SampleCount is never rewritten
 
 ## Fixture coverage
 
-The real P0030 fixture exercises `single_segment`, the explicit time tolerance,
+The real P0030 fixture exercises `single_segment`, default and explicit time tolerances,
 repeated-row batch association, and rejection of existing destinations.
 The real P0045 example merges two original MiniSEED request segments and
 explicitly asserts `anchor_segment`, unchanged anchor fields and waveform data,

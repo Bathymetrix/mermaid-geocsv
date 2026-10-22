@@ -31,7 +31,7 @@ provides evidence for the repeated-request case.
 
 ## Matching original traces
 
-The signature is `associate(waveforms, records, *, time_tolerance=0.0001,
+The signature is `associate(waveforms, records, *, time_tolerance=0.001,
 allow_first_segment=False)`. It modifies a Trace or Stream in place and
 returns `None`; records are tables from `geocsv.read`, retaining their
 source indices and immutable GeoCSV metadata.
@@ -45,14 +45,14 @@ A standard match requires:
    complete SEED character set or code lengths.
 2. Timezone-aware source starts within the inclusive absolute
    `time_tolerance` of the waveform start. Comparisons use full UTC integer
-   nanoseconds. The default is 100 microseconds; an override must be finite
+   nanoseconds. The default is 1 millisecond; an override must be finite
    nonnegative seconds, and zero requires exact equality. `None` is invalid.
    Source lexical resolution does not enlarge the tolerance.
 3. GeoCSV `SampleCount == stats.npts == len(data) > 0` exactly, with loaded,
    unmasked samples. There is no sample-count tolerance.
 4. Finite positive rates satisfying the inclusive floating-point endpoint
-   check `waveform_rate - 0.01 <= source_rate <= waveform_rate + 0.01`, in Hz.
-   The 0.01 Hz threshold is provisional scientific policy, not an instrument
+   check `waveform_rate - 0.00001 <= source_rate <= waveform_rate + 0.00001`, in Hz.
+   The 0.00001 Hz threshold is an agreement criterion, not an instrument
    accuracy bound or proof that whole-trace sampling grids agree.
 
 DataQuality is retained independently from MiniSEED quality and does not
@@ -166,9 +166,8 @@ remains unchanged in the source attachment.
 
 The inspected automaid writer uses `str(starttime)[:23] + 'Z'`, retaining
 milliseconds from an already corrected waveform start. Association must not
-apply `TimeCorrection` again. Some histories need an explicit
-`time_tolerance=0.001` because their waveform/source offsets exceed the
-100-microsecond default. The [reader specification](READER_SPEC.md#geocsv-metadata)
+apply `TimeCorrection` again. The 1 ms default covers the checked histories'
+sub-millisecond waveform/source offsets. The [reader specification](READER_SPEC.md#geocsv-metadata)
 explains preserved lexical resolution and timestamp precision.
 
 The user's current MERMAID clock does not establish millisecond physical
@@ -182,7 +181,7 @@ clock accuracy. For an independently measured first-to-last sample duration,
 rate is `(npts - 1) / duration`; a duration covering `npts` full intervals uses
 `npts / duration`. Recovering rate from ObsPy's rate-derived `endtime` would
 be circular, not independent evidence. Raw-MER/writer/MiniSEED precision and
-the provisional rate threshold remain an [open investigation](OPEN_QUESTIONS.md#mermaid-sampling-rate-follow-up).
+other raw-MER/encoding precision questions remain an [open investigation](OPEN_QUESTIONS.md#mermaid-sampling-rate-follow-up).
 
 ## Longer traces and subsequent processing
 
@@ -234,6 +233,15 @@ Scientific fields need context before projection or interpretation:
 These are interpretation requirements, not a general validation framework.
 
 ## Migration and related references
+
+Version 0.22.0 changes the absolute start/containment default from 0.0001 s to
+0.001 s and tightens rate agreement from 0.01 Hz to 0.00001 Hz, shared by strict
+matching, anchor coverage and SAC export. Explicit time overrides still work.
+The wider start window can expose additional eligible rows, which still raise
+as ambiguous; it never authorizes choosing the nearest row. The fixed strict
+half-sample coverage placement and association report schema are unchanged.
+Fresh-source checks against 15 complete histories validate 22 original segments
+and three combined/clipped windows; see [audit evidence](../audits/06.md#3-matching-tolerances-need-scientific-acceptance-not-automatic-widening).
 
 Version 0.21.0 separates coverage-grid placement from `time_tolerance`. Anchor
 coverage uses a fixed unique nearest-sample rule within half a waveform interval;

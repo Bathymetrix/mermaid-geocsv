@@ -12,7 +12,7 @@ from .read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.21.0"
+__version__ = "0.22.0"
 
 __all__ = [
     "__version__",
@@ -29,7 +29,7 @@ __all__ = [
 ]
 
 
-def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=False):
+def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=False):
     """Attach uniquely matched GeoCSV event metadata to ObsPy waveforms.
 
     Parameters
@@ -42,8 +42,8 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
         Tables returned by :func:`read`, retaining their source indices and
         immutable ``frame.attrs["geocsv"]`` provenance. May span datasets/files.
     time_tolerance : float, optional
-        Inclusive absolute start/containment tolerance in seconds. Default is 0.0001
-        (100 microseconds); zero removes absolute timing slack. Must be finite and
+        Inclusive absolute start/containment tolerance in seconds. Default is 0.001
+        (1 millisecond); zero removes absolute timing slack. Must be finite and
         nonnegative. Full UTC nanosecond values are compared; source lexical
         resolution does not enlarge the tolerance.
     allow_first_segment : bool, optional
@@ -76,7 +76,7 @@ def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=
     -----
     Standard matches require complete, exact SNCL (only Location may be empty),
     zoned UTC-comparable times, nonempty loaded sample count equality, and rates
-    within 0.01 Hz. This rate threshold is provisional scientific policy.
+    within 0.00001 Hz. This is rate agreement, not physical clock accuracy.
     DataQuality is retained as source evidence, independent of waveform quality.
     Invalid event identities and duplicate complete SNCL/time/count/rate keys
     fail source preflight; multiple traces may independently use the same row.

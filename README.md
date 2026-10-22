@@ -50,7 +50,8 @@ metadata = records.attrs["geocsv"]
 | [`geocsv.write_sac(trace, path)`](docs/tutorials/WRITE_SAC.md) | Export one associated MiniSEED-derived waveform to a new SAC file; returns `None` and leaves the trace unchanged. |
 
 Fetching and reading do not require ObsPy. Association defaults to original
-segments. With `allow_first_segment=True`, clipped or combined windows may use
+segments, with an inclusive 1 ms absolute start tolerance and source-rate
+agreement within 0.00001 Hz. With `allow_first_segment=True`, clipped or combined windows may use
 one same-SNCL source segment containing the waveform start, provided GeoCSV
 sample ranges cover every downloaded sample after clipping and counting overlaps
 once. Coverage uses unique nearest-sample placement strictly below half a waveform

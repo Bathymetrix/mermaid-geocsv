@@ -44,17 +44,17 @@ def one_event(subsets):
     return trace, frame
 
 
-def test_default_rejects_real_writer_offset_beyond_100_microseconds(subsets):
+def test_default_accepts_real_writer_offset_beyond_100_microseconds(subsets):
     trace = load_trace()
     records = subsets[EXAMPLES[0]['geocsv']]
     record_index = EXAMPLES[0]['subset_record_index']
     assert trace.stats.starttime.ns - records[0].loc[record_index, 'StartTime'].value == 349_000
     before = trace.copy()
     with pytest.raises(ValueError, match='no match'):
-        associate(trace, records)
+        associate(trace, records, time_tolerance=0.0001)
     assert trace.stats == before.stats
     assert (trace.data == before.data).all()
-    associate(trace, records, time_tolerance=0.001)
+    associate(trace, records)
     assert trace.stats.geocsv.source_record_index == record_index
 
 
@@ -180,14 +180,14 @@ def test_count_and_rate_mismatches_fail(subsets, field, value):
     assert "geocsv" not in trace.stats
 
 
-def test_provisional_rate_check_and_waveform_authority(subsets):
+def test_rate_check_and_waveform_authority(subsets):
     trace, frame = one_event(subsets)
     original = trace.stats.sampling_rate
-    frame.loc[:, "SampleRate"] = original + 0.00999
+    frame.loc[:, "SampleRate"] = original + 0.00000999
     associate(trace, [frame], time_tolerance=0.001)
     assert trace.stats.sampling_rate == original
     trace = load_trace()
-    frame.loc[:, "SampleRate"] = original + 0.01001
+    frame.loc[:, "SampleRate"] = original + 0.00001001
     with pytest.raises(ValueError, match="no match"):
         associate(trace, [frame], time_tolerance=0.001)
 

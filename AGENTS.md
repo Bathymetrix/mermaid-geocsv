@@ -207,7 +207,7 @@ immediate public interface, not premature shared cross-repository namespace
 infrastructure.
 
 The intended public Python API is deliberately small and must be documented.
-`geocsv.associate(waveforms, records, *, time_tolerance=0.0001,
+`geocsv.associate(waveforms, records, *, time_tolerance=0.001,
 allow_first_segment=False)` attaches uniquely matched event metadata to an ObsPy Trace
 or Stream in place and returns `None`. ObsPy remains an optional dependency,
 loaded only when association is called. Keep the matching implementation

@@ -1,0 +1,621 @@
+{
+  "checked_utc": "2026-10-22T00:14:49.617180+00:00",
+  "source_root": "/Users/jdsimon/mermaid/processed",
+  "package_version": "0.22.0",
+  "obspy_source_commit": "50033e1daf95233cd4f30e95a49c37fd50be2ccd",
+  "inspected_automaid_commit": "e841a1a0e2607582f10631c4f5989286d42d346b",
+  "time_tolerance_seconds": 0.001,
+  "sample_rate_tolerance_hz": 1e-05,
+  "obspy_version": "1.5.1",
+  "histories": [
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.020-P-0030/geo_DET_REQ.csv",
+      "sha256": "3320d7e24207744bf42305554aed588c26a799a933fff13889d64ebc78520a5d",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 787
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.020-P-0048/geo_DET_REQ.csv",
+      "sha256": "b120381d336001adb8e4d6a57c1ceb5e1317976a8935239c79b24a51b25d767c",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 107795
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.020-P-0050/geo_DET_REQ.csv",
+      "sha256": "b420c430285e68d63b2668ca39dc16ee1cdf0cca3f6b1f364f2b75cd290bc231",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 764169
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.020-P-06/geo_DET_REQ.csv",
+      "sha256": "93e8807306731191545845d58bb410480ed219b6e8129d381b22fcdcf9379080",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 20345
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.020-P-08/geo_DET_REQ.csv",
+      "sha256": "f89532eb8408c1cf5abaad3db6c8429ac98b9b344ea8465be3e904253189e75f",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 23087
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.020-P-10/geo_DET_REQ.csv",
+      "sha256": "9250b415f72d06f0edb9fae8ca9e62fe67a1f68af37a459f7320aa75d94354ee",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 30366
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.020-P-11/geo_DET_REQ.csv",
+      "sha256": "a16bcad0559c04e3997a5a70c80d49896403286e015869dda0cc39769d9b47f7",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 26327
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.020-P-12/geo_DET_REQ.csv",
+      "sha256": "52b69434bbfe4ce0a89823c1684511187aa376d25fc48b2fd870a0849e5a56fa",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 26014
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.020-P-17/geo_DET_REQ.csv",
+      "sha256": "b154cfa4f517097bae961ef97ef6fced4ac6ab14e71fccba157116c6967209bb",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 18948
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.020-P-18/geo_DET_REQ.csv",
+      "sha256": "b6552f05adbe548f544a8ee7eabfcc58fcf262773ddb5f08efa56fa558a402c0",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 20438
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.112-N-05/geo_DET_REQ.csv",
+      "sha256": "ca61149bf9a0f93e7772e8cd0c01515bc2d7283afdd37368e777e944116dbc59",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 24665
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.120-R-0071/geo_DET_REQ.csv",
+      "sha256": "c53f4622e466f3e3b696c06b3cfb837285c017c7c2514278d6fb5053ccf2e73c",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 24868
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/467.174-T-0101/geo_DET_REQ.csv",
+      "sha256": "7f70df8a1654676fa2dbe66128f38d17e4b31fffb73b19863f7d888a46796736",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 11953
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/467.174-W-0121/geo_DET_REQ.csv",
+      "sha256": "0a732be6003fbbc4a7411f86b8e40a7b4d65e57863660e1cd436c8dea9b33bf7",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 1557
+    },
+    {
+      "path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/geo_DET_REQ.csv",
+      "sha256": "6a1e92c09aa3c6b7f55e194b487487b57f3e583de735817857fb0558996acdc9",
+      "header": [
+        "#dataset: GeoCSV",
+        "#created: 2026-10-21T22:48:33.277Z",
+        "#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org",
+        "#attribution: automaid v4.5.14 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])"
+      ],
+      "dataset_count": 1,
+      "record_count": 124022
+    }
+  ],
+  "original_segments": [
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-0030/0009_20210528-04h30m10s/20210528T053250.0030_60B08BB3.MER.DET.WLT2.mseed",
+      "waveform_sha256": "6aa7a42cf2720911dad457398ffec9947273843715780d3bc6613b0cb24c9144",
+      "sncl": "MH.P0030.10.MDH",
+      "dataset_index": 0,
+      "source_record_index": 689,
+      "source_line_number": 699,
+      "waveform_starttime_ns": 1622179970321349000,
+      "source_starttime_ns": 1622179970321000000,
+      "start_difference_ns": 349000,
+      "last_sample_difference_ns": 412318,
+      "waveform_sample_rate_hz": 2.500913867946082,
+      "source_sample_rate_hz": 2.500914,
+      "rate_difference_hz": -1.3205391802273425e-07,
+      "sample_count": 3000,
+      "source_sample_count": 3000
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-0030/0006_20210527-22h23m27s/20210527T234115.0030_60B038D0.MER.DET.WLT2.mseed",
+      "waveform_sha256": "4d8ee57f239aaec966aa92b6c95706250b122759ad7adbb5d71733cd6b640899",
+      "sncl": "MH.P0030.10.MDH",
+      "dataset_index": 0,
+      "source_record_index": 464,
+      "source_line_number": 474,
+      "waveform_starttime_ns": 1622158875697492000,
+      "source_starttime_ns": 1622158875697000000,
+      "start_difference_ns": 492000,
+      "last_sample_difference_ns": 552109,
+      "waveform_sample_rate_hz": 2.500913867946082,
+      "source_sample_rate_hz": 2.500914,
+      "rate_difference_hz": -1.3205391802273425e-07,
+      "sample_count": 2848,
+      "source_sample_count": 2848
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-0030/0002_20210527-14h28m09s/20210527T154441.0030_60AFC696.MER.DET.WLT2.mseed",
+      "waveform_sha256": "69447d2341d4a4ee06e73819bae1e4ab407556d858778eceb069578dc6f4ed98",
+      "sncl": "MH.P0030.10.MDH",
+      "dataset_index": 0,
+      "source_record_index": 146,
+      "source_line_number": 156,
+      "waveform_starttime_ns": 1622130281628382000,
+      "source_starttime_ns": 1622130281628000000,
+      "start_difference_ns": 382000,
+      "last_sample_difference_ns": 394763,
+      "waveform_sample_rate_hz": 2.5009128630705395,
+      "source_sample_rate_hz": 2.500913,
+      "rate_difference_hz": -1.369294606590188e-07,
+      "sample_count": 584,
+      "source_sample_count": 584
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.120-R-0071/0112_20220907-23h48m11s/20220909T172243.0071_631C61E8.MER.DET.WLT5.mseed",
+      "waveform_sha256": "5f4519fd4d64cae8a11dcaaab9aa7da28293ca60f6208e9c5dec849e26eff4c8",
+      "sncl": "MH.R0071.00.BDH",
+      "dataset_index": 0,
+      "source_record_index": 13362,
+      "source_line_number": 13372,
+      "waveform_starttime_ns": 1662744163532380000,
+      "source_starttime_ns": 1662744163532000000,
+      "start_difference_ns": 380000,
+      "last_sample_difference_ns": 382798,
+      "waveform_sample_rate_hz": 20.00702476501465,
+      "source_sample_rate_hz": 20.007025,
+      "rate_difference_hz": -2.3498535028920742e-07,
+      "sample_count": 4768,
+      "source_sample_count": 4768
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-0048/0220_20210727-00h41m44s/20210728T081626.0048_610E7E24.MER.DET.WLT5.mseed",
+      "waveform_sha256": "b427015a5d44a44c10eda6721e0d34379dbf026c6f5330b8052416d8a582e025",
+      "sncl": "MH.P0048.00.BDH",
+      "dataset_index": 0,
+      "source_record_index": 97681,
+      "source_line_number": 97691,
+      "waveform_starttime_ns": 1627460186055971000,
+      "source_starttime_ns": 1627460186055000000,
+      "start_difference_ns": 971000,
+      "last_sample_difference_ns": 960300,
+      "waveform_sample_rate_hz": 20.007361963190185,
+      "source_sample_rate_hz": 20.007361,
+      "rate_difference_hz": 9.631901853879299e-07,
+      "sample_count": 4448,
+      "source_sample_count": 4448
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-12/0065_20190717-06h17m27s/20190718T032615.12_5D35E242.MER.DET.WLT5.mseed",
+      "waveform_sha256": "52de0070a33bbba329caf458e236cd6b9a0b65f7198f6bc3a58497846a132114",
+      "sncl": "MH.P0012.00.BDH",
+      "dataset_index": 0,
+      "source_record_index": 4659,
+      "source_line_number": 4669,
+      "waveform_starttime_ns": 1563420375311869000,
+      "source_starttime_ns": 1563420375311000000,
+      "start_difference_ns": 869000,
+      "last_sample_difference_ns": 866042,
+      "waveform_sample_rate_hz": 20.00703125,
+      "source_sample_rate_hz": 20.007031,
+      "rate_difference_hz": 2.499999993688107e-07,
+      "sample_count": 4736,
+      "source_sample_count": 4736
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-08/0024_20181129-20h58m50s/20181205T042308.08_5D5F39E7.MER.REQ.WLT3.mseed",
+      "waveform_sha256": "1d2949d531de1356e127e6fd40c92fc73b666665e80b6b9f1f88ea88ff322c57",
+      "sncl": "MH.P0008.00.MDH",
+      "dataset_index": 0,
+      "source_record_index": 1643,
+      "source_line_number": 1653,
+      "waveform_starttime_ns": 1543983788858030000,
+      "source_starttime_ns": 1543983788858000000,
+      "start_difference_ns": 30000,
+      "last_sample_difference_ns": 25131,
+      "waveform_sample_rate_hz": 5.001710132535272,
+      "source_sample_rate_hz": 5.00171,
+      "rate_difference_hz": 1.3253527164636125e-07,
+      "sample_count": 920,
+      "source_sample_count": 920
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-11/0009_20180925-13h09m01s/20180928T103246.11_5D7760BE.MER.REQ.WLT3.mseed",
+      "waveform_sha256": "5b1ac4bbb1fcf823f0447de1137ed27b431f797a7d22ebe70ea0088a4f8d8d76",
+      "sncl": "MH.P0011.00.MDH",
+      "dataset_index": 0,
+      "source_record_index": 586,
+      "source_line_number": 596,
+      "waveform_starttime_ns": 1538130766675592000,
+      "source_starttime_ns": 1538130766675000000,
+      "start_difference_ns": 592000,
+      "last_sample_difference_ns": 523641,
+      "waveform_sample_rate_hz": 5.0017902813299235,
+      "source_sample_rate_hz": 5.00179,
+      "rate_difference_hz": 2.8132992380136557e-07,
+      "sample_count": 6080,
+      "source_sample_count": 6080
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-18/0003_20180923-14h52m03s/20180928T104348.18_5D6C3AE8.MER.REQ.WLT3.mseed",
+      "waveform_sha256": "c091d68b3885d812f66d1653622a40ff465dad7506969c5046403611067963d2",
+      "sncl": "MH.P0018.00.MDH",
+      "dataset_index": 0,
+      "source_record_index": 176,
+      "source_line_number": 186,
+      "waveform_starttime_ns": 1538131428348807000,
+      "source_starttime_ns": 1538131428348000000,
+      "start_difference_ns": 807000,
+      "last_sample_difference_ns": 774388,
+      "waveform_sample_rate_hz": 5.0017771007870016,
+      "source_sample_rate_hz": 5.001777,
+      "rate_difference_hz": 1.0078700185545131e-07,
+      "sample_count": 8096,
+      "source_sample_count": 8096
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0283_20220909-03h08m36s/20220918T065407.06_64395124.MER.REQ.WLT4.mseed",
+      "waveform_sha256": "cc9d07135a6523d1767c10a945634ed50718c45e1113471d0850c2a66d4f509c",
+      "sncl": "MH.P0006.20.BDH",
+      "dataset_index": 0,
+      "source_record_index": 15545,
+      "source_line_number": 15555,
+      "waveform_starttime_ns": 1663484047789635000,
+      "source_starttime_ns": 1663484047789000000,
+      "start_difference_ns": 635000,
+      "last_sample_difference_ns": 620906,
+      "waveform_sample_rate_hz": 10.0035175879397,
+      "source_sample_rate_hz": 10.003517,
+      "rate_difference_hz": 5.879396987040764e-07,
+      "sample_count": 2400,
+      "source_sample_count": 2400
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0283_20220909-03h08m36s/20220919T181625.06_64395124.MER.REQ.WLT4.mseed",
+      "waveform_sha256": "1d9d293769c7ad192f971e57f41d96552cf7fe490ab938fa45cdf009e80f009e",
+      "sncl": "MH.P0006.20.BDH",
+      "dataset_index": 0,
+      "source_record_index": 15546,
+      "source_line_number": 15556,
+      "waveform_starttime_ns": 1663611385574609000,
+      "source_starttime_ns": 1663611385574000000,
+      "start_difference_ns": 609000,
+      "last_sample_difference_ns": 594906,
+      "waveform_sample_rate_hz": 10.0035175879397,
+      "source_sample_rate_hz": 10.003517,
+      "rate_difference_hz": 5.879396987040764e-07,
+      "sample_count": 2400,
+      "source_sample_count": 2400
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0290_20221112-10h19m09s/20221118T134758.06_64395124.MER.REQ.WLT4.mseed",
+      "waveform_sha256": "b05ab6fc4e77d1e3e6b1f09edbf92ec81e8d91c33babc10810b405cca8fdee23",
+      "sncl": "MH.P0006.20.BDH",
+      "dataset_index": 0,
+      "source_record_index": 15825,
+      "source_line_number": 15835,
+      "waveform_starttime_ns": 1668779278112657000,
+      "source_starttime_ns": 1668779278112000000,
+      "start_difference_ns": 657000,
+      "last_sample_difference_ns": 674024,
+      "waveform_sample_rate_hz": 10.003514289855957,
+      "source_sample_rate_hz": 10.003515,
+      "rate_difference_hz": -7.101440431256378e-07,
+      "sample_count": 2400,
+      "source_sample_count": 2400
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-0050/0049_20200817-01h44m40s/20200818T002005.0050_5FC489DC.MER.REQ.WLT5.mseed",
+      "waveform_sha256": "7bcd2687752d44692dd53eed5a98dfe6bb77246a460f37e56a1868439eae2a65",
+      "sncl": "MH.P0050.00.BDH",
+      "dataset_index": 0,
+      "source_record_index": 392330,
+      "source_line_number": 392340,
+      "waveform_starttime_ns": 1597710005857039000,
+      "source_starttime_ns": 1597710005857000000,
+      "start_difference_ns": 39000,
+      "last_sample_difference_ns": 33934,
+      "waveform_sample_rate_hz": 20.007122507122507,
+      "source_sample_rate_hz": 20.007122,
+      "rate_difference_hz": 5.0712250754259e-07,
+      "sample_count": 4000,
+      "source_sample_count": 4000
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/467.174-W-0121/0004_20250307-08h35m30s/20250309T022030.0121_67D17CAB.MER.REQ.WLT5.mseed",
+      "waveform_sha256": "c8f013185f3febf9df7b6c3a11e04bad989589a14ce8d7bdd2720d9529b9048a",
+      "sncl": "MH.W0121.00.BDH",
+      "dataset_index": 0,
+      "source_record_index": 890,
+      "source_line_number": 900,
+      "waveform_starttime_ns": 1741486830922647000,
+      "source_starttime_ns": 1741486830922000000,
+      "start_difference_ns": 647000,
+      "last_sample_difference_ns": 650829,
+      "waveform_sample_rate_hz": 20.007190704345703,
+      "source_sample_rate_hz": 20.007192,
+      "rate_difference_hz": -1.2956542967401674e-06,
+      "sample_count": 1184,
+      "source_sample_count": 1184
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.112-N-05/0050_20200124-11h22m34s/20200128T220223.05_5E7B35AB.MER.REQ.WLT5.mseed",
+      "waveform_sha256": "cad82c9c35504f2e34de64dc068304d26926096b314aa9ce29de67dfbdc3af94",
+      "sncl": "MH.N0005.00.BDH",
+      "dataset_index": 0,
+      "source_record_index": 3464,
+      "source_line_number": 3474,
+      "waveform_starttime_ns": 1580248943537507000,
+      "source_starttime_ns": 1580248943537000000,
+      "start_difference_ns": 507000,
+      "last_sample_difference_ns": 510668,
+      "waveform_sample_rate_hz": 20.00720576461169,
+      "source_sample_rate_hz": 20.007206,
+      "rate_difference_hz": -2.35388309732798e-07,
+      "sample_count": 6240,
+      "source_sample_count": 6240
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-17/0130_20210501-05h28m47s/20210507T051026.17_61CCE24C.MER.REQ.RAW.mseed",
+      "waveform_sha256": "3ba9e3b134479981bfb67cd571931da12876c3895d723f0cabccc57f257bfa8a",
+      "sncl": "MH.P0017.10.BDH",
+      "dataset_index": 0,
+      "source_record_index": 8407,
+      "source_line_number": 8417,
+      "waveform_starttime_ns": 1620364226356547000,
+      "source_starttime_ns": 1620364226356000000,
+      "start_difference_ns": 547000,
+      "last_sample_difference_ns": 551575,
+      "waveform_sample_rate_hz": 40.01461038961039,
+      "source_sample_rate_hz": 40.014611,
+      "rate_difference_hz": -6.103896126319341e-07,
+      "sample_count": 12004,
+      "source_sample_count": 12004
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/467.174-T-0101/0003_20230621-12h25m15s/20230621T203959.0101_653E9FD7.MER.REQ.RAW.mseed",
+      "waveform_sha256": "58c70d4b68fe62247eaccbf1f18b4f46a42992f1904da528d8e7a5a74f6ddbb0",
+      "sncl": "MH.T0101.10.BDH",
+      "dataset_index": 0,
+      "source_record_index": 516,
+      "source_line_number": 526,
+      "waveform_starttime_ns": 1687379999936734000,
+      "source_starttime_ns": 1687379999936000000,
+      "start_difference_ns": 734000,
+      "last_sample_difference_ns": 734032,
+      "waveform_sample_rate_hz": 40.014511873350926,
+      "source_sample_rate_hz": 40.014512,
+      "rate_difference_hz": -1.2664907700354888e-07,
+      "sample_count": 400,
+      "source_sample_count": 400
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-10/0207_20210812-18h06m12s/20210814T120825.10_61AAFD7F.MER.REQ.RAW.mseed",
+      "waveform_sha256": "5ba50ff743311352351a190c3e6b6fe58943d1b472f9a25dbd3462821bae4b4d",
+      "sncl": "MH.P0010.10.BDH",
+      "dataset_index": 0,
+      "source_record_index": 14955,
+      "source_line_number": 14965,
+      "waveform_starttime_ns": 1628942905831791000,
+      "source_starttime_ns": 1628942905831000000,
+      "start_difference_ns": 791000,
+      "last_sample_difference_ns": 790681,
+      "waveform_sample_rate_hz": 40.014379084967324,
+      "source_sample_rate_hz": 40.014379,
+      "rate_difference_hz": 8.496732561980025e-08,
+      "sample_count": 6002,
+      "source_sample_count": 6002
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0004_20180712-12h26m18s/20180713T094803.06_5B4C1D4F.MER.DET.WLT5.mseed",
+      "waveform_sha256": "2969994b1b1a8aff994b25f77018a5a104634b83fa40aaa03e3b5b51f05de9c1",
+      "sncl": "MH.P0006.00.BDH",
+      "dataset_index": 0,
+      "source_record_index": 237,
+      "source_line_number": 247,
+      "waveform_starttime_ns": 1531475283139974000,
+      "source_starttime_ns": 1531475283139000000,
+      "start_difference_ns": 974000,
+      "last_sample_difference_ns": 971783,
+      "waveform_sample_rate_hz": 20.007052186177717,
+      "source_sample_rate_hz": 20.007052,
+      "rate_difference_hz": 1.8617771502249525e-07,
+      "sample_count": 4768,
+      "source_sample_count": 4768,
+      "comparison_fixture_path": "/Users/jdsimon/programs/mermaid-geocsv/tests/fixtures/association/P0006_20180713_earthscope/20180713T094803.06_5B4C1D4F.MER.DET.WLT5.mseed"
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0004_20180712-12h26m18s/20180713T094831.06_5B6DEF16.MER.REQ.WLT5.mseed",
+      "waveform_sha256": "67aa6498381691fd603ccc6b21315dff2be98fbf7139ac2b347715aaf08def01",
+      "sncl": "MH.P0006.00.BDH",
+      "dataset_index": 0,
+      "source_record_index": 238,
+      "source_line_number": 248,
+      "waveform_starttime_ns": 1531475311908782000,
+      "source_starttime_ns": 1531475311908000000,
+      "start_difference_ns": 782000,
+      "last_sample_difference_ns": 777535,
+      "waveform_sample_rate_hz": 20.007052186177717,
+      "source_sample_rate_hz": 20.007052,
+      "rate_difference_hz": 1.8617771502249525e-07,
+      "sample_count": 9600,
+      "source_sample_count": 9600,
+      "comparison_fixture_path": "/Users/jdsimon/programs/mermaid-geocsv/tests/fixtures/association/P0006_20180713_earthscope/20180713T094831.06_5B6DEF16.MER.REQ.WLT5.mseed"
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T043358.0045_6238169F.MER.REQ.WLT5.mseed",
+      "waveform_sha256": "c4752e9c2ad1d720ba863522881fd520621886ff53570b175e2c3c97739242fa",
+      "sncl": "MH.P0045.00.BDH",
+      "dataset_index": 0,
+      "source_record_index": 101433,
+      "source_line_number": 101443,
+      "waveform_starttime_ns": 1642221238910159000,
+      "source_starttime_ns": 1642221238910000000,
+      "start_difference_ns": 159000,
+      "last_sample_difference_ns": 128322,
+      "waveform_sample_rate_hz": 20.006973266601562,
+      "source_sample_rate_hz": 20.006972,
+      "rate_difference_hz": 1.2666015614115622e-06,
+      "sample_count": 9696,
+      "source_sample_count": 9696,
+      "comparison_fixture_path": "/Users/jdsimon/programs/mermaid-geocsv/tests/fixtures/association/P0045_20220115/20220115T043358.0045_6238169F.MER.REQ.WLT5.mseed"
+    },
+    {
+      "waveform_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/0210_20220112-22h43m00s/20220115T044202.0045_62A7D1AC.MER.REQ.WLT5.mseed",
+      "waveform_sha256": "d1036cca99d37d234b4ac7129deb473ca84bb71990140491dad8d21dcafd35fb",
+      "sncl": "MH.P0045.00.BDH",
+      "dataset_index": 0,
+      "source_record_index": 101434,
+      "source_line_number": 101444,
+      "waveform_starttime_ns": 1642221722916205000,
+      "source_starttime_ns": 1642221722916000000,
+      "start_difference_ns": 205000,
+      "last_sample_difference_ns": 91089,
+      "waveform_sample_rate_hz": 20.006973266601562,
+      "source_sample_rate_hz": 20.006972,
+      "rate_difference_hz": 1.2666015614115622e-06,
+      "sample_count": 36000,
+      "source_sample_count": 36000,
+      "comparison_fixture_path": "/Users/jdsimon/programs/mermaid-geocsv/tests/fixtures/association/P0045_20220115/20220115T044202.0045_62A7D1AC.MER.REQ.WLT5.mseed"
+    }
+  ],
+  "windows": [
+    {
+      "name": "earthscope_clipped",
+      "sncl": "MH.P0006.00.BDH",
+      "sample_count": 9403,
+      "association_type": "anchor_segment",
+      "source_records": [
+        237,
+        238
+      ],
+      "max_sample_grid_offset_seconds": 0.021813578,
+      "max_sample_rate_difference_hz": 1.8617771502249525e-07
+    },
+    {
+      "name": "constructed_merge",
+      "sncl": "MH.P0045.00.BDH",
+      "sample_count": 45683,
+      "association_type": "anchor_segment",
+      "source_records": [
+        101433,
+        101434
+      ],
+      "max_sample_grid_offset_seconds": 0.024701427,
+      "max_sample_rate_difference_hz": 1.2666015614115622e-06
+    },
+    {
+      "name": "constructed_merge_clipped",
+      "sncl": "MH.P0045.00.BDH",
+      "sample_count": 45643,
+      "association_type": "anchor_segment",
+      "source_records": [
+        101433,
+        101434
+      ],
+      "max_sample_grid_offset_seconds": 0.024701364,
+      "max_sample_rate_difference_hz": 1.2666015614115622e-06
+    }
+  ],
+  "failures": [],
+  "summary": {
+    "full_histories": 15,
+    "original_segments": 22,
+    "windows": 3,
+    "max_abs_start_difference_ns": 974000,
+    "max_abs_last_sample_difference_ns": 971783,
+    "max_abs_rate_difference_hz": 1.2956542967401674e-06,
+    "failures": 0
+  },
+  "method": "Public associate defaults and write_sac against current full source histories; no runtime tolerance override or production-code monkeypatch"
+}

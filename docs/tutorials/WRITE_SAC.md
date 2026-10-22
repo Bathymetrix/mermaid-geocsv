@@ -56,7 +56,7 @@ subset_paths = {item["path"]: item["subset"]["path"]
                 for item in manifest["geocsv"]}
 trace, = read_waveforms(str(fixtures / example["mseed"]))
 tables = geocsv.read(fixtures / subset_paths[example["geocsv"]])
-geocsv.associate(trace, tables, time_tolerance=0.001)
+geocsv.associate(trace, tables)
 assert trace.stats.geocsv.association.type == "single_segment"
 
 workspace = TemporaryDirectory(prefix="geocsv-sac-")
@@ -72,8 +72,7 @@ print(output)
 ```
 
 This P0030 waveform starts 349 microseconds later than its millisecond-rendered
-GeoCSV time, so association explicitly allows 1 ms. The default association
-tolerance remains 100 microseconds; see the [association tutorial](ASSOCIATE.md).
+GeoCSV time, within the default 1 ms association tolerance; see the [association tutorial](ASSOCIATE.md).
 Writing uses the native waveform timing, not the rounded GeoCSV time.
 
 Use complete source histories for research. These tracked subsets preserve
@@ -179,7 +178,7 @@ request_example = next(item for item in manifest["examples"]
                        if item["group"].startswith("REQ."))
 request, = read_waveforms(str(fixtures / request_example["mseed"]))
 request_tables = geocsv.read(fixtures / subset_paths[request_example["geocsv"]])
-geocsv.associate(request, request_tables, time_tolerance=0.001)
+geocsv.associate(request, request_tables)
 assert request.stats.geocsv.DataQuality == "D"
 assert pd.isna(request.stats.geocsv.WaterPressure)
 
@@ -265,13 +264,15 @@ workspace.cleanup()
 
 Associate the final downloaded/clipped/combined window before export. The writer
 checks identity, initial start-time offset, association-time waveform sample
-count, and source rate agreement under association's 0.01 Hz threshold. Original
+count, and source rate agreement under association's 0.00001 Hz threshold. Original
 source SampleCount must equal waveform count only for `single_segment`. Source
 coverage was checked at association; the writer does not reopen source files.
 Later count/start changes require a fresh association on an unassociated trace.
 It also rejects empty data and masked gaps. These checks cannot detect all
-sample transformations, including filtering or changes within the rate
-threshold; they do not prove an unchanged processing history. A `single_segment`
+sample transformations, including filtering or replacing values without
+changing headers; they do not prove an unchanged processing history. Rate edits
+are rejected against the association-time snapshot even within the source-rate
+threshold. A `single_segment`
 label is not refreshed by later waveform processing.
 
 ## Verification and fixture coverage

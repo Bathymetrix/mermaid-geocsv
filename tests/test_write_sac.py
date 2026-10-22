@@ -325,3 +325,17 @@ def test_changed_rate_within_source_tolerance_is_rejected(trace, tmp_path):
     with pytest.raises(ValueError, match="rate disagrees with its association"):
         geocsv.write_sac(trace, tmp_path / "changed.sac")
     assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize("outside", [False, True])
+def test_source_rate_agreement_uses_ten_microhertz_limit(trace, tmp_path, outside):
+    boundary = trace.stats.sampling_rate + 0.00001
+    trace.stats.geocsv.SampleRate = np.nextafter(boundary, np.inf) if outside else boundary
+    output = tmp_path / "rate.sac"
+    if outside:
+        with pytest.raises(ValueError, match="rate disagrees with its association"):
+            geocsv.write_sac(trace, output)
+        assert not output.exists()
+    else:
+        geocsv.write_sac(trace, output)
+        assert SACTrace.read(str(output)).delta == np.float32(trace.stats.delta)

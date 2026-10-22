@@ -14,7 +14,7 @@ from .read import GeoCSVMetadata
 
 IDENTITY = {"Network": "network", "Station": "station",
             "Location": "location", "Channel": "channel"}
-SAMPLE_RATE_TOLERANCE_HZ = 0.01  # Provisional; revisit against MER timing precision.
+SAMPLE_RATE_TOLERANCE_HZ = 0.00001  # Absolute rate agreement, independent of grid placement.
 
 
 def _source_name(metadata):
@@ -197,12 +197,12 @@ def _validate_coverage(trace, overlapping):
     return ranges
 
 
-def associate(waveforms, records, *, time_tolerance=0.0001, allow_first_segment=False):
+def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=False):
     """Associate a Trace or Stream with event rows returned by geocsv.read.
 
     Validate all matches before modifying any trace; return None. By default require exact
-    SNCL, UTC times within 100 microseconds by default, exact
-    sample count, and rate difference <= 0.01 Hz. Waveform core fields remain
+    SNCL, UTC times within 1 millisecond by default, exact
+    sample count, and rate difference <= 0.00001 Hz. Waveform core fields remain
     authoritative. Quality is retained separately and is not a match filter.
     Guarantees end at initial association. SAC export is a separate operation.
     Missing Latitude or Longitude fails. Destination containers must be absent:

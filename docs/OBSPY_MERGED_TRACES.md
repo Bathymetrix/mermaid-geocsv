@@ -62,7 +62,7 @@ For `allow_first_segment=True`:
 3. For a nonstandard match, collect same-SNCL source intervals intersecting the
    waveform window expanded by half a waveform interval at each edge, including
    intervals beginning before the waveform. Required
-   counts/rates must be valid. Rates retain the provisional inclusive 0.01 Hz
+   counts/rates must be valid. Rates retain the inclusive 0.00001 Hz
    agreement check around the waveform rate.
 4. Place each source's integer sample range on the waveform grid. Clip it to
    `[0, npts)`; source samples outside the downloaded window are permitted.
@@ -85,7 +85,7 @@ For `allow_first_segment=True`:
 
 ### Separate absolute matching from grid placement
 
-`time_tolerance` retains its 100 microsecond default for strict original-start
+`time_tolerance` uses its 1 millisecond default for strict original-start
 matching and containing-anchor boundaries. It never controls coverage-grid
 placement; even zero does not require coincident grids in the anchor fallback.
 The rule is strictly `abs(grid offset) < 0.5 / waveform_sampling_rate`.

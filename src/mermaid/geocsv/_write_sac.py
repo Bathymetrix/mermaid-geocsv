@@ -9,6 +9,7 @@ from obspy import Trace, UTCDateTime
 from obspy.io.sac import SACTrace
 import pandas as pd
 
+from ._associate import SAMPLE_RATE_TOLERANCE_HZ
 from .read import GeoCSVMetadata
 
 
@@ -82,7 +83,8 @@ def write_sac(trace, path):
             or rate is None or pd.isna(rate) or not isfinite(float(rate))
             or waveform.get("sampling_rate_hz") != trace.stats.sampling_rate
             or not isfinite(trace.stats.sampling_rate) or trace.stats.sampling_rate <= 0
-            or not trace.stats.sampling_rate - 0.01 <= rate <= trace.stats.sampling_rate + 0.01):
+            or not trace.stats.sampling_rate - SAMPLE_RATE_TOLERANCE_HZ
+            <= rate <= trace.stats.sampling_rate + SAMPLE_RATE_TOLERANCE_HZ):
         raise ValueError(f"{trace.id}: waveform rate disagrees with its association")
     _float32_value(trace.stats.delta, f"{trace.id}: delta")
     if _float32_value(trace.stats.calib, f"{trace.id}: calib") == -12345:
