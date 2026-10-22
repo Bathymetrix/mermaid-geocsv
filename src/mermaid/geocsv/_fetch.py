@@ -10,11 +10,12 @@ import os
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from http.client import HTTPException
 from os import PathLike
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import quote, urljoin, urlsplit
 from urllib.request import Request, urlopen
 
 
@@ -86,11 +87,12 @@ def fetch(
         raise GeoCSVFetchError before any file download or directory creation.
     base_url : str
         HTTP(S) collection URL containing ``latest.json`` and ``releases/``.
-        Required while production hosting is undecided. A trailing slash is
+        Required while production hosting is not deployed. A trailing slash is
         optional. HTTP supports local testing; use HTTPS for public hosting.
     output_dir : path-like or None, optional
         Default "." saves files and the original ``manifest.json`` beneath
-        ``<output_dir>/<release_id>/``. Missing directories are created.
+        ``<output_dir>/<release_component>/``. The component is the release ID
+        with colons percent-encoded as ``%3A``. Missing directories are created.
         None retains file bytes and manifests in memory without writing files.
         Existing identical files are verified and reused; differing files or
         manifests raise FileExistsError and are never overwritten. There is no
@@ -98,6 +100,9 @@ def fetch(
     release : str, optional
         An explicit release ID bypasses latest. None resolves latest once for
         the whole operation. Unavailable releases never fall back to another.
+        Pass UTC timestamps as ``YYYY-MM-DDTHH:MM:SS[.digits]Z``, retaining
+        their exact spelling. Plain ASCII token IDs such as ``test-001`` are
+        also supported. Pass the literal ID, not its URL-encoded spelling.
     timeout : float, optional
         Positive finite socket timeout in seconds, default 30; not a total
         batch deadline. Downloads are sequential.
@@ -151,14 +156,16 @@ def fetch(
     if release is None:
         pointer, _ = _get_json(urljoin(base_url, "latest.json"), timeout)
         release = pointer.get("release_id")
-        _check_component(release, "latest release_id")
-        if pointer.get("manifest") != f"releases/{release}/manifest.json":
+        if not _is_release_id(release):
+            raise GeoCSVFetchError("latest release_id must be a plain token or UTC timestamp")
+        if pointer.get("manifest") != f"releases/{quote(release, safe='')}/manifest.json":
             raise GeoCSVFetchError("latest manifest path must identify its selected release")
     else:
-        if not _is_component(release):
-            raise ValueError("release must be a nonempty, plain URL path component")
+        if not _is_release_id(release):
+            raise ValueError("release must be a plain token or UTC timestamp")
 
-    manifest_url = urljoin(base_url, f"releases/{release}/manifest.json")
+    release_component = quote(release, safe="")
+    manifest_url = urljoin(base_url, f"releases/{release_component}/manifest.json")
     manifest, manifest_bytes = _get_json(manifest_url, timeout)
     entries = _check_manifest(manifest, release, manifest_url)
     if pointer is not None and (type(pointer.get("testing_only")) is not bool
@@ -173,7 +180,7 @@ def fetch(
 
     directory = None
     if output_dir is not None:
-        directory = Path(output_dir).resolve() / release
+        directory = Path(output_dir).resolve() / release_component
         directory.mkdir(parents=True, exist_ok=True)
         manifest_path = directory / "manifest.json"
         if manifest_path.exists():
@@ -225,6 +232,21 @@ def fetch(
 def _is_component(value) -> bool:
     return (isinstance(value, str) and value not in {".", ".."}
             and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", value) is not None)
+
+
+def _is_release_id(value) -> bool:
+    if _is_component(value):
+        return True
+    if (not isinstance(value, str)
+            or re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+                            r"(?:\.[0-9]+)?Z", value) is None):
+        return False
+    try:
+        # Validate the calendar/time without reformatting or rounding the ID.
+        datetime.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
 
 
 def _check_component(value, label: str) -> None:

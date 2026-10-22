@@ -4,12 +4,14 @@ Design agreed 2026-10-22. This is an implementation plan, not an operational
 hosting service. The public collection base is planned as
 `https://bathymetrix.com/geocsv/`. The main website remains independently
 maintained; large GeoCSV payloads live in object storage rather than Git.
-Cloudflare R2 and a Worker route for `/geocsv/*` are the proposed implementation.
+Cloudflare R2 and a Worker route for `/geocsv/*` are a proposed implementation;
+the provider remains subject to review of the existing website hosting.
 
 The snapshot creator, full-archive validator, publisher and Worker paths below
-are **planned**. They have not been implemented. Existing `geocsv.fetch` supports
-the earlier manifest protocol, but needs coordinated timestamp-ID/path handling
-before this design can be deployed. Nothing in this document authorizes
+are **planned**. They have not been implemented. `geocsv.fetch` supports the
+timestamp release/path contract below as of package version 0.24.0. The website
+must implement that contract, and full-archive validation remains to be built.
+Nothing in this document authorizes
 modification of protected processed inputs, publication, or a package release.
 
 ## Release identity and unchanged historical data
@@ -34,11 +36,62 @@ inventory under that same ID raise, including comment-only changes. Corrections
 therefore need a new upstream run timestamp. Do not regenerate or overwrite an
 existing release manifest simply to change its publication metadata.
 
-The current fetcher rejects colons in release IDs. Preserve the literal
-timestamp as `release_id` and define a shared, lossless URL/filesystem-safe
-representation, called `release_component` below. Its exact encoding and
-round-trip rules must be settled and implemented in both repositories before
-publication. It is a representation of the timestamp, not another release ID.
+## Release path contract
+
+Keep the literal timestamp as `release_id` in JSON, fetch arguments and returned
+provenance. Production timestamps use `YYYY-MM-DDTHH:MM:SS[.digits]Z`, with a
+valid calendar date, hours 00–23 and seconds 00–59. Preserve every fractional
+digit; do not parse and reformat the identity. The client also retains support
+for plain ASCII token IDs such as `test-001` for illustrative test collections.
+It verifies the manifest protocol, sizes and hashes, without interpreting each
+GeoCSV's `#created`; snapshot-wide timestamp validation belongs to the publisher.
+
+Define `release_component = urllib.parse.quote(release_id, safe="")`. In the
+accepted timestamp grammar this changes only `:` to uppercase `%3A`. A client
+must receive the literal ID, not an already encoded value. This representation
+is lossless: decoding once recovers the identical ID, including fractional
+digits. Equivalent instants with different fractional spellings are different
+IDs; the publisher must require exact source spelling agreement.
+
+For `release_id = "2026-10-21T22:48:33.277Z"`:
+
+| Context | Representation |
+| --- | --- |
+| JSON `release_id`, fetch `release`, returned provenance | `2026-10-21T22:48:33.277Z` |
+| URL component and downloaded local directory name | `2026-10-21T22%3A48%3A33.277Z` |
+| Object key or server-side release directory | `2026-10-21T22:48:33.277Z` |
+
+URLs contain the encoded component; storage keys contain the literal ID. Decode
+the URL path **exactly once** when resolving the object key. Do not store `%3A`
+in object keys or encode `%` again as `%25`. Local download directories retain
+the encoded spelling so they contain no Windows-invalid colons. The publisher's
+external staging/report workspace uses that same encoded directory spelling.
+The storage provider may change without changing this public contract.
+
+The latest pointer must use the exact encoded relative manifest path:
+
+```json
+{
+  "release_id": "2026-10-21T22:48:33.277Z",
+  "testing_only": false,
+  "manifest": "releases/2026-10-21T22%3A48%3A33.277Z/manifest.json"
+}
+```
+
+The immutable manifest contains the same literal `release_id`, boolean
+`testing_only`, and a `files` array. Each entry requires a unique nonempty
+`instrument_id`, unique `filename`, nonnegative integer `size_bytes`, lowercase
+64-hex-digit `sha256`, and a `provenance` object. For production, each filename is
+`{instrument_id}.geocsv`. Filenames start with an ASCII letter or digit and use
+only ASCII letters, digits, `.`, `_`, and `-`; `manifest.json` is reserved.
+Checksums and sizes describe complete uncompressed GeoCSV bytes. Descriptive
+fields are retained verbatim without becoming filesystem instructions. No new
+`release_component` JSON field is needed; it is derived from `release_id`.
+
+The client pins latest once or bypasses it for an explicit ID, requires exact
+manifest identity and test-flag agreement, and never falls back to another
+release. These rules apply to any chosen host. The existing website test-token
+collection remains compatible; its documentation needs the production addition.
 
 ## Workflow diagram
 
@@ -89,7 +142,7 @@ flowchart TB
     candidate --> publish
     accepted -->|no| stop
 
-    stored["R2: geocsv/releases/{release_component}/<br/>GeoCSV files, then manifest.json and validation.json"]
+    stored["Object keys: geocsv/releases/{literal release_id}/<br/>GeoCSV files, then manifest.json and validation.json<br/>R2 proposed"]
     verify["Verify public HTTPS bytes and hashes<br/>run geocsv.fetch with the explicit release ID"]
     healthy{"Remote checks pass?"}
     activate["Replace geocsv/latest.json last"]
@@ -100,7 +153,7 @@ flowchart TB
     healthy -->|yes| activate
 
     subgraph public["bathymetrix.com — planned public Worker route"]
-        worker["../bathymetrix-site/workers/geocsv/src/index.js<br/>planned: route /geocsv/* to R2; stream payloads"]
+        worker["../bathymetrix-site/workers/geocsv/src/index.js<br/>planned: decode URL once to literal object key; stream payloads"]
         latest["/geocsv/latest/{instrument_id}.geocsv<br/>temporary redirect to the selected immutable release"]
         client["geocsv.fetch reads /geocsv/latest.json once<br/>then one immutable manifest and its selected files"]
         worker --> latest
@@ -163,6 +216,14 @@ The existing [full-history fixture checker](../scripts/fixtures/check_full_histo
 checks 18 sampled waveform associations. It is not the proposed complete-corpus
 validator and cannot satisfy the publication gate by itself.
 
+Website staging and hosting implementation can start against the documented
+0.24.0 fetch contract without another client API change. Work still owned here
+before publication is the full-archive validator, its concrete report format,
+and a complete archive run. The website publisher must consume that report
+without a temporary acceptance bypass. Real HTTPS integration checks follow
+once a host is available. Keeping `base_url` explicit is supported; choosing a
+production default is optional and does not block the website.
+
 ## Implementation checklist
 
 These boxes track implementation, not approval of the design. No production
@@ -170,9 +231,11 @@ hosting component below is implemented by this documentation change.
 
 ### 1. Coordinate the contract
 
-- [ ] **Both repositories:** specify and test the exact timestamp-ID encoding
-  for manifests, URLs, object keys and local output directories, including
-  round trips and preservation of fractional digits.
+- [x] **This repository:** specify and test literal timestamp identity, encoded
+  URLs/local directories, and literal server/object keys, including fractional
+  digits and rejection of invalid or already encoded IDs (0.24.0).
+- [ ] **Website:** adopt the release path contract above in staging, manifests,
+  URL routing and object-key lookup; verify exactly one URL decoding step.
 - [ ] **Website:** update `data/geocsv/testing/CONTRACT.md` to distinguish the
   existing test protocol from the agreed production layout and ownership.
 - [ ] **Both repositories:** fix manifest/report fields and meanings, including
@@ -227,8 +290,8 @@ hosting component below is implemented by this documentation change.
 
 ### 5. Complete client integration and launch checks
 
-- [ ] **This repository:** implement the agreed timestamp-ID/path handling in
-  `fetch`, with focused tests, a version bump and synchronized fetch tutorials.
+- [x] **This repository:** implement timestamp-ID/path handling in `fetch`, with
+  focused tests, version 0.24.0 and synchronized fetch tutorials.
 - [ ] Verify explicit release pinning and default latest selection against the
   real HTTPS endpoint, including one/all instruments and disk/memory downloads.
 - [ ] Verify checksums, manifests and provenance survive `fetch → read`, and a

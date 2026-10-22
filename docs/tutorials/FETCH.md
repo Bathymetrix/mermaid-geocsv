@@ -29,7 +29,7 @@ the repository root, `docs/`, or `docs/tutorials/`.
 
 ## 1. Start a temporary local test collection
 
-Production hosting is undecided. This standalone example serves tracked
+Production hosting is not deployed. This standalone example serves tracked
 P0006 and P0045 fixtures over loopback HTTP using only the standard library.
 It creates an illustrative `test-001` release in a temporary directory; this is not a
 published scientific release. The context manager stops the server and removes
@@ -44,6 +44,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from threading import Thread
+from urllib.parse import quote
 
 from mermaid import geocsv
 
@@ -56,11 +57,11 @@ fixture_path = repository_root / "data/fixtures/P0006/P0006.geocsv"
 
 
 @contextmanager
-def local_collection():
+def local_collection(release_id="test-001"):
     with TemporaryDirectory(prefix="geocsv-tutorial-") as temporary:
         directory = Path(temporary)
         server_root = directory / "server"
-        release_directory = server_root / "releases/test-001"
+        release_directory = server_root / "releases" / release_id
         release_directory.mkdir(parents=True)
         entries = []
         for instrument in ("P0006", "P0045"):
@@ -74,15 +75,15 @@ def local_collection():
                 "provenance": {"notes": "Unmodified tracked test fixture"},
             })
         manifest = {
-            "release_id": "test-001", "testing_only": True,
+            "release_id": release_id, "testing_only": True,
             "files": entries,
         }
         (release_directory / "manifest.json").write_text(
             json.dumps(manifest), encoding="utf-8",
         )
         (server_root / "latest.json").write_text(json.dumps({
-            "release_id": "test-001", "testing_only": True,
-            "manifest": "releases/test-001/manifest.json",
+            "release_id": release_id, "testing_only": True,
+            "manifest": f"releases/{quote(release_id, safe='')}/manifest.json",
         }), encoding="utf-8")
         handler = partial(SimpleHTTPRequestHandler, directory=str(server_root))
         with ThreadingHTTPServer(("127.0.0.1", 0), handler) as server:
@@ -162,13 +163,32 @@ assert pinned[0].content == downloads[0].content
 help(geocsv.fetch)
 ```
 
+Production release IDs retain the exact upstream UTC `#created` timestamp.
+Pass the literal timestamp to `release`; URLs and local directory names encode
+its colons as `%3A`. Fractional digits are preserved without rounding or padding.
+This local demonstration uses the same fixture bytes under a timestamp ID;
+it does not implement the publisher's snapshot-wide `#created` validation:
+
+```python
+release_id = "2026-10-21T22:48:33.277Z"
+with local_collection(release_id) as (collection_url, output_directory):
+    timestamp_saved = geocsv.fetch("P0006", base_url=collection_url,
+                                   release=release_id, output_dir=output_directory)
+    timestamp_latest = geocsv.fetch("P0006", base_url=collection_url,
+                                    output_dir=None)
+    assert timestamp_saved[0].path.parent.name == "2026-10-21T22%3A48%3A33.277Z"
+    assert timestamp_saved[0].provenance.release_id == release_id
+    assert timestamp_latest[0].provenance.release_id == release_id
+    assert timestamp_latest[0].content == timestamp_saved[0].path.read_bytes()
+```
+
 The full signature is
 `fetch(instrument_ids=None, *, base_url, output_dir=".", release=None, timeout=30)`.
 For an actual collection, supply its publisher-provided URL as `base_url`.
 The local fixture provenance is documented in the
 [fixture notes](../../data/fixtures/P0006/README.md).
 
-Production hosting is undecided, so `base_url` is required. It must be an
+Production hosting is not deployed, so `base_url` is required. It must be an
 HTTP(S) collection URL without query parameters or a fragment; a trailing slash
 is optional. Use HTTPS for public hosting. The example above uses a temporary
 local test endpoint, not a published scientific data release. It needs neither the website
@@ -186,8 +206,8 @@ for one file. Each has `provenance` and exactly one of:
 
 | Storage | Result field | Behavior |
 | --- | --- | --- |
-| `output_dir="."` (default) | `path` | Absolute path under the current working directory's `<release_id>/` |
-| Explicit output directory | `path` | Absolute path under `<output_dir>/<release_id>/`; missing directories are created |
+| `output_dir="."` (default) | `path` | Absolute path under the current working directory's `<release_component>/` |
+| Explicit output directory | `path` | Absolute path under `<output_dir>/<release_component>/`; missing directories are created |
 | `output_dir=None` | `content` | Verified GeoCSV bytes retained in memory; no files or directories written |
 
 Disk output includes the exact release `manifest.json` alongside the selected
@@ -262,20 +282,21 @@ same immutable provenance for the uniquely matched dataset.
 
 ## Release protocol and failures
 
-The initial protocol follows the website's shared download agreement at
-`bathymetrix-site/data/geocsv/testing/CONTRACT.md`. The website chat owns hosting,
-publication, URLs, and manifests; the package chat owns this client. Changes to
-the protocol require coordination. The collection layout is:
+The initial test protocol is recorded at
+`bathymetrix-site/data/geocsv/testing/CONTRACT.md`. The production timestamp
+contract is recorded in the [hosting plan](../HOSTING.md#release-path-contract).
+The website owns hosting, publication, URLs, and manifests; this package owns
+the client. Changes require coordination. The URL layout is:
 
 ```text
 latest.json
-releases/<release_id>/manifest.json
-releases/<release_id>/<filename>
+releases/<release_component>/manifest.json
+releases/<release_component>/<filename>
 ```
 
 For latest selection, fetch `latest.json` once, read its `release_id`,
 `testing_only`, and `manifest`, and require that manifest path to be
-`releases/<release_id>/manifest.json`. Fetch that manifest once and require its
+`releases/<release_component>/manifest.json`. Fetch that manifest once and require its
 release ID and test flag to agree. Every requested file comes from that one
 inventory, so latest cannot change the selected release between files.
 An explicit `release` requests its manifest directly and never consults latest
@@ -287,9 +308,15 @@ these are retained without interpreting them as observation coverage or
 publication evidence. Each file entry requires a nonempty string
 `instrument_id`, `filename`, nonnegative integer `size_bytes`, lowercase
 64-digit hexadecimal `sha256`, and a `provenance` object. Instrument IDs and
-filenames must be unique. Release IDs and filenames must be plain components
-starting with an ASCII letter or digit and containing only ASCII letters,
-digits, dots, underscores, and hyphens; `.` and `..` are excluded. A filename
+filenames must be unique. Release IDs accept either a plain ASCII token or a
+valid UTC timestamp `YYYY-MM-DDTHH:MM:SS[.digits]Z`; timestamps use valid calendar
+dates, hours 00–23 and seconds 00–59. Literal IDs are retained in manifests and
+provenance. URL/local `release_component` is `quote(release_id, safe="")`:
+colons become uppercase `%3A`, and fractional digits retain their exact spelling.
+Do not supply a pre-encoded ID, normalize equivalent timestamps, or decode local
+directory names before opening them. Plain tokens and filenames start with an
+ASCII letter or digit and contain only ASCII letters, digits, dots, underscores,
+and hyphens; `.` and `..` are excluded. A filename
 cannot be `manifest.json`. This prevents remote declarations from escaping the
 selected local release directory. Source provenance paths are descriptive;
 the downloader does not open them. Unknown manifest fields are retained in the
@@ -328,7 +355,8 @@ policy; association diagnostics now identify memory-fetched sources by URL.
 ## Fixture coverage
 
 These examples exercise memory retrieval, disk retrieval and reuse, release
-pinning, and download provenance using real P0006 and P0045 GeoCSV payloads
+pinning, literal timestamp IDs with encoded paths, and download provenance using
+real P0006 and P0045 GeoCSV payloads
 served as a temporary test release. Assertions distinguish explicit reverse
 selection order, manifest discovery order, and a one-instrument selection,
 then verify the station and provenance of each parsed table. No public

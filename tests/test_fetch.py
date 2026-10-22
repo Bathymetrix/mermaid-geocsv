@@ -9,6 +9,7 @@ from pathlib import Path
 import shutil
 from threading import Thread
 from types import SimpleNamespace
+from urllib.parse import quote, unquote
 
 import pandas as pd
 import pytest
@@ -83,6 +84,84 @@ def collection(tmp_path):
 
 def update_manifest(collection):
     collection.manifest_path.write_text(json.dumps(collection.manifest), encoding="utf-8")
+
+
+@pytest.mark.parametrize("release,memory,pinned", [
+    ("2026-10-21T22:48:33Z", False, False),
+    ("2026-10-21T22:48:33.277Z", True, True),
+    ("2026-10-21T22:48:33.277000000001Z", False, True),
+])
+def test_timestamp_release_identity_urls_and_storage(collection, release, memory, pinned):
+    component = quote(release, safe="")
+    # An HTTP server decodes the URL once: storage uses the literal timestamp.
+    directory = collection.root / "releases" / release
+    collection.directory.rename(directory)
+    collection.manifest["release_id"] = release
+    manifest_path = directory / "manifest.json"
+    manifest_path.write_text(json.dumps(collection.manifest), encoding="utf-8")
+    pointer = collection.root / "latest.json"
+    if pinned:
+        pointer.unlink()
+    else:
+        pointer.write_text(json.dumps({
+            "release_id": release, "testing_only": True,
+            "manifest": f"releases/{component}/manifest.json",
+        }), encoding="utf-8")
+
+    result, = geocsv.fetch("P0006", base_url=collection.url,
+                           output_dir=None if memory else collection.client,
+                           release=release if pinned else None)
+    assert result.provenance.release_id == release
+    assert result.provenance.manifest == manifest_path.read_bytes()
+    assert result.provenance.manifest_url == collection.url + f"releases/{component}/manifest.json"
+    assert result.provenance.url == collection.url + f"releases/{component}/P0006.geocsv"
+    expected_requests = [f"/releases/{component}/manifest.json",
+                         f"/releases/{component}/P0006.geocsv"]
+    assert collection.requests == ([] if pinned else ["/latest.json"]) + expected_requests
+    if memory:
+        assert result.content == (directory / "P0006.geocsv").read_bytes()
+        assert list(collection.client.iterdir()) == []
+    else:
+        assert result.path.parent.name == component
+        assert unquote(result.path.parent.name) == release
+        assert ":" not in result.path.parent.name
+        assert result.path.read_bytes() == (directory / "P0006.geocsv").read_bytes()
+        assert (result.path.parent / "manifest.json").read_bytes() == result.provenance.manifest
+    frame, = geocsv.read(result)
+    assert frame.attrs["geocsv"].download.release_id == release
+
+
+@pytest.mark.parametrize("release", [
+    "2026-02-30T22:48:33Z", "2026-10-21T24:48:33Z",
+    "2026-10-21T22:48:60Z", "2026-10-21T22:48:33+00:00",
+    "2026-10-21T22%3A48%3A33Z", "2026-10-21T22:48:33Z/../escape",
+    "2026-10-21T22:48:33Z?query", "2026-10-21T22:48:33Z#fragment",
+])
+def test_invalid_timestamp_release_rejected_from_arguments_and_pointer(collection, release):
+    with pytest.raises(ValueError, match="release"):
+        geocsv.fetch(base_url=collection.url, release=release, output_dir=collection.client)
+    assert collection.requests == []
+    (collection.root / "latest.json").write_text(json.dumps({
+        "release_id": release, "testing_only": True,
+        "manifest": "releases/invalid/manifest.json",
+    }), encoding="utf-8")
+    with pytest.raises(geocsv.GeoCSVFetchError, match="latest release_id"):
+        geocsv.fetch(base_url=collection.url, output_dir=collection.client)
+    assert collection.requests == ["/latest.json"]
+    assert list(collection.client.iterdir()) == []
+
+
+@pytest.mark.parametrize("component", ["2026-10-21T22:48:33.277Z",
+                                       "2026-10-21T22%253A48%253A33.277Z"])
+def test_latest_requires_exactly_once_encoded_timestamp_path(collection, component):
+    (collection.root / "latest.json").write_text(json.dumps({
+        "release_id": "2026-10-21T22:48:33.277Z", "testing_only": True,
+        "manifest": f"releases/{component}/manifest.json",
+    }), encoding="utf-8")
+    with pytest.raises(geocsv.GeoCSVFetchError, match="manifest path"):
+        geocsv.fetch(base_url=collection.url, output_dir=collection.client)
+    assert collection.requests == ["/latest.json"]
+    assert list(collection.client.iterdir()) == []
 
 
 def test_memory_all_real_fixture_and_metadata(collection, monkeypatch):

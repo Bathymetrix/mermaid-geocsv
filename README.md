@@ -55,6 +55,10 @@ metadata = records.attrs["geocsv"]
 | [`geocsv.associate(...)`](docs/tutorials/ASSOCIATE.md) | Attach uniquely matched event metadata and coordinates to an ObsPy Trace or Stream in place; returns `None`. |
 | [`geocsv.write_sac(trace, path)`](docs/tutorials/WRITE_SAC.md) | Export one associated MiniSEED-derived waveform to a new SAC file; returns `None` and leaves the trace unchanged. |
 
+Fetch accepts literal UTC timestamp release IDs, preserving their exact spelling
+in provenance and manifests. URL paths and local release directories encode
+colons as `%3A`; see the [hosting contract](docs/HOSTING.md#release-path-contract).
+
 Fetching and reading do not require ObsPy. Association defaults to original
 segments, with an inclusive 1 ms absolute start tolerance and source-rate
 agreement within 0.00001 Hz. With `allow_first_segment=True`, clipped or combined windows may use
