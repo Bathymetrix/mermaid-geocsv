@@ -282,8 +282,8 @@ same immutable provenance for the uniquely matched dataset.
 
 ## Release protocol and failures
 
-The initial test protocol is recorded at
-`bathymetrix-site/data/geocsv/testing/CONTRACT.md`. The production timestamp
+The publication and download contract is recorded at
+`bathymetrix-site/docs/GEOCSV_CONTRACT.md`. The production timestamp
 contract is recorded in the [hosting plan](../HOSTING.md#release-path-contract).
 `bathymetrix-site` owns snapshot creation, full-archive validation, acceptance
 reports, publication, hosting, URLs and manifests. Its validator uses this

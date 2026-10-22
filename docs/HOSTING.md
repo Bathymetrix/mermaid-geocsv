@@ -20,7 +20,7 @@ this document authorizes modification of protected processed inputs,
 publication, or a package release.
 
 The [website implementation and deployment runbook](../../bathymetrix-site/docs/GEOCSV_HOSTING.md)
-and [publication contract](../../bathymetrix-site/data/geocsv/testing/CONTRACT.md)
+and [publication contract](../../bathymetrix-site/docs/GEOCSV_CONTRACT.md)
 record the website's local implementation, concrete report schema and archive
 results. Validation and publication are both website-owned.
 
@@ -44,9 +44,8 @@ verification-tool user agent pass. The fetch client and publisher use urllib
 without an explicit user agent. Cloudflare Security Events identified Browser
 Integrity Check as the blocking feature. The proposed configuration rule disables
 only BIC for public GET/HEAD requests on apex/www under `/geocsv/`, retaining
-the existing policy elsewhere. The legacy `/data/geocsv/testing/` collection is
-outside this exception and production hosting verification. Deployment and
-normal-client verification remain pending. Verify the unmodified fetch client
+the existing policy elsewhere. Deployment and normal-client verification
+remain pending. Verify the unmodified fetch client
 against an illustrative release under `/geocsv/` after R2/Worker test hosting
 is prepared, before production data publication. This is an edge policy adjustment;
 package HTTP behavior remains unchanged. Keep actual rule/account configuration
@@ -150,8 +149,7 @@ fields are retained verbatim without becoming filesystem instructions. No new
 
 The client pins latest once or bypasses it for an explicit ID, requires exact
 manifest identity and test-flag agreement, and never falls back to another
-release. These rules apply to any chosen host. The existing website test-token
-collection remains compatible.
+release. These rules apply to any chosen host.
 
 ## Workflow diagram
 
@@ -323,8 +321,8 @@ GeoCSV hosting and production publication remain inactive.
   digits and rejection of invalid or already encoded IDs (0.24.0).
 - [x] **Website:** adopt timestamp identity, encoded URLs, literal object keys,
   exact-byte manifest fields and relative source provenance in local code/tests.
-- [x] **Website:** extend `data/geocsv/testing/CONTRACT.md` with production paths
-  while retaining the unchanged illustrative test collection.
+- [x] **Website:** document production paths and the publication/download
+  protocol in `docs/GEOCSV_CONTRACT.md`.
 - [x] **Website:** update the runbook, contract and diagram to place archive
   validation, its report format and acceptance gate in `scripts/geocsv/`.
 - [x] **Website:** require an explicit serial-to-ID inventory, validate Station
