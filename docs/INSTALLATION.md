@@ -31,6 +31,15 @@ classifiers. `Requires-Python >=3.11` sets the installation minimum; it does not
 certify untested future Python versions. Supporting 3.11 also means package
 code must use syntax and standard-library APIs available in that version.
 
+Each CI job also builds the universal pure-Python wheel, installs it with that
+job's dependencies in a fresh environment, and runs
+[`scripts/check_wheel.py`](../scripts/check_wheel.py) outside the checkout in
+Python's isolated mode. The check verifies the installed import location and
+version, lazy ObsPy loading, and a real-data `read → associate → write_sac`
+round trip with sample, timing, identity and coordinate checks. Fixtures remain
+external test inputs; they are not needed in the installed package. The check
+does not contact EarthScope or require production GeoCSV hosting.
+
 ## Minimal parser installation
 
 Install the parser and its required dependency, pandas 2.2 or newer:

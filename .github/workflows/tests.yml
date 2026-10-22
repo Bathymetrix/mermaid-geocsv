@@ -41,3 +41,15 @@ jobs:
         run: python -m pip install ".[dev,obspy]" "$PANDAS_REQUIREMENT" "$NUMPY_REQUIREMENT" "$OBSPY_REQUIREMENT"
       - name: Run tests
         run: python -m pytest -q
+      - name: Build and smoke-test installed wheel
+        env:
+          PANDAS_REQUIREMENT: ${{ matrix.pandas }}
+          NUMPY_REQUIREMENT: ${{ matrix.numpy }}
+          OBSPY_REQUIREMENT: ${{ matrix.obspy }}
+        run: |
+          python -m pip wheel --no-deps --wheel-dir "$RUNNER_TEMP/geocsv-wheels" .
+          python -m venv "$RUNNER_TEMP/geocsv-wheel-env"
+          wheel_python="$RUNNER_TEMP/geocsv-wheel-env/bin/python"
+          "$wheel_python" -m pip install "$RUNNER_TEMP"/geocsv-wheels/*.whl "$PANDAS_REQUIREMENT" "$NUMPY_REQUIREMENT" "$OBSPY_REQUIREMENT"
+          cd "$RUNNER_TEMP"
+          "$wheel_python" -I "$GITHUB_WORKSPACE/scripts/check_wheel.py" "$GITHUB_WORKSPACE/data/fixtures/association"
