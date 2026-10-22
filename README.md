@@ -75,7 +75,9 @@ not reconstruct acquisition lineage. Production GeoCSV hosting is still pending.
 Associate the final downloaded/clipped/combined window before export. Avoid
 changing its samples, start, count, or sampling rate after association. SAC
 output has float32 precision and no
-serialized GeoCSV provenance; nonfinite or unrepresentable values and identity
+serialized GeoCSV provenance. Association provenance is guaranteed only in
+memory; users may write their own sidecars in any format. Nonfinite or
+unrepresentable values and identity
 codes that cannot survive SAC storage are rejected. No response correction or
 counts-to-pressure calibration is supplied.
 

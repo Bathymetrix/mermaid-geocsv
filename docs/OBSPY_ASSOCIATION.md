@@ -148,6 +148,11 @@ waveform grid is supported, not proof that these rows were actually concatenated
 or supplied particular values in an overlap. Arbitrary GeoCSV reports are not
 serialized into SAC or MiniSEED headers.
 
+Association provenance is guaranteed only in this in-memory attachment at
+initial association. Users may persist it in sidecars in any format they
+choose. Sidecar creation, format, fidelity and later restoration are the user's
+responsibility; the package provides no sidecar writer or round-trip guarantee.
+
 ### Adopted sea-level reference
 
 `stats.coordinates.elevation = 0.0` is an explicit marine MERMAID convention

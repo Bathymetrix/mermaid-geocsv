@@ -102,6 +102,9 @@ Association is a nested AttribDict report with a fresh waveform snapshot,
 chronological source coverage descriptions/ranges, signed waveform-start offset,
 and maximum measured grid/rate differences. Follow the schema in
 `docs/OBSPY_ASSOCIATION.md`; do not store input tolerances or a segment ordinal.
+Association provenance is guaranteed only in the in-memory attachment at initial
+association. Users may write sidecars in any format; package-managed sidecar
+writing, schemas and persistence guarantees are outside the v1 scope.
 
 Retain DET Q and REQ D as useful lineage/validation evidence, independent of
 rate. Loss of these distinctions in EarthScope M data, overlaps, contiguity,
