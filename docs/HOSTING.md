@@ -10,8 +10,9 @@ Keep the existing website on GitHub Pages and domain registration at Squarespace
 `bathymetrix-site` owns snapshot creation, full-archive validation, the
 acceptance-report format and gate, publication and hosting. Snapshot staging,
 the timestamp manifest contract, Worker and publisher transfer machinery are
-implemented locally there. The full-archive validator and report protocol remain
-to be implemented there; production publication is blocked until they pass.
+implemented locally there. The full-archive validator, version 2 report protocol and acceptance gate are
+implemented locally there. Production publication requires a complete passing
+archive report bound to the frozen candidate and current inputs/code.
 No hosting infrastructure has been deployed. `geocsv.fetch` supports the
 timestamp release/path contract below as of package version 0.24.0. Nothing in
 this document authorizes modification of protected processed inputs,
@@ -19,17 +20,16 @@ publication, or a package release.
 
 The [website implementation and deployment runbook](../../bathymetrix-site/docs/GEOCSV_HOSTING.md)
 and [publication contract](../../bathymetrix-site/data/geocsv/testing/CONTRACT.md)
-record the website's local implementation. Their existing package-owned
-validator references need synchronization with the ownership defined here.
+record the website's local implementation, concrete report schema and archive
+results. Validation and publication are both website-owned.
 
 ## Current website and DNS
 
-The domain is registered with Squarespace. The website is hosted on GitHub
-Pages, with a custom CNAME target of `bathymetrix.github.io`. The Squarespace
-preset is inactive; custom DNS records provide the working configuration.
-DNS is managed through Squarespace, with authoritative nameservers
-`ns-cloud-c1.googledomains.com` through `ns-cloud-c4.googledomains.com`.
-Configuration verified on 2026-10-22; recheck before deployment.
+Domain registration remains at Squarespace and the website is hosted on GitHub
+Pages. Current authoritative nameservers, website/email records and DNSSEC state
+must be confirmed privately before migration. Actual operational inventories,
+exports, account context and deployment configuration stay outside repositories;
+tracked procedures use placeholders.
 
 The chosen same-host `/geocsv/*` Worker route requires a Cloudflare zone and a
 proxied DNS record for the hostname; a DNS CNAME cannot route a URL subpath.
@@ -40,6 +40,14 @@ Prepare the complete migration/deployment steps before any live changes.
 Selecting R2 does not itself activate a DNS migration or publish the data.
 See Cloudflare's [Worker routing requirements](https://developers.cloudflare.com/workers/best-practices/workers-best-practices/#set-up-custom-domains-or-routes-correctly)
 and [primary DNS setup](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/).
+
+## Recordless sources and validation scope
+
+Data-recordless GeoCSV sources are never staged or published. The website keeps
+a deterministic local-only staging inventory with explicit exclusions/reasons
+and checks for hidden unexamined waveform inputs. That sidecar is not uploaded.
+The report binds its hash separately from the published manifest. `.mhpsd`
+spectra are outside the original MiniSEED/SAC validation scope and are not counted.
 
 ## Release identity and unchanged historical data
 
@@ -145,10 +153,10 @@ flowchart TB
 
     subgraph website["../bathymetrix-site/ — complete publication workflow"]
         create["scripts/geocsv/create_snapshot.py<br/>implemented locally: verbatim staging and inventory"]
-        validate["scripts/geocsv/validate_snapshot.py<br/>planned: compare every original waveform pair"]
+        validate["scripts/geocsv/validate_snapshot.py<br/>implemented: compare every original waveform pair"]
         consistent{"One common #created<br/>and valid, unique instrument IDs?"}
         publish["scripts/geocsv/publish_snapshot.py<br/>local preflight and transfer machinery implemented"]
-        accepted{"Website-owned report protocol implemented?<br/>Report covers these exact bytes?<br/>Gate currently blocks every report"}
+        accepted{"Version 2 report complete and passing?<br/>Exact candidate, source inventory and code versions?"}
         create --> consistent
         publish --> accepted
     end
@@ -175,7 +183,10 @@ flowchart TB
     verify["Verify public HTTPS bytes and hashes<br/>run geocsv.fetch with the explicit release ID"]
     healthy{"Remote checks pass?"}
     activate["Replace geocsv/latest.json last"]
-    accepted -. future accepted report or identical retry .-> stored
+    recheck["Recheck accepted candidate and report bytes"]
+    accepted -->|accepted report or identical retry| recheck
+    recheck -->|changed| stop
+    recheck -->|unchanged| stored
     stored --> verify
     verify --> healthy
     healthy -->|no| stop
@@ -208,9 +219,9 @@ pointer cache bypass and immutable-object caching are hosting responsibilities.
 | --- | --- | --- |
 | `../automaid/` | `scripts/main.py`, `scripts/geocsv.py`, `scripts/events.py`: create scientific outputs and their run timestamp | Existing |
 | `../bathymetrix-site/` | `scripts/geocsv/create_snapshot.py`, private `snapshot.py`: stage verbatim bytes, validate the explicit serial-to-ID inventory, enforce one timestamp and freeze the manifest | Implemented locally |
-| `../bathymetrix-site/` | `scripts/geocsv/validate_snapshot.py`: validate every original MiniSEED/SAC pair and produce the concrete acceptance report | Planned |
-| `../bathymetrix-site/` | `scripts/geocsv/publish_snapshot.py`: preflight, upload, verify and activate | Local preflight/transfer machinery implemented; acceptance gate rejects every report |
-| `../bathymetrix-site/` | Concrete versioned report format and `require_scientific_acceptance` | Planned; implement alongside the validator in the website repository |
+| `../bathymetrix-site/` | `scripts/geocsv/validate_snapshot.py`: validate every original MiniSEED/SAC pair and produce the concrete acceptance report | Implemented locally; full archive results recorded in website documentation |
+| `../bathymetrix-site/` | `scripts/geocsv/publish_snapshot.py`: preflight, upload, verify and activate | Implemented locally with versioned scientific acceptance and exact input rechecks |
+| `../bathymetrix-site/` | `scripts/geocsv/acceptance.py`: version 2 report format and `require_scientific_acceptance` | Implemented locally alongside the validator |
 | `../bathymetrix-site/` | `workers/geocsv/src/index.js`, `geocsv/index.html`: public routing, streaming, latest redirects and landing page | Implemented locally; not deployed |
 | `./` | Public `read`, `associate`, `write_sac`, `fetch` APIs and documented scientific behavior | Implemented; no publication-validator script or report schema planned here |
 
@@ -236,6 +247,14 @@ must account for documented source decimal precision and SAC float32 rounding;
 an unexpected mismatch is reported, not grounds for automatic tolerance
 widening. This covers every pair, not every producer-specific SAC header.
 
+Website report version 2 retains exact native-to-export float32 interval
+preservation and permits at most one float32 ULP against the independent SAC
+interval. This mirrors the representation-check pattern in
+`tests/test_earthscope_response.py`; it does not change association matching
+thresholds or sample-value equality. Two-step reference differences fail.
+Website coding instructions require consulting the relevant current package
+contract and verification tests rather than inventing stricter or wider rules.
+
 The machine-readable report records the release ID, exact candidate manifest
 SHA-256, all staged file hashes, the source waveform inventory/fingerprints,
 package/code/dependency versions, checks and limits, counts, measured maxima,
@@ -254,11 +273,10 @@ checks 18 sampled waveform associations. It is not the proposed complete-corpus
 validator and cannot satisfy the publication gate by itself.
 
 Website development can continue against the documented 0.24.0 fetch contract
-without another client API change. The remaining validator, concrete report
-format, acceptance adapter and complete archive run are all website-owned work;
-there is no package-owned validator/report deliverable to wait for. The
-publisher must consume its validator's report without a temporary acceptance
-bypass. The validator needs Python 3.11 or newer and this package with the ObsPy
+without another client API change. The validator, versioned report format, acceptance adapter and complete
+archive run are website-owned. The implemented publisher consumes its
+validator's complete evidence without an acceptance bypass. Scientific failures
+remain publication blockers regardless of implementation status. The validator needs Python 3.11 or newer and this package with the ObsPy
 extra. Staging's standard-library-only environment can remain separate.
 Real HTTPS integration checks follow once a host is available. Keeping
 `base_url` explicit is supported; choosing a production default is optional
@@ -266,10 +284,12 @@ and does not block the website.
 
 ## Implementation checklist
 
-These boxes distinguish reviewed local implementation from pending scientific
-acceptance and deployed verification. Website source and offline tests were
-inspected on 2026-10-22; website tests were not rerun for this documentation
-update. No live infrastructure or production release is activated.
+These boxes distinguish verified local implementation and scientific acceptance
+from pending deployed verification. On 2026-10-22, website report version 2 passed
+all 43,365 original MiniSEED/SAC pairs and the publisher's acceptance gate
+rechecked and accepted that evidence. All 32 website Python tests and nine Worker
+tests passed. The website runbook and archive findings record the full outcome.
+No live infrastructure or production release is activated.
 
 ### 1. Coordinate the contract
 
@@ -280,7 +300,7 @@ update. No live infrastructure or production release is activated.
   exact-byte manifest fields and relative source provenance in local code/tests.
 - [x] **Website:** extend `data/geocsv/testing/CONTRACT.md` with production paths
   while retaining the unchanged illustrative test collection.
-- [ ] **Website:** update the runbook, contract and diagram to place archive
+- [x] **Website:** update the runbook, contract and diagram to place archive
   validation, its report format and acceptance gate in `scripts/geocsv/`.
 - [x] **Website:** require an explicit serial-to-ID inventory, validate Station
   values, and reject unexpectedly missing previously published instruments.
@@ -292,8 +312,10 @@ update. No live infrastructure or production release is activated.
   source root and external publication workspace; run after processing finishes.
 - [x] Enforce exactly one valid `#created` per file and exact snapshot-wide
   agreement; raise on missing/repeated/mixed timestamps or ambiguous IDs.
-- [x] Copy each `geo_DET_REQ.csv` verbatim as `{instrument_id}.geocsv`, freeze
-  the sorted complete manifest, and record full-file hashes and byte counts.
+- [x] Copy each nonempty `geo_DET_REQ.csv` verbatim as `{instrument_id}.geocsv`,
+  freeze the sorted complete manifest, and record full-file hashes and byte counts.
+  Account for recordless source files in a local-only exclusion sidecar; never
+  stage or publish them. The first candidate includes 103 files and excludes nine.
 - [x] Cover identical historical rows and updated comments
   under a new shared timestamp passes; no new data row is required.
 - [x] Cover differing bytes under an existing release ID raising, while an
@@ -301,21 +323,24 @@ update. No live infrastructure or production release is activated.
 
 ### 3. Establish full-archive scientific acceptance
 
-- [ ] **Website:** implement `scripts/geocsv/validate_snapshot.py` using this
+- [x] **Website:** implement `scripts/geocsv/validate_snapshot.py` using this
   package's public APIs, complete waveform inventories and independent paired
   SAC reads. Keep this alongside creation and publication scripts.
-- [ ] **Website:** define the concrete versioned report format and implement
+- [x] **Website:** define the concrete versioned report format and implement
   `publish_snapshot.py`'s `require_scientific_acceptance` against it. Bind the
   exact candidate manifest and full file inventory with complete waveform
   accounting and explicit pass criteria; no arbitrary success flag suffices.
-- [ ] Fix comparison fields, units, missing-value rules and precision limits
+- [x] Fix comparison fields, units, missing-value rules and precision limits
   using the documented scientific contract; avoid whole-SAC equivalence claims.
-- [ ] Produce the candidate-bound validation report, complete accounting and
+- [x] Implement the candidate-bound validation report, complete accounting and
   useful failure diagnostics; leave sources unchanged and remove scratch SAC.
-- [ ] Exercise the gate with real inputs and intentional missing-pair,
+- [x] Exercise the gate with synthetic original waveforms and intentional missing-pair,
   association, sample and coordinate mismatches; failures must block publishing.
-- [ ] Run the complete local archive and resolve every failure or unsupported
-  input before accepting the first candidate. Record actual checked counts.
+- [x] Run the complete local archive: all 43,365 original waveform pairs passed
+  report version 2 and publication acceptance, with no failed, missing, unsupported
+  or unexamined pairs. Maximum independent-reference interval distance was one
+  float32 ULP; native interval error was zero. Spectra were outside scope and
+  were not counted. Future candidates require their own accepted report.
 
 ### 4. Prepare hosting and safe publication
 
@@ -339,8 +364,9 @@ update. No live infrastructure or production release is activated.
   conditional latest replacement last; scientific acceptance remains blocked.
 - [x] Cover interrupted uploads, changed candidates/reports, conflicting release
   bytes and competing activation using offline transport tests.
-- [ ] Connect the real scientific gate, validate optional SDK/deployment behavior,
-  and verify rollback to a retained release through the same acceptance rules.
+- [x] Connect the versioned scientific report gate with source/candidate rechecks.
+- [ ] Validate optional SDK/deployment behavior and verify rollback to a retained
+  release through the same acceptance rules.
 
 ### 5. Complete client integration and launch checks
 
@@ -380,7 +406,9 @@ Read-only references inspected for this plan on 2026-10-22:
   plus uncommitted local changes inspected on 2026-10-22: the production
   contract, `docs/GEOCSV_HOSTING.md`, snapshot creator/private helpers, publisher
   preflight/transfer machinery, Worker, landing page and offline tests exist.
-  Scientific acceptance still blocks every report; the validator does not yet
-  exist. Website ownership references need the update specified above.
+  The website now implements `scripts/geocsv/validate_snapshot.py` and
+  `acceptance.py`, including versioned evidence, source rechecks and focused
+  scientific rejection tests. Archive failures and launch readiness are
+  tracked separately from local implementation.
 
 These references are dated evidence, not permission to change those checkouts.
