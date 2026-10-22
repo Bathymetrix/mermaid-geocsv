@@ -14,11 +14,18 @@ GeoCSV. Take up this scope/API decision only for a concrete workflow.
 
 ## Production collection hosting
 
-Fetching is implemented, but production hosting and a default collection URL
-remain undecided. Callers supply `base_url`; the
-[fetch guide](tutorials/FETCH.md) records the provisional manifest protocol
-and a standalone local test collection. Publication belongs to the collection
-host, separate from the client package.
+Fetching and timestamp release IDs are implemented. Production hosting is
+planned at `https://bathymetrix.com/geocsv/` using R2 and a Worker; it is not yet
+deployed. Callers continue to supply `base_url`; choosing a package default
+remains optional. The [fetch guide](tutorials/FETCH.md) records the manifest
+protocol and a standalone local test collection.
+
+`bathymetrix-site` owns snapshot creation, full-archive validation, the concrete
+acceptance-report format and publisher gate, publication and hosting. Its
+validator uses this package's public `read`, `associate` and `write_sac` APIs
+with independent paired waveform references and the documented scientific
+comparison rules. No publication-validator script or report protocol is planned
+in this package. See the [hosting workflow and status](HOSTING.md).
 
 ## Associate transformed archive waveforms
 

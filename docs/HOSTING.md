@@ -7,12 +7,20 @@ maintained; large GeoCSV payloads live in object storage rather than Git.
 Cloudflare R2 and a Worker route for `/geocsv/*` were selected on 2026-10-22.
 Keep the existing website on GitHub Pages and domain registration at Squarespace.
 
-The snapshot creator, full-archive validator, publisher and Worker paths below
-are **planned**. They have not been implemented. `geocsv.fetch` supports the
-timestamp release/path contract below as of package version 0.24.0. The website
-must implement that contract, and full-archive validation remains to be built.
-Nothing in this document authorizes
-modification of protected processed inputs, publication, or a package release.
+`bathymetrix-site` owns snapshot creation, full-archive validation, the
+acceptance-report format and gate, publication and hosting. Snapshot staging,
+the timestamp manifest contract, Worker and publisher transfer machinery are
+implemented locally there. The full-archive validator and report protocol remain
+to be implemented there; production publication is blocked until they pass.
+No hosting infrastructure has been deployed. `geocsv.fetch` supports the
+timestamp release/path contract below as of package version 0.24.0. Nothing in
+this document authorizes modification of protected processed inputs,
+publication, or a package release.
+
+The [website implementation and deployment runbook](../../bathymetrix-site/docs/GEOCSV_HOSTING.md)
+and [publication contract](../../bathymetrix-site/data/geocsv/testing/CONTRACT.md)
+record the website's local implementation. Their existing package-owned
+validator references need synchronization with the ownership defined here.
 
 ## Current website and DNS
 
@@ -110,7 +118,7 @@ fields are retained verbatim without becoming filesystem instructions. No new
 The client pins latest once or bypasses it for an explicit ID, requires exact
 manifest identity and test-flag agreement, and never falls back to another
 release. These rules apply to any chosen host. The existing website test-token
-collection remains compatible; its documentation needs the production addition.
+collection remains compatible.
 
 ## Workflow diagram
 
@@ -135,11 +143,12 @@ flowchart TB
     csv --> source
     events --> waveforms
 
-    subgraph website["../bathymetrix-site/ — planned publication tools"]
-        create["scripts/geocsv/create_snapshot.py<br/>copy verbatim and inventory all instruments"]
+    subgraph website["../bathymetrix-site/ — complete publication workflow"]
+        create["scripts/geocsv/create_snapshot.py<br/>implemented locally: verbatim staging and inventory"]
+        validate["scripts/geocsv/validate_snapshot.py<br/>planned: compare every original waveform pair"]
         consistent{"One common #created<br/>and valid, unique instrument IDs?"}
-        publish["scripts/geocsv/publish_snapshot.py<br/>require passing report and recheck hashes"]
-        accepted{"Report covers these exact bytes<br/>and release ID can be published?"}
+        publish["scripts/geocsv/publish_snapshot.py<br/>local preflight and transfer machinery implemented"]
+        accepted{"Website-owned report protocol implemented?<br/>Report covers these exact bytes?<br/>Gate currently blocks every report"}
         create --> consistent
         publish --> accepted
     end
@@ -151,9 +160,10 @@ flowchart TB
     consistent -->|yes| candidate
     consistent -->|no| stop
 
-    subgraph package["./ — mermaid-geocsv; planned full-archive validator"]
-        validate["scripts/validate_snapshot.py<br/>read → associate → write_sac<br/>compare every pair using approved precision rules"]
+    subgraph package["./ — mermaid-geocsv; existing public APIs"]
+        api["src/mermaid/geocsv/<br/>read → associate → write_sac<br/>documented scientific behavior"]
     end
+    api -. called by the website validator .-> validate
     candidate --> validate
     waveforms -->|read-only| validate
     validate --> report
@@ -165,14 +175,14 @@ flowchart TB
     verify["Verify public HTTPS bytes and hashes<br/>run geocsv.fetch with the explicit release ID"]
     healthy{"Remote checks pass?"}
     activate["Replace geocsv/latest.json last"]
-    accepted -->|yes or identical retry| stored
+    accepted -. future accepted report or identical retry .-> stored
     stored --> verify
     verify --> healthy
     healthy -->|no| stop
     healthy -->|yes| activate
 
-    subgraph public["bathymetrix.com — planned public Worker route"]
-        worker["../bathymetrix-site/workers/geocsv/src/index.js<br/>planned: decode URL once to literal object key; stream payloads"]
+    subgraph public["bathymetrix.com — routing implemented locally; not deployed"]
+        worker["../bathymetrix-site/workers/geocsv/src/index.js<br/>decode URL once to literal object key; stream payloads"]
         latest["/geocsv/latest/{instrument_id}.geocsv<br/>temporary redirect to the selected immutable release"]
         client["geocsv.fetch reads /geocsv/latest.json once<br/>then one immutable manifest and its selected files"]
         worker --> latest
@@ -197,10 +207,18 @@ pointer cache bypass and immutable-object caching are hosting responsibilities.
 | Owner | Script or responsibility | Status |
 | --- | --- | --- |
 | `../automaid/` | `scripts/main.py`, `scripts/geocsv.py`, `scripts/events.py`: create scientific outputs and their run timestamp | Existing |
-| `../bathymetrix-site/` | `scripts/geocsv/create_snapshot.py`: stage unchanged GeoCSV bytes, resolve IDs, enforce one timestamp and generate the complete manifest | Planned |
-| `./` | `scripts/validate_snapshot.py`: validate staged GeoCSV against every local original MiniSEED/SAC pair | Planned |
-| `../bathymetrix-site/` | `scripts/geocsv/publish_snapshot.py`: enforce acceptance, upload, verify and activate | Planned |
-| `../bathymetrix-site/` | `workers/geocsv/src/index.js`: public routing, streaming and latest redirects | Planned |
+| `../bathymetrix-site/` | `scripts/geocsv/create_snapshot.py`, private `snapshot.py`: stage verbatim bytes, validate the explicit serial-to-ID inventory, enforce one timestamp and freeze the manifest | Implemented locally |
+| `../bathymetrix-site/` | `scripts/geocsv/validate_snapshot.py`: validate every original MiniSEED/SAC pair and produce the concrete acceptance report | Planned |
+| `../bathymetrix-site/` | `scripts/geocsv/publish_snapshot.py`: preflight, upload, verify and activate | Local preflight/transfer machinery implemented; acceptance gate rejects every report |
+| `../bathymetrix-site/` | Concrete versioned report format and `require_scientific_acceptance` | Planned; implement alongside the validator in the website repository |
+| `../bathymetrix-site/` | `workers/geocsv/src/index.js`, `geocsv/index.html`: public routing, streaming, latest redirects and landing page | Implemented locally; not deployed |
+| `./` | Public `read`, `associate`, `write_sac`, `fetch` APIs and documented scientific behavior | Implemented; no publication-validator script or report schema planned here |
+
+The website's validator orchestrates the public package APIs and independent
+reference comparisons. It does not implement another parser, matcher or SAC
+projection. Keep workflow-specific validation, report generation and publisher
+acceptance together in the website. Fix package defects in this repository;
+coordinate unresolved scientific comparison rules before changing them.
 
 The validator runs against the frozen candidate, not a separate live GeoCSV
 copy. It inventories every original MiniSEED and paired SAC for all included
@@ -235,52 +253,61 @@ The existing [full-history fixture checker](../scripts/fixtures/check_full_histo
 checks 18 sampled waveform associations. It is not the proposed complete-corpus
 validator and cannot satisfy the publication gate by itself.
 
-Website staging and hosting implementation can start against the documented
-0.24.0 fetch contract without another client API change. Work still owned here
-before publication is the full-archive validator, its concrete report format,
-and a complete archive run. The website publisher must consume that report
-without a temporary acceptance bypass. Real HTTPS integration checks follow
-once a host is available. Keeping `base_url` explicit is supported; choosing a
-production default is optional and does not block the website.
+Website development can continue against the documented 0.24.0 fetch contract
+without another client API change. The remaining validator, concrete report
+format, acceptance adapter and complete archive run are all website-owned work;
+there is no package-owned validator/report deliverable to wait for. The
+publisher must consume its validator's report without a temporary acceptance
+bypass. The validator needs Python 3.11 or newer and this package with the ObsPy
+extra. Staging's standard-library-only environment can remain separate.
+Real HTTPS integration checks follow once a host is available. Keeping
+`base_url` explicit is supported; choosing a production default is optional
+and does not block the website.
 
 ## Implementation checklist
 
-These boxes track implementation, not approval of the design. No production
-hosting component below is implemented by this documentation change.
+These boxes distinguish reviewed local implementation from pending scientific
+acceptance and deployed verification. Website source and offline tests were
+inspected on 2026-10-22; website tests were not rerun for this documentation
+update. No live infrastructure or production release is activated.
 
 ### 1. Coordinate the contract
 
 - [x] **This repository:** specify and test literal timestamp identity, encoded
   URLs/local directories, and literal server/object keys, including fractional
   digits and rejection of invalid or already encoded IDs (0.24.0).
-- [ ] **Website:** adopt the release path contract above in staging, manifests,
-  URL routing and object-key lookup; verify exactly one URL decoding step.
-- [ ] **Website:** update `data/geocsv/testing/CONTRACT.md` to distinguish the
-  existing test protocol from the agreed production layout and ownership.
-- [ ] **Both repositories:** fix manifest/report fields and meanings, including
-  complete inventory, exact-byte SHA-256/size, relative provenance, timestamp
-  identity, idempotent retries and immutable retention of old releases.
-- [ ] **Website:** define instrument-ID extraction/validation and how unexpected
-  missing previously published instruments are reported before acceptance.
+- [x] **Website:** adopt timestamp identity, encoded URLs, literal object keys,
+  exact-byte manifest fields and relative source provenance in local code/tests.
+- [x] **Website:** extend `data/geocsv/testing/CONTRACT.md` with production paths
+  while retaining the unchanged illustrative test collection.
+- [ ] **Website:** update the runbook, contract and diagram to place archive
+  validation, its report format and acceptance gate in `scripts/geocsv/`.
+- [x] **Website:** require an explicit serial-to-ID inventory, validate Station
+  values, and reject unexpectedly missing previously published instruments.
 - [ ] **Website:** settle the collection's data-license and citation text.
 
 ### 2. Stage a reproducible candidate
 
-- [ ] **Website:** implement `scripts/geocsv/create_snapshot.py` with an explicit
+- [x] **Website:** implement `scripts/geocsv/create_snapshot.py` with an explicit
   source root and external publication workspace; run after processing finishes.
-- [ ] Enforce exactly one valid `#created` per file and exact snapshot-wide
+- [x] Enforce exactly one valid `#created` per file and exact snapshot-wide
   agreement; raise on missing/repeated/mixed timestamps or ambiguous IDs.
-- [ ] Copy each `geo_DET_REQ.csv` verbatim as `{instrument_id}.geocsv`, freeze
+- [x] Copy each `geo_DET_REQ.csv` verbatim as `{instrument_id}.geocsv`, freeze
   the sorted complete manifest, and record full-file hashes and byte counts.
-- [ ] Verify a retired float with identical historical rows and updated comments
+- [x] Cover identical historical rows and updated comments
   under a new shared timestamp passes; no new data row is required.
-- [ ] Verify differing bytes under an existing release ID raise, while an
+- [x] Cover differing bytes under an existing release ID raising, while an
   identical retry preserves the existing manifest and objects.
 
 ### 3. Establish full-archive scientific acceptance
 
-- [ ] **This repository:** implement `scripts/validate_snapshot.py` using the
-  public APIs, complete waveform inventories and independent paired SAC reads.
+- [ ] **Website:** implement `scripts/geocsv/validate_snapshot.py` using this
+  package's public APIs, complete waveform inventories and independent paired
+  SAC reads. Keep this alongside creation and publication scripts.
+- [ ] **Website:** define the concrete versioned report format and implement
+  `publish_snapshot.py`'s `require_scientific_acceptance` against it. Bind the
+  exact candidate manifest and full file inventory with complete waveform
+  accounting and explicit pass criteria; no arbitrary success flag suffices.
 - [ ] Fix comparison fields, units, missing-value rules and precision limits
   using the documented scientific contract; avoid whole-SAC equivalence claims.
 - [ ] Produce the candidate-bound validation report, complete accounting and
@@ -292,28 +319,35 @@ hosting component below is implemented by this documentation change.
 
 ### 4. Prepare hosting and safe publication
 
-- [ ] **Website:** prepare Cloudflare DNS onboarding with existing website/email
-  records preserved, Squarespace registration retained, and the GitHub Pages
-  origin working through the proxy; review migration steps before activation.
+- [x] **Website:** prepare the DNS migration runbook, Worker deployment example
+  and landing page without changing live infrastructure.
+- [ ] Confirm actual DNS/email records and DNSSEC state; preserve them through
+  reviewed onboarding with Squarespace registration and GitHub Pages retained.
 - [ ] **Website:** configure R2 and Cloudflare routing/TLS for
   `bathymetrix.com/geocsv/`, including the landing page at `/geocsv/`.
-- [ ] Implement `workers/geocsv/src/index.js` for streamed immutable downloads,
+- [x] Implement `workers/geocsv/src/index.js` for streamed immutable downloads,
   manifest/pointer delivery, correct missing-file responses and temporary latest
   redirects. Keep the main website's other routes working.
-- [ ] Bypass caches for `latest.json` and latest redirects; cache successful
-  immutable release responses deliberately and prevent stale publication 404s.
+- [x] Implement no-store latest responses/redirects, deliberate immutable
+  response caching and uncached misses/errors in the local Worker.
+- [ ] Verify deployed cache configuration prevents stale latest and publication
+  404s; local cache doubles do not establish production behavior.
 - [ ] Serve plain GeoCSV with appropriate content metadata; honor
   `Accept-Encoding: identity` and verify the exact delivered bytes.
-- [ ] Implement `scripts/geocsv/publish_snapshot.py`: require a passing report,
-  recheck candidate hashes, upload files before the manifest, verify remote
-  content, and update the single latest pointer last. Serialize publications.
-- [ ] Test interrupted uploads, a changed candidate after validation, conflicting
-  release IDs and rollback to a retained release. Failures leave latest intact.
+- [x] Implement publisher preflight and transfer sequencing with candidate
+  rechecks, conditional immutable uploads, verification, serialization and
+  conditional latest replacement last; scientific acceptance remains blocked.
+- [x] Cover interrupted uploads, changed candidates/reports, conflicting release
+  bytes and competing activation using offline transport tests.
+- [ ] Connect the real scientific gate, validate optional SDK/deployment behavior,
+  and verify rollback to a retained release through the same acceptance rules.
 
 ### 5. Complete client integration and launch checks
 
 - [x] **This repository:** implement timestamp-ID/path handling in `fetch`, with
   focused tests, version 0.24.0 and synchronized fetch tutorials.
+- [x] **Website:** add localhost integration tests using the actual fetch client
+  against generated snapshots; deployed HTTPS remains a separate check.
 - [ ] Verify explicit release pinning and default latest selection against the
   real HTTPS endpoint, including one/all instruments and disk/memory downloads.
 - [ ] Verify checksums, manifests and provenance survive `fetch → read`, and a
@@ -343,7 +377,10 @@ Read-only references inspected for this plan on 2026-10-22:
   `scripts/main.py` creates one run timestamp and passes it to the GeoCSV writer;
   `scripts/geocsv.py` emits it as `#created`.
 - `../bathymetrix-site/` at `f861d6182e3632e32bfc142294e24118b977830e`:
-  the provisional contract is `data/geocsv/testing/CONTRACT.md`; the planned
-  snapshot/publication scripts and Worker directory do not yet exist.
+  plus uncommitted local changes inspected on 2026-10-22: the production
+  contract, `docs/GEOCSV_HOSTING.md`, snapshot creator/private helpers, publisher
+  preflight/transfer machinery, Worker, landing page and offline tests exist.
+  Scientific acceptance still blocks every report; the validator does not yet
+  exist. Website ownership references need the update specified above.
 
 These references are dated evidence, not permission to change those checkouts.

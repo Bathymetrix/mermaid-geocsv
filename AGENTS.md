@@ -160,10 +160,21 @@ instructions and publication contract rather than assuming the recorded paths
 or behavior are still current. Inspection is authorized; changes there require
 separate authorization.
 
+`bathymetrix-site` owns the complete publication workflow: snapshot creation,
+full-archive validation, the acceptance-report format and gate, publication,
+and hosting. Keep its three scripts together under `scripts/geocsv/`, including
+`validate_snapshot.py`. The validator calls this package's public `read`,
+`associate` and `write_sac` APIs and compares their results with independent
+waveform references under the documented scientific rules. This package owns
+those APIs, scientific behavior and package defect fixes; do not add a separate
+publication validator or report schema here, or duplicate matching/projection
+logic in the website. The sampled fixture checker remains package development
+tooling, not the publication acceptance gate.
+
 Update the diagram, relative paths, script names, implementation status and
 checklist when those scripts or responsibilities change. Distinguish existing
 tools from planned tools. Keep upstream timestamp/format changes and website
-URL/manifest changes coordinated with this package's fetch/validation contract;
+URL/manifest changes coordinated with this package's fetch and scientific contracts;
 do not silently change scientific comparison rules. Unchanged historical data
 with changed comments and a new shared `#created` timestamp is a valid new
 snapshot; published bytes under an existing release ID remain immutable.

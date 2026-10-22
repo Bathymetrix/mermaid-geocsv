@@ -285,8 +285,10 @@ same immutable provenance for the uniquely matched dataset.
 The initial test protocol is recorded at
 `bathymetrix-site/data/geocsv/testing/CONTRACT.md`. The production timestamp
 contract is recorded in the [hosting plan](../HOSTING.md#release-path-contract).
-The website owns hosting, publication, URLs, and manifests; this package owns
-the client. Changes require coordination. The URL layout is:
+`bathymetrix-site` owns snapshot creation, full-archive validation, acceptance
+reports, publication, hosting, URLs and manifests. Its validator uses this
+package's public scientific APIs; this package owns those APIs and the fetch
+client. Shared contract changes require coordination. The URL layout is:
 
 ```text
 latest.json
