@@ -12,6 +12,11 @@ today; the format behavior below is provisional where the
 not settle interoperability. An open question here is not a claim that the
 current reader is correct for every GeoCSV producer.
 
+On 2026-10-21, the user accepted these documented MERMAID reader conventions
+for the package while confirming that specifics such as missing-value spellings
+are not yet formally codified. Audit 06 finding 10 is therefore closed as a
+scope decision; the format questions on this page remain open.
+
 Keep format questions separate from Python API choices. When a clarification
 becomes authoritative, record its source and version here, then reconcile the
 reader specification, tests, and behavior as needed. The audits provide the

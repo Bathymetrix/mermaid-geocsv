@@ -2,6 +2,13 @@
 
 `mermaid-geocsv` reads MERMAID GeoCSV files into typed pandas DataFrames.
 
+MERMAID-specific format details, including missing-value spellings such as
+`nan`, are not yet formally codified. This document defines the package's
+current supported conventions. Compatibility with arbitrary GeoCSV producers
+or every container version is not guaranteed. Formal format clarification will
+be incorporated through explicit documented changes, not silent reinterpretation
+of existing scientific values.
+
 GeoCSV is self-describing: it carries its field names, declared field types,
 units, delimiter, and descriptive comments with the tabular data. This package
 preserves that information while providing a standard Python analysis surface.

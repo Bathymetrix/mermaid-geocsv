@@ -7,7 +7,9 @@ and export associated waveforms to SAC with geographic headers.
 
 The reader returns typed pandas DataFrames while preserving source column
 names, record order, timestamps, units, comments, and provenance. Scientific
-analysis stays in pandas and other downstream tools.
+analysis stays in pandas and other downstream tools. The supported
+[MERMAID reader conventions](docs/READER_SPEC.md) cover format details that are
+not yet formally codified; general GeoCSV conformance is not promised.
 
 ## Install
 
