@@ -4,8 +4,8 @@ Design agreed 2026-10-22. This is an implementation plan, not an operational
 hosting service. The public collection base is planned as
 `https://bathymetrix.com/geocsv/`. The main website remains independently
 maintained; large GeoCSV payloads live in object storage rather than Git.
-Cloudflare R2 and a Worker route for `/geocsv/*` are a proposed implementation;
-the provider remains subject to review of the existing website hosting.
+Cloudflare R2 and a Worker route for `/geocsv/*` were selected on 2026-10-22.
+Keep the existing website on GitHub Pages and domain registration at Squarespace.
 
 The snapshot creator, full-archive validator, publisher and Worker paths below
 are **planned**. They have not been implemented. `geocsv.fetch` supports the
@@ -13,6 +13,27 @@ timestamp release/path contract below as of package version 0.24.0. The website
 must implement that contract, and full-archive validation remains to be built.
 Nothing in this document authorizes
 modification of protected processed inputs, publication, or a package release.
+
+## Current website and DNS
+
+The user reports a Squarespace domain registration costing $20/year, with no
+website hosting subscription identified. The live website is served by GitHub
+Pages; public A records match GitHub Pages and the HTTP response identifies
+GitHub. The user reports a custom CNAME target of `bathymetrix.github.io` and an
+inactive Squarespace preset. Public authoritative nameservers currently use
+`ns-cloud-c1.googledomains.com` through `ns-cloud-c4.googledomains.com`, consistent
+with the current Squarespace domain/DNS management. These observations were
+checked on 2026-10-22; recheck before deployment.
+
+The chosen same-host `/geocsv/*` Worker route requires a Cloudflare zone and a
+proxied DNS record for the hostname; a DNS CNAME cannot route a URL subpath.
+Plan Cloudflare authoritative DNS onboarding while retaining Squarespace as
+registrar and GitHub Pages as the website origin. Inventory and preserve the
+working website and email records, and account for DNSSEC during that migration.
+Prepare the complete migration/deployment steps before any live changes.
+Selecting R2 does not itself activate a DNS migration or publish the data.
+See Cloudflare's [Worker routing requirements](https://developers.cloudflare.com/workers/best-practices/workers-best-practices/#set-up-custom-domains-or-routes-correctly)
+and [primary DNS setup](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/).
 
 ## Release identity and unchanged historical data
 
@@ -142,7 +163,7 @@ flowchart TB
     candidate --> publish
     accepted -->|no| stop
 
-    stored["Object keys: geocsv/releases/{literal release_id}/<br/>GeoCSV files, then manifest.json and validation.json<br/>R2 proposed"]
+    stored["R2 object keys: geocsv/releases/{literal release_id}/<br/>GeoCSV files, then manifest.json and validation.json"]
     verify["Verify public HTTPS bytes and hashes<br/>run geocsv.fetch with the explicit release ID"]
     healthy{"Remote checks pass?"}
     activate["Replace geocsv/latest.json last"]
@@ -273,6 +294,9 @@ hosting component below is implemented by this documentation change.
 
 ### 4. Prepare hosting and safe publication
 
+- [ ] **Website:** prepare Cloudflare DNS onboarding with existing website/email
+  records preserved, Squarespace registration retained, and the GitHub Pages
+  origin working through the proxy; review migration steps before activation.
 - [ ] **Website:** configure R2 and Cloudflare routing/TLS for
   `bathymetrix.com/geocsv/`, including the landing page at `/geocsv/`.
 - [ ] Implement `workers/geocsv/src/index.js` for streamed immutable downloads,
