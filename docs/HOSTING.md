@@ -1,19 +1,20 @@
 # GeoCSV hosting workflow and build checklist
 
-Design agreed 2026-10-22. This is an implementation plan, not an operational
-hosting service. The public collection base is planned as
-`https://bathymetrix.com/geocsv/`. The main website remains independently
-maintained; large GeoCSV payloads live in object storage rather than Git.
-Cloudflare R2 and a Worker route for `/geocsv/*` were selected on 2026-10-22.
-Keep the existing website on GitHub Pages and domain registration at Squarespace.
+This plan describes the GeoCSV hosting architecture as of 2026-10-22. The data
+service is not operational. The planned public collection base is
+`https://bathymetrix.com/geocsv/`, backed by Cloudflare R2 and a Worker route for
+`/geocsv/*`. Production payloads will reside in object storage outside Git. The
+existing website remains on GitHub Pages and domain registration at Squarespace.
 
 `bathymetrix-site` owns snapshot creation, full-archive validation, the
 acceptance-report format and gate, publication and hosting. Snapshot staging,
 the timestamp manifest contract, Worker and publisher transfer machinery are
-implemented locally there. The full-archive validator, version 2 report protocol and acceptance gate are
-implemented locally there. Production publication requires a complete passing
-archive report bound to the frozen candidate and current inputs/code.
-No hosting infrastructure has been deployed. `geocsv.fetch` supports the
+implemented locally in that repository, together with the full-archive validator,
+version 2 report protocol and acceptance gate. Production publication requires
+a complete passing archive report bound to the frozen candidate and current
+inputs/code.
+Cloudflare authoritative DNS onboarding is complete; the GeoCSV download
+service is not deployed. `geocsv.fetch` supports the
 timestamp release/path contract below as of package version 0.24.0. Nothing in
 this document authorizes modification of protected processed inputs,
 publication, or a package release.
@@ -25,19 +26,43 @@ results. Validation and publication are both website-owned.
 
 ## Current website and DNS
 
-Domain registration remains at Squarespace and the website is hosted on GitHub
-Pages. Current authoritative nameservers, website/email records and DNSSEC state
-must be confirmed privately before migration. Actual operational inventories,
-exports, account context and deployment configuration stay outside repositories;
-tracked procedures use placeholders.
+Cloudflare authoritative DNS onboarding and website proxy activation are
+complete as of 2026-10-22. All imported records were compared with Squarespace
+and confirmed to match. Full (strict) is configured and only apex/www website
+records are proxied; email and other service records remain unchanged. DNSSEC is
+disabled. Squarespace remains registrar and GitHub Pages remains origin.
 
-The chosen same-host `/geocsv/*` Worker route requires a Cloudflare zone and a
-proxied DNS record for the hostname; a DNS CNAME cannot route a URL subpath.
-Plan Cloudflare authoritative DNS onboarding while retaining Squarespace as
-registrar and GitHub Pages as the website origin. Inventory and preserve the
-working website and email records, and account for DNSSEC during that migration.
-Prepare the complete migration/deployment steps before any live changes.
-Selecting R2 does not itself activate a DNS migration or publish the data.
+Public checks confirmed Cloudflare authority through two recursive resolvers.
+After proxy activation, apex/www HTTPS validated through Cloudflare, HTTP and
+`www` redirected to apex HTTPS without loops, and all four main pages returned
+200 with Cloudflare edge responses. The Universal edge certificate is Active and
+covers apex/www. Fresh post-proxy email sending and receiving both passed.
+
+Default Python urllib user-agent requests currently receive 403 on the website,
+GeoCSV landing page and test manifest. Requests differing only by an explicit
+verification-tool user agent pass. The fetch client and publisher use urllib
+without an explicit user agent. Cloudflare Security Events identified Browser
+Integrity Check as the blocking feature. The proposed configuration rule disables
+only BIC for public GET/HEAD requests on apex/www under `/geocsv/`, retaining
+the existing policy elsewhere. The legacy `/data/geocsv/testing/` collection is
+outside this exception and production hosting verification. Deployment and
+normal-client verification remain pending. Verify the unmodified fetch client
+against an illustrative release under `/geocsv/` after R2/Worker test hosting
+is prepared, before production data publication. This is an edge policy adjustment;
+package HTTP behavior remains unchanged. Keep actual rule/account configuration
+outside the repository. See the website runbook and
+[Cloudflare selective BIC configuration](https://developers.cloudflare.com/waf/tools/browser-integrity-check/).
+
+The next coordinated steps are to resolve automated-client access, prepare
+private R2 storage and Worker hosting, verify downloads, and restore DNSSEC.
+Production data activation still requires current scientific acceptance and
+explicit authorization.
+
+The chosen same-host `/geocsv/*` Worker route requires a proxied DNS record for
+the hostname; a DNS CNAME cannot route a URL subpath. Actual operational
+inventories, exports, account context and deployment configuration stay outside
+repositories; tracked procedures use placeholders. Infrastructure changes require
+explicit coordination.
 See Cloudflare's [Worker routing requirements](https://developers.cloudflare.com/workers/best-practices/workers-best-practices/#set-up-custom-domains-or-routes-correctly)
 and [primary DNS setup](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/).
 
@@ -269,15 +294,15 @@ Use source-relative identifiers in public reports, retaining local diagnostics
 in the publication workspace.
 
 The existing [full-history fixture checker](../scripts/fixtures/check_full_histories.py)
-checks 18 sampled waveform associations. It is not the proposed complete-corpus
-validator and cannot satisfy the publication gate by itself.
+checks 18 sampled waveform associations. It does not perform full-archive
+validation and cannot satisfy the publication gate by itself.
 
-Website development can continue against the documented 0.24.0 fetch contract
-without another client API change. The validator, versioned report format, acceptance adapter and complete
-archive run are website-owned. The implemented publisher consumes its
-validator's complete evidence without an acceptance bypass. Scientific failures
-remain publication blockers regardless of implementation status. The validator needs Python 3.11 or newer and this package with the ObsPy
-extra. Staging's standard-library-only environment can remain separate.
+The website implements the documented 0.24.0 fetch contract. The validator,
+versioned report format, acceptance adapter and complete archive run are
+website-owned. The publisher requires the validator's complete evidence without
+an acceptance bypass. Scientific failures block publication. Validation requires
+Python 3.11 or newer and this package with the ObsPy extra. Staging's
+standard-library-only environment can remain separate.
 Real HTTPS integration checks follow once a host is available. Keeping
 `base_url` explicit is supported; choosing a production default is optional
 and does not block the website.
@@ -289,7 +314,7 @@ from pending deployed verification. On 2026-10-22, website report version 2 pass
 all 43,365 original MiniSEED/SAC pairs and the publisher's acceptance gate
 rechecked and accepted that evidence. All 32 website Python tests and nine Worker
 tests passed. The website runbook and archive findings record the full outcome.
-No live infrastructure or production release is activated.
+GeoCSV hosting and production publication remain inactive.
 
 ### 1. Coordinate the contract
 
@@ -346,8 +371,18 @@ No live infrastructure or production release is activated.
 
 - [x] **Website:** prepare the DNS migration runbook, Worker deployment example
   and landing page without changing live infrastructure.
-- [ ] Confirm actual DNS/email records and DNSSEC state; preserve them through
-  reviewed onboarding with Squarespace registration and GitHub Pages retained.
+- [x] Complete Cloudflare authoritative DNS onboarding and compare all imported
+  records with Squarespace; retain Squarespace registration and GitHub Pages.
+- [x] Verify public Cloudflare authority and apex/www HTTPS and redirects.
+- [x] Confirm an Active Universal edge certificate covering apex/www.
+- [x] Configure Full (strict), proxy only website records, and verify public
+  edge HTTPS, redirects and main-page responses.
+- [x] Verify fresh email sending and receiving after proxy activation.
+- [x] Identify Browser Integrity Check as the feature blocking default Python
+  requests through Cloudflare Security Events.
+- [ ] Coordinate a download-path BIC exception and verify normal urllib and
+  unmodified fetch/publisher HTTP clients.
+- [ ] Restore and verify DNSSEC after hosting verification; it is currently disabled.
 - [ ] **Website:** configure R2 and Cloudflare routing/TLS for
   `bathymetrix.com/geocsv/`, including the landing page at `/geocsv/`.
 - [x] Implement `workers/geocsv/src/index.js` for streamed immutable downloads,
@@ -361,7 +396,8 @@ No live infrastructure or production release is activated.
   `Accept-Encoding: identity` and verify the exact delivered bytes.
 - [x] Implement publisher preflight and transfer sequencing with candidate
   rechecks, conditional immutable uploads, verification, serialization and
-  conditional latest replacement last; scientific acceptance remains blocked.
+  conditional latest replacement last. Each candidate requires its own passing
+  scientific acceptance report.
 - [x] Cover interrupted uploads, changed candidates/reports, conflicting release
   bytes and competing activation using offline transport tests.
 - [x] Connect the versioned scientific report gate with source/candidate rechecks.
