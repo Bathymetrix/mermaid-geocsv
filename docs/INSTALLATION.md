@@ -1,7 +1,9 @@
 # Installation and notebook setup
 
-Requires Python 3.12 or newer. After cloning the repository, run these commands
-in your terminal from the repository root (macOS/Linux):
+Requires Python 3.11 or newer. Python 3.14 is the latest tested and supported
+version; newer Python versions are not yet validated. After cloning the
+repository, run these commands in your terminal from the repository root
+(macOS/Linux):
 
 ```bash
 python3 --version
@@ -12,6 +14,22 @@ source .venv/bin/activate
 If `.venv` already exists, just activate it. Choose one of the two installation
 workflows below. In both, `python` uses the activated environment, and `-m`
 runs the named module using that interpreter.
+
+## Supported Python versions
+
+The supported Python range is 3.11–3.14. CI runs the full suite, including
+association, SAC export, and tutorial examples, at these bounds:
+
+| Python | pandas | ObsPy | NumPy |
+| --- | --- | --- | --- |
+| 3.11 | 2.2.0 (minimum) | 1.5.1 (minimum) | Latest 1.x compatible with pandas 2.2.0 |
+| 3.14 | Latest compatible | Latest compatible | Latest compatible |
+
+Python 3.12 and 3.13 are supported intermediate versions without separate CI
+jobs. The package metadata lists supported Python minor versions using standard
+classifiers. `Requires-Python >=3.11` sets the installation minimum; it does not
+certify untested future Python versions. Supporting 3.11 also means package
+code must use syntax and standard-library APIs available in that version.
 
 ## Minimal parser installation
 

@@ -13,7 +13,11 @@ not yet formally codified; general GeoCSV conformance is not promised.
 
 ## Install
 
-Requires Python 3.12 or newer. From the cloned repository (macOS/Linux):
+Requires Python 3.11 or newer; Python 3.14 is the latest tested and supported
+version. CI tests the full package, including ObsPy, on Python 3.11 with minimum
+pandas/ObsPy versions and Python 3.14 with the latest compatible dependencies.
+Newer Python versions are not yet validated. From the cloned repository
+(macOS/Linux):
 
 ```bash
 python3 -m venv .venv

@@ -15,14 +15,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python: "3.12"
-            dependencies: minimum pandas
+          - python: "3.11"
+            dependencies: minimum pandas and ObsPy
             pandas: pandas==2.2.0
+            obspy: obspy==1.5.1
             # pandas 2.2.0 wheels require NumPy 1.x.
             numpy: numpy<2
           - python: "3.14"
-            dependencies: latest pandas
+            dependencies: latest pandas and ObsPy
             pandas: pandas
+            obspy: obspy
             numpy: numpy
     steps:
       - uses: actions/checkout@v7
@@ -35,12 +37,7 @@ jobs:
         env:
           PANDAS_REQUIREMENT: ${{ matrix.pandas }}
           NUMPY_REQUIREMENT: ${{ matrix.numpy }}
-        run: python -m pip install ".[dev]" "$PANDAS_REQUIREMENT" "$NUMPY_REQUIREMENT"
-      - name: Install ObsPy for association fixture tests
-        if: matrix.python == '3.12'
-        env:
-          PANDAS_REQUIREMENT: ${{ matrix.pandas }}
-          NUMPY_REQUIREMENT: ${{ matrix.numpy }}
-        run: python -m pip install ".[obspy]" "$PANDAS_REQUIREMENT" "$NUMPY_REQUIREMENT"
+          OBSPY_REQUIREMENT: ${{ matrix.obspy }}
+        run: python -m pip install ".[dev,obspy]" "$PANDAS_REQUIREMENT" "$NUMPY_REQUIREMENT" "$OBSPY_REQUIREMENT"
       - name: Run tests
         run: python -m pytest -q
