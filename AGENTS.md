@@ -179,6 +179,21 @@ do not silently change scientific comparison rules. Unchanged historical data
 with changed comments and a new shared `#created` timestamp is a valid new
 snapshot; published bytes under an existing release ID remain immutable.
 
+### Current hosted-data phase
+
+All hosted GeoCSV data are testing only until production publication is explicitly
+authorized, including full-corpus upload/download tests. Keep public descriptions,
+manifests and latest pointers consistent with `testing_only: true`, and keep test
+activation isolated from future production. The website must implement and verify
+this support before uploads; a documentation rule does not make its existing
+production-oriented publisher safe for testing.
+
+Timestamped immutable snapshots support reproducible tests without constituting a
+first scientific release. Passing scientific acceptance or deploying infrastructure
+does not authorize production promotion, a first data/software release tag or
+production-availability claims. Preserve the website's scientific and publication
+gates; do not relabel frozen manifests or reuse reports bound to different bytes.
+
 ### Fresh Association State for Every Trace
 
 Every trace association must start with empty, newly allocated association

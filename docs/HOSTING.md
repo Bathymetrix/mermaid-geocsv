@@ -24,6 +24,20 @@ and [publication contract](../../bathymetrix-site/docs/GEOCSV_CONTRACT.md)
 record the website's local implementation, concrete report schema and archive
 results. Validation and publication are both website-owned.
 
+## Current publication phase: testing only
+
+All hosted data remain explicitly testing only, including full-corpus transfer
+and validation tests. Manifests/latest pointers must agree on `testing_only: true`,
+and public descriptions must identify testing status. Timestamped snapshots do
+not constitute a first scientific release. Production promotion, release tags
+and production-availability claims require explicit authorization.
+
+The website's current tools write or require `testing_only: false`. Testing-only
+labeling and object/pointer isolation remain implementation prerequisites for
+uploads. Scientific and licensing/citation gates remain in force; frozen
+candidates/reports must not be relabeled. The website publication contract records
+the full policy.
+
 ## Current website and DNS
 
 Cloudflare authoritative DNS onboarding and website proxy activation are
@@ -125,12 +139,14 @@ the encoded spelling so they contain no Windows-invalid colons. The publisher's
 external staging/report workspace uses that same encoded directory spelling.
 The storage provider may change without changing this public contract.
 
-The latest pointer must use the exact encoded relative manifest path:
+The latest pointer must use the exact encoded relative manifest path. The
+current testing-only phase requires `testing_only: true` in both pointer and
+manifest; the format below is relative to the isolated testing collection:
 
 ```json
 {
   "release_id": "2026-10-21T22:48:33.277Z",
-  "testing_only": false,
+  "testing_only": true,
   "manifest": "releases/2026-10-21T22%3A48%3A33.277Z/manifest.json"
 }
 ```
@@ -151,8 +167,10 @@ release. These rules apply to any chosen host.
 
 ## Workflow diagram
 
-Repository paths are relative to the `mermaid-geocsv/` root. A subgraph names
-its repository root; paths inside it are relative to that root. `$MERMAID`
+The diagram retains the reviewed publication sequence; production object keys
+are a future reference. Testing-mode labeling and isolation must be implemented
+before uploads. Repository paths are relative to the `mermaid-geocsv/` root.
+A subgraph names its repository root; paths inside it are relative to that root. `$MERMAID`
 identifies the external read-only data tree. `{work}` is a chosen local
 publication workspace outside all Git checkouts and the protected source tree;
 it contains staged payloads, reports and temporary comparison outputs.
@@ -173,6 +191,7 @@ flowchart TB
     events --> waveforms
 
     subgraph website["../bathymetrix-site/ — complete publication workflow"]
+        phase["Current hosted-data phase: testing only<br/>No production promotion without explicit authorization"]
         create["scripts/geocsv/create_snapshot.py<br/>implemented locally: verbatim staging and inventory"]
         validate["scripts/geocsv/validate_snapshot.py<br/>implemented: compare every original waveform pair"]
         consistent{"One common #created<br/>and valid, unique instrument IDs?"}
@@ -180,6 +199,7 @@ flowchart TB
         accepted{"Version 2 report complete and passing?<br/>Exact candidate, source inventory and code versions?"}
         create --> consistent
         publish --> accepted
+        phase -. constrains .-> publish
     end
 
     candidate["{work}/snapshots/{release_component}/<br/>{instrument_id}.geocsv + manifest.json"]
@@ -314,6 +334,10 @@ GeoCSV hosting and production publication remain inactive.
 
 ### 1. Coordinate the contract
 
+- [x] Record the current testing-only phase for all hosted data, including
+  complete-corpus tests; keep production promotion and first release unauthorized.
+- [ ] **Website:** implement and verify testing-only flags, object/pointer isolation
+  and public labeling before hosted uploads, preserving all scientific gates.
 - [x] **This repository:** specify and test literal timestamp identity, encoded
   URLs/local directories, and literal server/object keys, including fractional
   digits and rejection of invalid or already encoded IDs (0.24.0).
