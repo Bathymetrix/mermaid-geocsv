@@ -176,9 +176,13 @@ fixtures; publisher edits do not implicitly redefine fetch behavior. The sampled
 fixture checker is package development tooling, not the publication gate.
 
 The external archive is `$MERMAID/publisher`, a separate local Git repository.
-Its `geocsv/` directory retains immutable payloads, manifests, source provenance,
-staging inventories, reports and publication receipts. Original waveform archives
-are never copied there. Git sources require a clean entire working tree and full
+Its `geocsv/testing/` collection retains testing payloads, manifests, source
+provenance, staging inventories, reports and publication receipts. The publisher
+derives this local namespace from `testing_only: true`. Initial workflow-testing
+artifacts may be retired through separately authorized cleanup; keep bytes
+immutable until retirement and never reuse retired identities for different bytes.
+Production retention remains indefinite. Original waveform archives are never
+copied there. Git sources require a clean entire working tree and full
 commit hash; ordinary source directories remain valid. Sources remain read-only.
 Successful publication includes a scoped local archive commit, never an automatic
 push. Software-repository commits still require explicit authorization.

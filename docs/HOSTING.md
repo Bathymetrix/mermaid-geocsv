@@ -23,14 +23,21 @@ All hosted data remain testing only, including complete-corpus tests. Publisher
 0.1.0 requires `testing_only: true`, explicit testing destinations and complete
 schema-3 scientific evidence. The local website Worker isolates
 `/geocsv/testing/` and `geocsv/testing/` keys from future production activation.
-Neither the Worker nor R2 data service is deployed. Production promotion, first
-release tags and availability claims remain separately unauthorized.
+The read-only Worker was deployed on 2026-10-23. Private bucket access and
+uncached pointer/object misses passed live checks; no data objects or latest
+pointers have been uploaded. Production promotion, first release tags and
+claims of data availability remain separately unauthorized.
 
-The external archive is `$MERMAID/publisher`, a separate local Git repository;
-GeoCSV uses `geocsv/{snapshots,staging,validation,publications}`. Published products
-and evidence are retained indefinitely. Original waveform archives are not
-copied. Git-tracked source inputs require a clean tree and full commit hash in
-immutable local snapshot provenance; ordinary source directories remain valid.
+The external archive is `$MERMAID/publisher`, a separate local Git repository.
+Testing GeoCSV artifacts use
+`geocsv/testing/{snapshots,staging,validation,publications}`, selected from the
+manifest’s `testing_only: true` flag. Initial workflow-testing artifacts may be
+retired through separately authorized cleanup after verification; they are not
+permanent scientific releases. Retain immutable bytes until retirement and never
+reuse retired testing identities for different bytes. Production retention
+remains indefinite. Original waveform archives are not copied. Git-tracked source
+inputs require a clean tree and full commit hash in immutable local snapshot
+provenance; ordinary source directories remain valid.
 Successful publication includes a scoped local archive commit, never an automatic
 push. Source-provenance and receipt changes do not alter the fetch manifest.
 
@@ -40,6 +47,15 @@ historical; new code/candidates require fresh validation. Scientific comparisons
 retain the existing documented rules, including exact native float32 interval
 preservation and a one-ULP allowance against independent SAC intervals. No
 comparison tolerance is changed by migration.
+
+Instrument selection is frozen at creation with `--instruments P0006 P0045`.
+Validation and publication use that same scope; publishing cannot filter a
+snapshot. Full-corpus validation may use a separate ordinary temporary workspace
+without Git, archival or publication intent. Fresh schema-3 runs passed all
+43,365 full-corpus waveform pairs and all 3,292 pairs for the separate archived
+P0006/P0045 candidate, including current acceptance gates after the local layout
+change. See the publisher’s [fresh findings](../../mermaid-publisher/docs/geocsv/SCHEMA3_FINDINGS.md).
+These reports are distinct from the historical schema-2 acceptance.
 
 ## Release path contract
 
@@ -69,18 +85,18 @@ flowchart TB
     upstream["automaid: GeoCSV and original MiniSEED/SAC"] --> source["$MERMAID/processed — read only"]
     source --> create["mermaid-publisher/scripts/geocsv/create_snapshot.py"]
     inspect["inspect_snapshot.py: internal integrity checks"] -.-> create
-    create --> candidate["$MERMAID/publisher/geocsv/snapshots/{ID}"]
+    create --> candidate["$MERMAID/publisher/geocsv/testing/snapshots/{ID}"]
     candidate --> validate["validate_snapshot.py: complete scientific comparisons"]
     source --> validate
     api["mermaid-geocsv: read → associate → write_sac"] -.-> validate
-    validate --> report["validation/{ID}: schema-3 evidence"]
+    validate --> report["testing/validation/{ID}: schema-3 evidence"]
     report --> gate["gate_snapshot.py: current evidence"]
     candidate --> gate
     gate --> publish["publish_snapshot.py: conditional transfer"]
     publish --> remote["Isolated testing objects: payloads, manifest, report"]
     remote --> checks["Exact HTTPS bytes and pinned fetch"]
     checks --> latest["Confirm latest activation last"]
-    latest --> record["publications/: receipt and local Git commit"]
+    latest --> record["testing/publications/: receipt and local Git commit"]
     remote -.-> website["bathymetrix-site: read-only Worker and landing page"]
     website --> fetch["mermaid-geocsv.fetch"]
 ```
@@ -92,9 +108,12 @@ flowchart TB
 - [x] Implement local testing-only creation, transfer isolation and serving support.
 - [x] Implement clean-source Git provenance, dedicated Git archives and publication receipts.
 - [x] Preserve download semantics and freeze an independently installed consumer baseline.
-- [ ] Run fresh complete-corpus schema-3 validation for a newly staged candidate.
-- [ ] Set licensing/citation before uploads.
-- [ ] Deploy approved R2/Worker configuration and verify SDK and live exact bytes.
+- [x] Freeze instrument selection and isolate local testing artifacts.
+- [x] Run fresh full-corpus and separate P0006/P0045 schema-3 validation and acceptance.
+- [x] Limit approved hosted testing to P0006/P0045 and prepare the MH network citation.
+- [ ] Publish the testing scope, citation and retirement notice before data uploads.
+- [x] Deploy approved R2/Worker configuration and verify read-only SDK/HTTPS access.
+- [ ] Verify live conditional writes, successful-object labels, caching and exact bytes.
 - [ ] Verify pinned/latest, one/all instruments, disk/memory and scientific use.
 - [ ] Restore DNSSEC after hosting verification.
 
