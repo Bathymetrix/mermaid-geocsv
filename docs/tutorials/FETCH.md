@@ -283,12 +283,13 @@ same immutable provenance for the uniquely matched dataset.
 ## Release protocol and failures
 
 The publication and download contract is recorded at
-`bathymetrix-site/docs/GEOCSV_CONTRACT.md`. The production timestamp
-contract is recorded in the [hosting plan](../HOSTING.md#release-path-contract).
-`bathymetrix-site` owns snapshot creation, full-archive validation, acceptance
-reports, publication, hosting, URLs and manifests. Its validator uses this
-package's public scientific APIs; this package owns those APIs and the fetch
-client. Shared contract changes require coordination. The URL layout is:
+`mermaid-publisher/docs/geocsv/CONTRACT.md`. The timestamp contract is
+summarized in the [hosting plan](../HOSTING.md#release-path-contract).
+`mermaid-publisher` owns snapshot creation, full-archive validation, evidence,
+gating and publication. `bathymetrix-site` owns its read-only hosting. The
+publisher uses this package's public scientific APIs; this package owns those
+APIs and the fetch client. Publisher and consumer versions evolve independently;
+shared contract changes require explicit compatibility review. The URL layout is:
 
 ```text
 latest.json

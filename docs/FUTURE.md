@@ -20,8 +20,9 @@ deployed. Callers continue to supply `base_url`; choosing a package default
 remains optional. The [fetch guide](tutorials/FETCH.md) records the manifest
 protocol and a standalone local test collection.
 
-`bathymetrix-site` owns snapshot creation, full-archive validation, the concrete
-acceptance-report format and publisher gate, publication and hosting. Its
+`mermaid-publisher` owns snapshot creation, full-archive validation, the concrete
+acceptance-report format, publication gate and transfer. `bathymetrix-site` owns
+its read-only hosting. The publisher's
 validator uses this package's public `read`, `associate` and `write_sac` APIs
 with independent paired waveform references and the documented scientific
 comparison rules. No publication-validator script or report protocol is planned

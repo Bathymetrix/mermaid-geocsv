@@ -81,8 +81,8 @@ Both association types can be exported to SAC. For `anchor_segment`, the anchor'
 STLA/STLO/STDP/STEL apply to the entire waveform under the supplied MERMAID
 negligible-drift convention. Missing REQ pressure remains undefined. This does
 not reconstruct acquisition lineage. Production GeoCSV hosting is still pending.
-`bathymetrix-site` owns snapshot creation, archive validation and publication,
-using this package's public APIs; see the [hosting workflow](docs/HOSTING.md).
+`mermaid-publisher` owns snapshot creation, archive validation and publication;
+`bathymetrix-site` owns its read-only hosting. The publisher uses this package's public APIs; see the [hosting workflow](docs/HOSTING.md).
 
 Associate the final downloaded/clipped/combined window before export. Avoid
 changing its samples, start, count, or sampling rate after association. SAC

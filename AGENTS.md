@@ -160,16 +160,28 @@ instructions and publication contract rather than assuming the recorded paths
 or behavior are still current. Inspection is authorized; changes there require
 separate authorization.
 
-`bathymetrix-site` owns the complete publication workflow: snapshot creation,
-full-archive validation, the acceptance-report format and gate, publication,
-and hosting. Keep its three scripts together under `scripts/geocsv/`, including
-`validate_snapshot.py`. The validator calls this package's public `read`,
-`associate` and `write_sac` APIs and compares their results with independent
-waveform references under the documented scientific rules. This package owns
-those APIs, scientific behavior and package defect fixes; do not add a separate
-publication validator or report schema here, or duplicate matching/projection
-logic in the website. The sampled fixture checker remains package development
-tooling, not the publication acceptance gate.
+`mermaid-publisher` owns snapshot creation, full-archive validation, the
+acceptance-report format and gate, transfer, latest activation and local archive
+recording. Its five modules live under `scripts/geocsv/`: create_snapshot,
+inspect_snapshot, validate_snapshot, gate_snapshot and publish_snapshot. Only
+create, validate and publish are runnable commands. `bathymetrix-site` owns only
+its read-only Worker, landing page and hosting infrastructure. The canonical
+publication/download agreement is `mermaid-publisher/docs/geocsv/CONTRACT.md`.
+
+The publisher calls public `read`, `associate`, `write_sac` and `fetch` APIs.
+This package owns scientific API behavior and package defect fixes. Do not add
+publication validators or report schemas here, or duplicate matching/projection
+logic in the publisher. Keep a fixed supported consumer baseline and historical
+fixtures; publisher edits do not implicitly redefine fetch behavior. The sampled
+fixture checker is package development tooling, not the publication gate.
+
+The external archive is `$MERMAID/publisher`, a separate local Git repository.
+Its `geocsv/` directory retains immutable payloads, manifests, source provenance,
+staging inventories, reports and publication receipts. Original waveform archives
+are never copied there. Git sources require a clean entire working tree and full
+commit hash; ordinary source directories remain valid. Sources remain read-only.
+Successful publication includes a scoped local archive commit, never an automatic
+push. Software-repository commits still require explicit authorization.
 
 Update the diagram, relative paths, script names, implementation status and
 checklist when those scripts or responsibilities change. Distinguish existing
@@ -184,9 +196,8 @@ snapshot; published bytes under an existing release ID remain immutable.
 All hosted GeoCSV data are testing only until production publication is explicitly
 authorized, including full-corpus upload/download tests. Keep public descriptions,
 manifests and latest pointers consistent with `testing_only: true`, and keep test
-activation isolated from future production. The website must implement and verify
-this support before uploads; a documentation rule does not make its existing
-production-oriented publisher safe for testing.
+activation isolated from future production. Publisher and website testing isolation must be verified before uploads;
+local support does not establish deployed behavior.
 
 Timestamped immutable snapshots support reproducible tests without constituting a
 first scientific release. Passing scientific acceptance or deploying infrastructure

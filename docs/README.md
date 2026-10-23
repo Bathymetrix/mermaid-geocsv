@@ -26,8 +26,8 @@ Each pair contains the same prose and Python examples and runs independently.
   Production hosting is not deployed; callers supply `base_url`.
 - [Hosting workflow and build checklist](HOSTING.md): planned
   `bathymetrix.com/geocsv/` publication, the cross-repository Mermaid diagram,
-  timestamp-based releases, and website-owned creation, full-archive validation,
-  acceptance reports and publication using this package's public APIs.
+  timestamp-based snapshots, publisher-owned creation, full-archive validation,
+  evidence and transfer using this package's public APIs, and separate website hosting.
 - [Association guide](tutorials/ASSOCIATE.md): matching tolerances, source-row
   attachments, coordinate projections, validation, and processing limitations.
 - [Merged-trace policy](OBSPY_MERGED_TRACES.md): explicit first-segment location
