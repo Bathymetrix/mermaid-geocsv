@@ -6,18 +6,13 @@ Fetch and read MERMAID GeoCSV metadata, associate it with ObsPy waveforms,
 and export associated waveforms to SAC with geographic headers.
 
 The reader returns typed pandas DataFrames while preserving source column
-names, record order, timestamps, units, comments, and provenance. Scientific
-analysis stays in pandas and other downstream tools. The supported
-[MERMAID reader conventions](docs/READER_SPEC.md) cover format details that are
-not yet formally codified; general GeoCSV conformance is not promised.
+names, record order, timestamps, units, comments, and provenance. It follows
+[MERMAID reader conventions](docs/READER_SPEC.md); general GeoCSV conformance
+is not promised. Scientific analysis stays in downstream tools.
 
 ## Install
 
-Requires Python 3.11 or newer; Python 3.14 is the latest tested and supported
-version. CI tests the full package, including ObsPy, on Python 3.11 with minimum
-pandas/ObsPy versions and Python 3.14 with the latest compatible dependencies.
-Newer Python versions are not yet validated. From the cloned repository
-(macOS/Linux):
+Supports Python 3.11–3.14. From the cloned repository (macOS/Linux):
 
 ```bash
 python3 -m venv .venv
@@ -33,7 +28,8 @@ export, add ObsPy 1.5.1 or newer:
 python -m pip install '.[obspy]'
 ```
 
-See the [installation guide](docs/INSTALLATION.md) for notebook setup.
+See the [installation guide](docs/INSTALLATION.md) for dependency support,
+CI coverage, and notebook setup.
 
 ## Quick start
 
@@ -46,67 +42,23 @@ print(records.head())
 metadata = records.attrs["geocsv"]
 ```
 
-## Public API
-
-| Function | Purpose |
-| --- | --- |
-| [`geocsv.fetch(...)`](docs/tutorials/FETCH.md) | Retrieve verified release files to disk or memory; returns a list of fetch results. Requires an explicit `base_url`. |
-| [`geocsv.read(...)`](docs/READER_SPEC.md#python-api) | Parse a local path, bytes, or fetch results; returns a list of dataset tables. |
-| [`geocsv.associate(...)`](docs/tutorials/ASSOCIATE.md) | Attach uniquely matched event metadata and coordinates to an ObsPy Trace or Stream in place; returns `None`. |
-| [`geocsv.write_sac(trace, path)`](docs/tutorials/WRITE_SAC.md) | Export one associated MiniSEED-derived waveform to a new SAC file; returns `None` and leaves the trace unchanged. |
-
-Fetch accepts literal UTC timestamp release IDs, preserving their exact spelling
-in provenance and manifests. URL paths and local release directories encode
-colons as `%3A`; see the [hosting contract](docs/HOSTING.md#release-path-contract).
-
-Fetching and reading do not require ObsPy. Association defaults to original
-segments, with an inclusive 1 ms absolute start tolerance and source-rate
-agreement within 0.00001 Hz. With `allow_first_segment=True`, clipped or combined windows may use
-one same-SNCL source segment containing the waveform start, provided GeoCSV
-sample ranges cover every downloaded sample after clipping and counting overlaps
-once. Coverage uses unique nearest-sample placement strictly below half a waveform
-interval. This follows the half-sample scale of ObsPy's MiniSEED reader;
-absolute start/containment tolerance is separate. Measured offsets
-remain in the association report; waveform samples and times are unchanged.
-Zero or multiple containing anchors raise; no nearest-prior row is assumed.
-Errors identify affected traces, source records, and physical starting lines.
-
-`trace.stats.geocsv.association` is a nested ObsPy `AttribDict` with
-`.type` (`single_segment` or `anchor_segment`), a waveform snapshot, source
-coverage segments with record/line references and clipped sample ranges, and
-measured timing/rate differences. It records association-time evidence, not
-waveform construction history; see the [report schema](docs/OBSPY_ASSOCIATION.md#association-report).
-
-Both association types can be exported to SAC. For `anchor_segment`, the anchor's
-STLA/STLO/STDP/STEL apply to the entire waveform under the supplied MERMAID
-negligible-drift convention. Missing REQ pressure remains undefined. This does
-not reconstruct acquisition lineage. Production GeoCSV hosting is still pending.
-`mermaid-publisher` owns snapshot creation, archive validation and publication;
-`bathymetrix-site` owns its read-only hosting. The publisher uses this package's public APIs; see the [hosting workflow](docs/HOSTING.md).
-
-Associate the final downloaded/clipped/combined window before export. Avoid
-changing its samples, start, count, or sampling rate after association. SAC
-output has float32 precision and no
-serialized GeoCSV provenance. Association provenance is guaranteed only in
-memory; users may write their own sidecars in any format. Nonfinite or
-unrepresentable values and identity
-codes that cannot survive SAC storage are rejected. SAC waveform samples
-remain raw counts; instrument correction, response removal and counts-to-pressure
-calibration are outside this repository's scope.
-
-## Learn more
+## API and tutorials
 
 Each tutorial is standalone, with matching Markdown and notebook versions.
 
-| Tutorial | Guide | Notebook |
-| --- | --- | --- |
-| Read GeoCSV and use pandas | [Read](docs/tutorials/READ.md) | [READ.ipynb](docs/tutorials/READ.ipynb) |
-| Fetch releases | [Fetch](docs/tutorials/FETCH.md) | [FETCH.ipynb](docs/tutorials/FETCH.ipynb) |
-| Associate waveforms | [Associate](docs/tutorials/ASSOCIATE.md) | [ASSOCIATE.ipynb](docs/tutorials/ASSOCIATE.ipynb) |
-| Write SAC files | [Write SAC](docs/tutorials/WRITE_SAC.md) | [WRITE_SAC.ipynb](docs/tutorials/WRITE_SAC.ipynb) |
-| Plot and analyze records | [Plotting](docs/tutorials/PLOTTING.md) | [PLOTTING.ipynb](docs/tutorials/PLOTTING.ipynb) |
+| Operation | Purpose | Guide | Notebook |
+| --- | --- | --- | --- |
+| `geocsv.fetch(...)` | Retrieve verified GeoCSV files to disk or memory. | [Fetch](docs/tutorials/FETCH.md) | [FETCH.ipynb](docs/tutorials/FETCH.ipynb) |
+| `geocsv.read(...)` | Parse local paths, bytes, or fetch results into dataset tables. | [Read](docs/tutorials/READ.md) | [READ.ipynb](docs/tutorials/READ.ipynb) |
+| `geocsv.associate(...)` | Attach uniquely matched metadata and coordinates to ObsPy waveforms in place. | [Associate](docs/tutorials/ASSOCIATE.md) | [ASSOCIATE.ipynb](docs/tutorials/ASSOCIATE.ipynb) |
+| `geocsv.write_sac(trace, path)` | Export one associated MiniSEED-derived waveform without changing the trace. | [Write SAC](docs/tutorials/WRITE_SAC.md) | [WRITE_SAC.ipynb](docs/tutorials/WRITE_SAC.ipynb) |
+| Plot and analyze records | Use pandas and Matplotlib downstream. | [Plotting](docs/tutorials/PLOTTING.md) | [PLOTTING.ipynb](docs/tutorials/PLOTTING.ipynb) |
 
-For format rules, scientific context, fixture provenance, and design notes,
-see the [documentation index](docs/README.md).
+Hosted GeoCSV collections remain testing only; `fetch` requires an explicit
+`base_url`. See the [hosting workflow](docs/HOSTING.md) for publication status.
+
+Detailed matching rules, association reports, SAC precision and provenance
+limits, format rules, and fixture references are in the
+[documentation index](docs/README.md).
 
 Developed and maintained by [Bathymetrix®](https://bathymetrix.com).
