@@ -25,8 +25,11 @@ schema-3 scientific evidence. The local website Worker isolates
 `/geocsv/testing/` and `geocsv/testing/` keys from future production activation.
 The read-only Worker was deployed on 2026-10-23. Private bucket access and
 uncached pointer/object misses passed live checks; no data objects or latest
-pointers have been uploaded. Production promotion, first release tags and
-claims of data availability remain separately unauthorized.
+pointers have been uploaded. The public landing page now identifies the
+P0006/P0045 testing scope, cites the MH network (10.7914/SN/MH), and describes
+retirement of
+initial workflow-testing artifacts. Production promotion, first release tags,
+data uploads and claims of data availability remain separately unauthorized.
 
 The external archive is `$MERMAID/publisher`, a separate local Git repository.
 Testing GeoCSV artifacts use
@@ -111,7 +114,7 @@ flowchart TB
 - [x] Freeze instrument selection and isolate local testing artifacts.
 - [x] Run fresh full-corpus and separate P0006/P0045 schema-3 validation and acceptance.
 - [x] Limit approved hosted testing to P0006/P0045 and prepare the MH network citation.
-- [ ] Publish the testing scope, citation and retirement notice before data uploads.
+- [x] Publish the testing scope, citation and retirement notice before data uploads (2026-10-26).
 - [x] Deploy approved R2/Worker configuration and verify read-only SDK/HTTPS access.
 - [ ] Verify live conditional writes, successful-object labels, caching and exact bytes.
 - [ ] Verify pinned/latest, one/all instruments, disk/memory and scientific use.
