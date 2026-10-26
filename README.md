@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml/badge.svg?branch=main&event=push)](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml)
 
-Fetch and read MERMAID GeoCSV metadata, associate it with ObsPy waveforms,
+Fetch and read MERMAID GeoCSV metadata, associate it with [ObsPy](https://docs.obspy.org/) waveforms,
 and optionally create SAC station location headers for writing with ObsPy.
 
 The reader returns typed pandas DataFrames while preserving source column
@@ -53,12 +53,6 @@ Each tutorial is standalone, with matching Markdown and notebook versions.
 | `geocsv.associate(...)` | Attach uniquely matched metadata and coordinates to ObsPy waveforms in place. | [Associate](docs/tutorials/ASSOCIATE.md) | [ASSOCIATE.ipynb](docs/tutorials/ASSOCIATE.ipynb) |
 | SAC headers and ObsPy writing | Use `associate(..., create_sac_header=True)`, then ObsPy `Trace.write` or `Stream.write`. | [Write SAC](docs/tutorials/WRITE_SAC.md) | [WRITE_SAC.ipynb](docs/tutorials/WRITE_SAC.ipynb) |
 | Plot and analyze records | Use pandas and Matplotlib downstream. | [Plotting](docs/tutorials/PLOTTING.md) | [PLOTTING.ipynb](docs/tutorials/PLOTTING.ipynb) |
-
-Version 0.25.0 removes `geocsv.write_sac`. Request SAC headers during association
-on an unassociated waveform, then write with ObsPy. The optional header is
-ObsPy's fresh baseline plus `stla`, `stlo`, `stel` and `stdp`; `stats.sac` must
-be absent. The package owns association and geographic metadata, while the
-publisher owns export verification. Fetch/download semantics are unchanged.
 
 Hosted GeoCSV collections remain testing only; `fetch` requires an explicit
 `base_url`. See the [hosting workflow](docs/HOSTING.md) for publication status.
