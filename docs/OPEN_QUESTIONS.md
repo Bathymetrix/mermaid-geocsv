@@ -193,8 +193,8 @@ These questions replace the former `sandbox/obspy_association/OPEN_QUESTIONS.md`
 TBD list. Preserve the distinction between dated evidence, current matching
 rules, and unresolved interpretation. The public API and initial attachment
 rules are settled in the [association tutorial](tutorials/ASSOCIATE.md);
-Geographic SAC export is implemented separately in
-[`write_sac`](tutorials/WRITE_SAC.md); broader transformed-waveform support
+Optional `create_sac_header=True` supplies SAC station location headers for
+[ObsPy writing](tutorials/WRITE_SAC.md); broader transformed-waveform support
 remains [planned work](FUTURE.md#associate-transformed-archive-waveforms).
 
 ### Archive segmentation and request boundaries

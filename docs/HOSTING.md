@@ -1,6 +1,6 @@
 # GeoCSV hosting responsibilities and status
 
-`mermaid-geocsv` owns public fetch/read/associate/write_sac APIs and their
+`mermaid-geocsv` owns public fetch/read/associate APIs, optional SAC header creation and their
 scientific behavior. `mermaid-publisher` owns snapshot creation, full-archive
 scientific validation, the report schema and publication gate, transfer, latest
 activation and local archive recording. `bathymetrix-site` owns its read-only
@@ -98,6 +98,20 @@ publication requires fresh validation matching the active installed consumer.
 Changes to manifests, identities, paths or checksum semantics require explicit
 compatibility review, separate from publisher/report version changes.
 
+## SAC projection and export verification
+
+Consumer 0.25.0 removes `write_sac` and adds `create_sac_header=False` to
+association. True requests ObsPy's fresh SAC baseline plus only stla/stlo/stel/stdp;
+the SAC destination must be absent. Publisher `_verify_sac.py` retains final
+waveform consistency, representability, no-overwrite and stable-summary checks,
+and independently checks the projection without repairing it. The publisher
+supports both the unchanged frozen 0.24.0 consumer and the refactored consumer.
+The serving Worker and manifest/download contract are unaffected. Current
+verification status and the check-by-check migration are recorded in
+[the publisher verification guide](../../mermaid-publisher/docs/geocsv/SAC_VERIFICATION.md).
+Historical reports remain bound to their original software. No new publication
+or deployed behavior is implied by this local refactor.
+
 ## Cross-repository workflow
 
 ```mermaid
@@ -108,7 +122,8 @@ flowchart TB
     create --> candidate["$MERMAID/publisher/geocsv/testing/snapshots/{ID}"]
     candidate --> validate["validate_snapshot.py: complete scientific comparisons"]
     source --> validate
-    api["mermaid-geocsv: read → associate → write_sac"] -.-> validate
+    api["mermaid-geocsv: read → associate(create_sac_header=True)"] -.-> validate
+    sac["ObsPy writing + publisher _verify_sac.py checks"] -.-> validate
     validate --> report["testing/validation/{ID}: schema-3 evidence"]
     report --> gate["gate_snapshot.py: current evidence"]
     candidate --> gate

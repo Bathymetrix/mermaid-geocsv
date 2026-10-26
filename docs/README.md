@@ -13,7 +13,7 @@ Each pair contains the same prose and Python examples and runs independently.
 | Read GeoCSV and use pandas | [Read](tutorials/READ.md) | [READ.ipynb](tutorials/READ.ipynb) |
 | Fetch releases | [Fetch](tutorials/FETCH.md) | [FETCH.ipynb](tutorials/FETCH.ipynb) |
 | Associate waveforms | [Associate](tutorials/ASSOCIATE.md) | [ASSOCIATE.ipynb](tutorials/ASSOCIATE.ipynb) |
-| Write SAC files | [Write SAC](tutorials/WRITE_SAC.md) | [WRITE_SAC.ipynb](tutorials/WRITE_SAC.ipynb) |
+| Create SAC station headers and write with ObsPy | [Write SAC](tutorials/WRITE_SAC.md) | [WRITE_SAC.ipynb](tutorials/WRITE_SAC.ipynb) |
 | Plot and analyze records | [Plotting](tutorials/PLOTTING.md) | [PLOTTING.ipynb](tutorials/PLOTTING.ipynb) |
 
 ## API and scientific conventions
@@ -33,7 +33,7 @@ Each pair contains the same prose and Python examples and runs independently.
 - [Merged-trace policy](OBSPY_MERGED_TRACES.md): explicit first-segment location
   fallback for clipped/combined windows, sample-grid coverage, overlaps, and
   limits on reconstruction claims.
-- [SAC writing guide](tutorials/WRITE_SAC.md): supported segments, geographic
+- [SAC header and ObsPy writing guide](tutorials/WRITE_SAC.md): supported segments, geographic
   header mappings, pressure/depth conventions, missing pressure, float32
   precision, and independent automaid comparisons.
 

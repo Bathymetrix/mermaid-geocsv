@@ -16,8 +16,9 @@ references only: read them separately with ObsPy, then compare their inherited
 `stats.sac` values key-by-key against approved SAC fields projected onto the
 MiniSEED traces after GeoCSV association. Never use SAC reference headers to
 fill or match association metadata. SAC-input association is outside scope
-until further instruction. Separate `geocsv.write_sac` exports associated
-waveforms with either association label without changing `stats.sac`; see the
+until further instruction. Optional `create_sac_header=True` creates fresh
+SAC station location headers during association for either label. Use ObsPy's
+Trace/Stream writer for serialization; see the
 [SAC writing tutorial](../../../docs/tutorials/WRITE_SAC.md).
 
 Complete `geo_DET_REQ.csv` histories are verbatim, local, and Git-ignored.

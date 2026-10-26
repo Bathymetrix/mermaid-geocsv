@@ -131,13 +131,15 @@ SAC trace read separately by ObsPy. Define field coverage, units, missing-value
 conventions, and numeric precision for the comparisons. Do not promise whole
 SAC-header equivalence for fields without a GeoCSV source or agreed mapping.
 Supporting association of SAC-derived input traces is outside current scope.
-The separate `write_sac(trace, path)` operation exports associated
-MiniSEED waveforms with either association label using fresh SAC headers
-without mutating `stats.sac`. SAC waveform samples remain raw counts, subject
+The optional `create_sac_header=True` association argument creates fresh
+`stats.sac` headers with ObsPy's default conversion plus only stla/stlo/stel/stdp
+for either association label. The destination must be absent. ObsPy's
+Trace/Stream writer owns serialization; publisher-only tooling retains final
+waveform/export verification. Do not restore a public package writer. SAC waveform samples remain raw counts, subject
 to SAC storage precision. Expect uncalibrated input; instrument correction,
 response removal and counts-to-pressure calibration are outside repository scope.
 Preserve association-time waveform sample count
-separately from raw source SampleCount so later length changes fail export.
+separately from raw source SampleCount so publisher verification can detect later length changes.
 The unused `project_sac` option was removed on 2026-10-16 before package
 exposure. Keep deferred mappings in `docs/FUTURE.md`; do not
 reserve an unimplemented argument in the current associator.
@@ -162,13 +164,14 @@ separate authorization.
 
 `mermaid-publisher` owns snapshot creation, full-archive validation, the
 acceptance-report format and gate, transfer, latest activation and local archive
-recording. Its five modules live under `scripts/geocsv/`: create_snapshot,
-inspect_snapshot, validate_snapshot, gate_snapshot and publish_snapshot. Only
+recording. Its six modules live under `scripts/geocsv/`: create_snapshot,
+inspect_snapshot, validate_snapshot, _verify_sac, gate_snapshot and publish_snapshot. Only
 create, validate and publish are runnable commands. `bathymetrix-site` owns only
 its read-only Worker, landing page and hosting infrastructure. The canonical
 publication/download agreement is `mermaid-publisher/docs/geocsv/CONTRACT.md`.
 
-The publisher calls public `read`, `associate`, `write_sac` and `fetch` APIs.
+The publisher calls public `read`, `associate` and `fetch` APIs, uses optional
+SAC header creation and ObsPy writing, and owns export verification.
 This package owns scientific API behavior and package defect fixes. Do not add
 publication validators or report schemas here, or duplicate matching/projection
 logic in the publisher. Keep a fixed supported consumer baseline and historical
@@ -222,12 +225,12 @@ record, its dataset provenance, and explicitly documented projection rules
 (such as the adopted sea-level reference). Never use an earlier match or
 pre-existing trace metadata to fill missing source values. Requested destination
 containers (`stats.geocsv` and `stats.coordinates`) must be absent, even if
-empty or apparently equivalent; otherwise raise. Future `stats.sac`
-projections must follow the same rule. Never
+empty or apparently equivalent; otherwise raise. Requested `stats.sac`
+projections follow the same rule. Never
 merge, overwrite, or delete existing destinations. Required groups, including
 latitude/longitude pairs, must be complete or raise; do not introduce per-field
 missing-data policy switches. Apply this rule to all association-owned fields,
-including future SAC projections, not only coordinates.
+including optional SAC projections, not only coordinates.
 
 This rule concerns newly associated metadata, not clearing the waveform's
 native Stats or data: existing waveform identity, timing, sampling, and
@@ -272,8 +275,8 @@ is `from mermaid import geocsv`. This is a package-local implementation of an
 immediate public interface, not premature shared cross-repository namespace
 infrastructure.
 
-Implementation modules use a leading underscore (`_read.py`, `_fetch.py`,
-`_associate.py` and `_write_sac.py`). Expose public operations and types through
+Implementation modules use a leading underscore (`_read.py`, `_fetch.py` and
+`_associate.py`). Expose public operations and types through
 `src/mermaid/geocsv/__init__.py`; implementation module paths are private.
 
 Preserve `mermaid` as a native namespace package: do not add
@@ -294,7 +297,7 @@ authorization to add sibling packages, shared infrastructure or a metapackage.
 
 The intended public Python API is deliberately small and must be documented.
 `geocsv.associate(waveforms, records, *, time_tolerance=0.001,
-allow_first_segment=False)` attaches uniquely matched event metadata to an ObsPy Trace
+allow_first_segment=False, create_sac_header=False)` attaches uniquely matched event metadata to an ObsPy Trace
 or Stream in place and returns `None`. ObsPy remains an optional dependency,
 loaded only when association is called. Keep the matching implementation
 private and preserve the scientific contract above.

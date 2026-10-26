@@ -1,12 +1,17 @@
-# Write associated waveforms to SAC
+# Create station location headers and write SAC with ObsPy
 
-`geocsv.write_sac(trace, path)` writes one already-associated MiniSEED-derived
-waveform to a new binary SAC file and returns `None`. It fills receiver
-latitude, longitude, approximate depth when available, and the adopted
-sea-level elevation. The input trace is unchanged. The companion files
-[`WRITE_SAC.md`](WRITE_SAC.md) and [`WRITE_SAC.ipynb`](WRITE_SAC.ipynb) contain
-the same prose and Python examples in the same order. This tutorial is
-standalone; it uses tracked real-data fixtures and runs offline.
+`geocsv.associate(..., create_sac_header=True)` creates fresh `stats.sac`
+headers using ObsPy's default conversion, then adds station latitude (`stla`),
+longitude (`stlo`), adopted sea-level elevation (`stel`), and approximate depth
+(`stdp`) from the documented GeoCSV mapping. `stats.sac` must be absent.
+The default False leaves existing SAC headers untouched. Write the associated
+Trace or Stream using ObsPy's `write(..., format="SAC")` method.
+
+The companion files [`WRITE_SAC.md`](WRITE_SAC.md) and
+[`WRITE_SAC.ipynb`](WRITE_SAC.ipynb) contain the same prose and Python examples
+in the same order. This tutorial is standalone; it uses tracked real-data
+fixtures and runs offline. ObsPy owns file writing and storage behavior;
+`mermaid-geocsv` does not provide a writer.
 
 From the repository root, activate your existing environment and install
 ObsPy support:
@@ -17,7 +22,7 @@ python -m pip install '.[obspy]'
 ```
 
 See the [installation guide](../INSTALLATION.md) if you need an environment.
-ObsPy 1.5.1 or newer is required to call `associate` or `write_sac`; importing
+ObsPy 1.5.1 or newer is required to call `associate`; importing
 the package and fetching or reading GeoCSV do not require it. For notebooks:
 
 ```bash
@@ -56,18 +61,18 @@ subset_paths = {item["path"]: item["subset"]["path"]
                 for item in manifest["geocsv"]}
 trace, = read_waveforms(str(fixtures / example["mseed"]))
 tables = geocsv.read(fixtures / subset_paths[example["geocsv"]])
-geocsv.associate(trace, tables)
+geocsv.associate(trace, tables, create_sac_header=True)
 assert trace.stats.geocsv.association.type == "single_segment"
 
 workspace = TemporaryDirectory(prefix="geocsv-sac-")
 output_dir = Path(workspace.name)
 output = output_dir / "associated.sac"
 before = trace.copy()
-assert geocsv.write_sac(trace, output) is None
+assert trace.write(str(output), format="SAC") is None
 assert output.is_file()
 assert trace.stats == before.stats
 np.testing.assert_array_equal(trace.data, before.data)
-assert "sac" not in trace.stats
+assert "sac" in trace.stats
 print(output)
 ```
 
@@ -109,28 +114,30 @@ longitude describe the interpolated receiver position at the first sample;
 they are not averages over the waveform. Pressure is the matched event's
 source value, not a reconstructed depth trajectory.
 
-All geographic values and declared units come from `stats.geocsv` and its
-immutable dataset metadata. The writer never reopens GeoCSV, reads
-`stats.coordinates`, or inherits values from an existing `stats.sac`. It
-constructs a fresh `SACTrace` with `keep_sac_header=False`. Existing containers
-on the input trace remain untouched.
+All geographic values and declared units come from the matched GeoCSV row
+and its immutable dataset metadata. Association builds every requested
+projection before changing any trace. It never inherits an existing SAC header,
+uses another trace's location, or reads an independent SAC comparison file.
+Missing required coordinates or invalid pressure/units fail the entire batch.
 
-ObsPy supplies ordinary waveform identity, sampling, timing, calibration
-metadata, and default SAC headers. SAC waveform samples remain raw counts,
-subject to float32 storage. Input is expected to be uncalibrated MiniSEED-derived
-samples; the writer does not determine or undo earlier processing. Instrument
-correction, response removal and counts-to-pressure calibration are outside
-this repository's scope. Samples are not scaled or calibrated.
-Output is little-endian binary SAC, with float32 samples and floating headers.
-Integer samples outside the exactly representable float32 range can lose
-precision. Export requires finite real samples. Overflow and nonzero values
-that would become zero in float32 storage raise `ValueError` before file
-creation; the same storage checks apply to depth, sample interval, and
-calibration. Identity codes must fit eight ASCII bytes, have no surrounding
-whitespace, and not equal the SAC undefined token `-12345`.
-SAC timing also has finite precision and does not guarantee
-preservation of UTC nanoseconds. GeoCSV row provenance is not serialized into
-SAC; retain the associated trace or source records when you need it.
+ObsPy's fresh-header conversion supplies ordinary identity, sampling, timing,
+and defaults. Only the four station location fields receive additional GeoCSV
+mappings. Native waveform Stats, calibration metadata, samples and processing
+history remain unchanged. Creating `stats.sac` does not calibrate samples or
+remove an instrument response. GeoCSV provides no counts-to-pressure factor.
+ObsPy calls one header slot `scale` and maps `stats.calib` into it; the linked
+SAC manual marks that slot UNUSED. That mapping is ObsPy behavior, not an
+additional GeoCSV calibration promise.
+
+ObsPy's default `keep_sac_header=True` preserves the projected headers when
+writing. Passing `keep_sac_header=False` discards them. Binary SAC uses float32
+samples and floating headers; large integers can lose precision and timing
+need not preserve UTC nanoseconds. ObsPy defaults to little-endian binary SAC
+and accepts its own writer options. The package does not validate a later
+write, promise lossless conversion, or serialize GeoCSV row provenance.
+Retain the associated trace or source records for provenance. Additional
+export-time consistency and storage checks belong to the publisher's
+[verification tooling](../../../mermaid-publisher/docs/geocsv/SAC_VERIFICATION.md).
 
 ## 3. Compare with an independently read automaid SAC file
 
@@ -167,29 +174,29 @@ time differently between reference-time fields and the relative `b` header.
 This is a comparison of the four geographic headers and waveform content,
 identity, count, interval and start time. It does not assert whole-header or
 byte-for-byte equivalence. Automaid also writes instrument, orientation,
-calibration and trigger information that this geographic exporter does not
+calibration and trigger information that these four geographic mappings do not
 reconstruct. In particular, the native MiniSEED calibration metadata may differ
 from automaid's SAC `scale`.
 
-## 4. Export several traces, including REQ with missing pressure
+## 4. Write a Stream, including REQ with missing pressure
 
-Each call takes one Trace and one explicit path. Loop over an associated
-Stream and choose distinct filenames; there is no implicit naming scheme or
-batch transaction. Earlier files remain if a later export fails.
+A SAC file contains one trace. ObsPy's `Stream.write` creates one file per
+trace and appends numbers when the Stream contains multiple traces. For this
+two-trace example, `segment.sac` becomes `segment01.sac` and `segment02.sac`.
+The package supplies no file naming or batch-writing behavior.
 
 ```python
 request_example = next(item for item in manifest["examples"]
                        if item["group"].startswith("REQ."))
 request, = read_waveforms(str(fixtures / request_example["mseed"]))
 request_tables = geocsv.read(fixtures / subset_paths[request_example["geocsv"]])
-geocsv.associate(request, request_tables)
+geocsv.associate(request, request_tables, create_sac_header=True)
 assert request.stats.geocsv.DataQuality == "D"
 assert pd.isna(request.stats.geocsv.WaterPressure)
 
 batch = Stream([trace, request])
-for index, item in enumerate(batch):
-    geocsv.write_sac(item, output_dir / f"segment-{index}.sac")
-request_sac = SACTrace.read(str(output_dir / "segment-1.sac"))
+batch.write(str(output_dir / "segment.sac"), format="SAC")
+request_sac = SACTrace.read(str(output_dir / "segment02.sac"))
 assert request_sac.stla is not None and request_sac.stlo is not None
 assert request_sac.stdp is None
 request_reference = SACTrace.read(str(fixtures / request_example["sac"]))
@@ -205,21 +212,22 @@ raises `ValueError`. Source quality identifies this exception; native MiniSEED
 quality does not override it and is not used to infer depth. When pressure is
 present, its declared units must be mbar even for REQ records.
 
-## 5. Handle existing files and export a clipped combined window
+## 5. Control overwriting and write a clipped combined window
 
-Output paths must not exist; parent directories must already exist. All input
-validation and SAC construction finish before exclusive file creation.
-Invalid inputs create no output. Filesystem errors propagate; an I/O failure
-after creation can leave a partial file.
+ObsPy overwrites an existing output filename by default. Use an exclusively
+opened binary file if overwrite refusal is required; this is standard Python
+file handling, not a package-managed writer. An I/O failure can leave a partial
+file, and writing multiple files is not a transaction.
 
 ```python
 saved_bytes = output.read_bytes()
 try:
-    geocsv.write_sac(trace, output)
+    with output.open("xb") as handle:
+        trace.write(handle, format="SAC")
 except FileExistsError as error:
     print(error)
 else:
-    raise AssertionError("Expected overwrite refusal")
+    raise AssertionError("Expected exclusive-open refusal")
 assert output.read_bytes() == saved_bytes
 ```
 
@@ -249,14 +257,15 @@ merged, = segments
 merged.trim(starttime=merged.stats.starttime + 1,
             endtime=merged.stats.endtime - 1)
 merged_tables = geocsv.read(root / "data" / "fixtures" / "P0045" / "P0045.geocsv")
-geocsv.associate(merged, merged_tables, allow_first_segment=True)
+geocsv.associate(merged, merged_tables, allow_first_segment=True,
+                 create_sac_header=True)
 assert merged.stats.geocsv.association.type == "anchor_segment"
 assert merged.stats.npts < 45683
 assert merged.stats.geocsv.SampleCount == 9696
 assert merged.stats.geocsv.association.waveform.sample_count == merged.stats.npts
 assert merged.stats.geocsv.association.waveform_start_offset_seconds > 0.9
 merged_path = output_dir / "merged.sac"
-geocsv.write_sac(merged, merged_path)
+merged.write(str(merged_path), format="SAC")
 merged_sac = SACTrace.read(str(merged_path))
 assert merged_sac.stla == np.float32(merged.stats.geocsv.Latitude)
 assert merged_sac.stlo == np.float32(merged.stats.geocsv.Longitude)
@@ -266,18 +275,13 @@ np.testing.assert_array_equal(merged_sac.data, merged.data.astype(np.float32))
 workspace.cleanup()
 ```
 
-Associate the final downloaded/clipped/combined window before export. The writer
-checks identity, initial start-time offset, association-time waveform sample
-count, and source rate agreement under association's 0.00001 Hz threshold. Original
-source SampleCount must equal waveform count only for `single_segment`. Source
-coverage was checked at association; the writer does not reopen source files.
-Later count/start changes require a fresh association on an unassociated trace.
-It also rejects empty data and masked gaps. These checks cannot detect all
-sample transformations, including filtering or replacing values without
-changing headers; they do not prove an unchanged processing history. Rate edits
-are rejected against the association-time snapshot even within the source-rate
-threshold. A `single_segment`
-label is not refreshed by later waveform processing.
+Associate the final downloaded/clipped/combined window before writing.
+Association checks its identity, start, rate, count and source coverage at that
+time. Later trimming, resampling, merging or manual edits do not refresh
+`stats.geocsv`, `stats.coordinates` or the station location projection.
+ObsPy's writer does not revalidate GeoCSV association. A retained association
+label does not establish current coverage or an unchanged processing history.
+The publisher retains separate checks on the final waveform and its SAC export.
 
 ## Verification and fixture coverage
 
@@ -293,21 +297,21 @@ comparisons.
 
 Implementation references: ObsPy's documented
 [SACTrace conversion](https://docs.obspy.org/packages/autogen/obspy.io.sac.sactrace.SACTrace.from_obspy_trace.html)
-and [writer](https://docs.obspy.org/packages/autogen/obspy.io.sac.sactrace.SACTrace.write.html).
+and [Trace writer](https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.write.html)
+and [Stream writer](https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.write.html).
 Source inspection used `/Users/jdsimon/programs/obspy/` commit
 `50033e1daf95233cd4f30e95a49c37fd50be2ccd`, including SAC conversion, headers,
 array writing and nearby tests; the repository environment separately uses
 ObsPy 1.5.1. The pressure convention follows automaid's
 `scripts/events.py` and `scripts/geocsv.py`.
 
-## Association report compatibility
+## Migration from the former package writer
 
-Version 0.20.0 requires the nested `stats.geocsv.association` report created by
-current association. Its `.type` is `single_segment` or `anchor_segment`;
-`.waveform` records identity, start/end time, rate and count. SAC export checks
-identity/start/count/rate against this snapshot and retains the source rate and
-unit checks. A later rate change is rejected even when it remains within the
-source-rate tolerance. Reassociate the final waveform on an unassociated copy.
-The report's coverage segments and alignment diagnostics stay in memory and
-are not serialized into SAC. See the
-[report schema](../OBSPY_ASSOCIATION.md#association-report).
+Version 0.25.0 removes `geocsv.write_sac`. Request `create_sac_header=True` on
+an unassociated final waveform, then use `Trace.write` or `Stream.write`.
+Creating the header is part of transactional association; file writing remains
+an ObsPy operation. Existing destination containers raise even when empty.
+The package's former output-path protection, export-time association checks,
+storage guards and stable summary calculation are retained in publisher-only
+verification, rather than becoming consumer API promises. This tutorial's
+four-field and waveform comparisons remain unchanged.

@@ -35,7 +35,7 @@ Each CI job also builds the universal pure-Python wheel, installs it with that
 job's dependencies in a fresh environment, and runs
 [`scripts/check_wheel.py`](../scripts/check_wheel.py) outside the checkout in
 Python's isolated mode. The check verifies the installed import location and
-version, lazy ObsPy loading, and a real-data `read → associate → write_sac`
+version, lazy ObsPy loading, and a real-data `read → associate(create_sac_header=True) → Trace.write`
 round trip with sample, timing, identity and coordinate checks. Fixtures remain
 external test inputs; they are not needed in the installed package. The check
 does not contact EarthScope or require production GeoCSV hosting.
@@ -80,7 +80,8 @@ python -m jupyterlab docs/tutorials/READ.ipynb
 ## Optional ObsPy support
 
 The optional ObsPy dependency enables `geocsv.associate` for MiniSEED-derived
-traces and streams, and `geocsv.write_sac` for exporting associated segments:
+traces and streams, including optional `create_sac_header=True`. Use ObsPy's
+`Trace.write` or `Stream.write` to serialize the located waveform:
 
 ```bash
 python -m pip install '.[obspy]'

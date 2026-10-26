@@ -180,7 +180,8 @@ not a permanent link between the trace and the inventory.
 
 GeoCSV follows the format-adapter precedent: retain the complete source row
 and immutable provenance under `stats.geocsv`, create explicit coordinates
-at association, and construct fresh SAC headers only during `write_sac`.
+at association, and optionally create fresh SAC headers with
+`create_sac_header=True` for subsequent ObsPy writing.
 There is no perpetual synchronization between these containers. The
 [association reference](OBSPY_ASSOCIATION.md) specifies authority and lifetime.
 

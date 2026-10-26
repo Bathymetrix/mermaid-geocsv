@@ -27,6 +27,8 @@ def main():
     assert not Path.cwd().resolve().is_relative_to(repository), (
         "run the smoke check outside the repository")
     assert geocsv.__version__ == package.version
+    assert not hasattr(geocsv, "write_sac")
+    assert not (installed_directory / "_write_sac.py").exists()
     assert "obspy" not in sys.modules, "ObsPy must remain a lazy dependency"
 
     import numpy as np
@@ -43,14 +45,14 @@ def main():
     assert frame.attrs["geocsv"].source_path.is_absolute()
 
     waveform, = read(str(fixtures / example["mseed"]))
-    geocsv.associate(waveform, tables)
+    geocsv.associate(waveform, tables, create_sac_header=True)
     source = waveform.stats.geocsv
     assert source.source_record_index == example["subset_record_index"]
     assert source.association.type == "single_segment"
 
     with TemporaryDirectory(prefix="geocsv-wheel-sac-") as temporary:
         output = Path(temporary) / "associated.sac"
-        geocsv.write_sac(waveform, output)
+        waveform.write(str(output), format="SAC")
         exported, = read(str(output), round_sampling_interval=False)
         assert exported.id == waveform.id
         assert exported.stats.npts == waveform.stats.npts
@@ -58,9 +60,11 @@ def main():
         assert exported.stats.sac.delta == np.float32(waveform.stats.delta)
         assert exported.stats.sac.stla == np.float32(source.Latitude)
         assert exported.stats.sac.stlo == np.float32(source.Longitude)
+        assert exported.stats.sac.stel == 0
+        assert exported.stats.sac.stdp == np.float32(source.WaterPressure / 100)
         np.testing.assert_array_equal(exported.data, waveform.data.astype(np.float32))
 
-    print(f"Wheel {package.version}: read/associate/write_sac passed ({imported_path})")
+    print(f"Wheel {package.version}: read/associate/create_sac_header/Trace.write passed ({imported_path})")
 
 
 if __name__ == "__main__":

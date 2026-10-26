@@ -141,13 +141,14 @@ These are coverage evidence, not a reconstruction of concatenation history.
 
 ## SAC export
 
-`write_sac` accepts both association labels. It constructs fresh geographic
-headers from the anchor and declared units, preserving missing REQ depth.
-Identity, association-time start/count/rate, source rate agreement and SAC storage
-validity are checked before file creation. No GeoCSV file is reopened.
-Associate the final downloaded/clipped/combined window before export; later
-length/start/rate changes require a fresh association on an unassociated waveform.
-Neither matching nor export proves an unmodified sample history.
+`associate(..., create_sac_header=True)` supports both association labels.
+It constructs ObsPy's fresh SAC baseline plus the anchor's four geographic
+fields, preserving missing REQ depth. The SAC destination must be absent.
+Associate the final downloaded/clipped/combined window before header creation,
+then use ObsPy `Trace.write` or `Stream.write`. Later waveform changes do not
+refresh the projection or cause ObsPy to revalidate GeoCSV association.
+Export-time consistency and storage checks remain publisher-only tooling.
+Neither matching nor writing proves an unmodified sample history.
 
 ## Real-data evidence and limits
 

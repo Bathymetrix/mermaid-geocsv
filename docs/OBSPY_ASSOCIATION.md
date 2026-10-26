@@ -32,7 +32,7 @@ provides evidence for the repeated-request case.
 ## Matching original traces
 
 The signature is `associate(waveforms, records, *, time_tolerance=0.001,
-allow_first_segment=False)`. It modifies a Trace or Stream in place and
+allow_first_segment=False, create_sac_header=False)`. It modifies a Trace or Stream in place and
 returns `None`; records are tables from `geocsv.read`, retaining their
 source indices and immutable GeoCSV metadata.
 
@@ -212,10 +212,17 @@ ObsPy can inherit an earlier row while changing `npts` and `endtime`; a
 retained `single_segment` label is not revalidated. See [Stream merging and
 association](STREAM.md#comparison-with-geocsv-association).
 
-Association does not create SAC headers. Separate
-[`geocsv.write_sac`](tutorials/WRITE_SAC.md) exports either association label to
-a new file, constructing fresh headers from the attached GeoCSV values and
-units. For `anchor_segment`, the anchor's receiver position, approximate depth,
+Optional `create_sac_header=True` creates fresh `stats.sac` using ObsPy's
+public conversion, then adds only `stla`, `stlo`, `stel` and `stdp` from the
+GeoCSV station location mapping. The flag defaults to False and must be a
+Python bool. When requested, `stats.sac` must be absent, even if empty; all
+requested projections validate before any trace is mutated. Missing REQ depth
+is stored as SAC undefined (-12345). Native waveform Stats and samples are not
+changed by header conversion. Use ObsPy `Trace.write` or `Stream.write` with
+its default `keep_sac_header=True`; False discards the projection. File writing,
+precision, overwriting and later export validation are outside the consumer
+contract. Publisher-only checks retain the former exporter validations. See
+[the SAC tutorial](tutorials/WRITE_SAC.md). For `anchor_segment`, the anchor's receiver position, approximate depth,
 and sea-level reference apply to the whole window under the user's MERMAID
 negligible-drift convention. Missing REQ pressure remains undefined. Arbitrary GeoCSV
 provenance is not serialized by MiniSEED or SAC export.
@@ -238,6 +245,15 @@ Scientific fields need context before projection or interpretation:
 These are interpretation requirements, not a general validation framework.
 
 ## Migration and related references
+
+Version 0.25.0 removes the public `write_sac` operation. Set
+`associate(..., create_sac_header=True)` on the final unassociated waveform,
+then call ObsPy's `Trace.write` or `Stream.write`. The fresh SAC baseline comes
+from ObsPy; the only additional GeoCSV mappings are station latitude,
+longitude, adopted sea-level elevation and approximate depth. Association-time
+scientific guarantees are unchanged. Export checks now live in the publisher;
+ordinary ObsPy writing does not revalidate GeoCSV association. No download
+protocol, matching tolerance or provenance schema changes are introduced.
 
 Version 0.22.0 changes the absolute start/containment default from 0.0001 s to
 0.001 s and tightens rate agreement from 0.01 Hz to 0.00001 Hz, shared by strict

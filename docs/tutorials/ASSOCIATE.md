@@ -87,7 +87,7 @@ help(geocsv.associate)
 Begin with one trace and the parsed tables. The default 1 ms start tolerance
 accepts this fixture; no optional input is needed.
 Its signature is `associate(waveforms, records, *, time_tolerance=0.001,
-allow_first_segment=False)`. The fallback flag must be a Python bool; strings
+allow_first_segment=False, create_sac_header=False)`. The fallback flag must be a Python bool; strings
 such as `"False"` are rejected. Each trace must match exactly one `Algorithm(event):` row
 under these rules:
 
@@ -153,9 +153,28 @@ units for a future nonzero elevation projection. This is the interpolated
 receiver position at the first sample time, rather than an average position
 over the waveform. Elevation does not
 represent receiver depth or infer a pressure conversion. Missing either
-coordinate fails the association. To export an associated waveform
-with geographic SAC headers, use the separate [SAC writing tutorial](WRITE_SAC.md).
-Association itself does not create or modify `stats.sac`.
+coordinate fails the association. By default, association leaves `stats.sac`
+untouched. Set `create_sac_header=True` to create ObsPy's fresh SAC baseline
+plus station latitude (`stla`), longitude (`stlo`), adopted sea-level elevation
+(`stel`) and approximate depth (`stdp`). The flag must be a Python bool and
+`stats.sac` must be absent. Pressure in declared mbar is divided by 100 as an
+approximate depth in metres; missing REQ pressure stays SAC undefined, while
+missing DET pressure raises. No additional GeoCSV-to-SAC mappings are promised.
+
+```python
+sac_trace, = read_waveforms(str(waveform_path))
+geocsv.associate(sac_trace, tables, create_sac_header=True)
+assert sac_trace.stats.sac.stla == sac_trace.stats.geocsv.Latitude
+assert sac_trace.stats.sac.stlo == sac_trace.stats.geocsv.Longitude
+assert sac_trace.stats.sac.stel == 0.0
+assert sac_trace.stats.sac.stdp == sac_trace.stats.geocsv.WaterPressure / 100
+```
+
+Write with ObsPy's `sac_trace.write(path, format="SAC")`, preserving its default
+`keep_sac_header=True`. Setting it to False discards the projection. The
+[SAC tutorial](WRITE_SAC.md) shows `Trace.write`, `Stream.write`, precision,
+and independent reference comparisons. All requested projections validate
+before any trace is modified; native waveform headers and samples stay intact.
 
 The attachment also has four association-owned keys:
 
@@ -485,9 +504,9 @@ print(window.stats.coordinates)
 The anchor's GeoCSV position still describes its original first sample. Its
 geographic projection onto this window follows the supplied MERMAID convention;
 no new interpolation or average position is computed. Associate after clipping
-or combining traces, before export. The exporter checks the association-time
-waveform count and start, so later length/start changes require a fresh
-association from an unassociated waveform. Source SampleCount is never rewritten.
+or combining traces, before optional SAC header creation and writing.
+Later waveform edits do not refresh association or its projections; ObsPy
+writing does not revalidate them. Source SampleCount is never rewritten.
 
 ## Fixture coverage
 

@@ -67,6 +67,9 @@ def test_tutorial_examples(name, working_directory, monkeypatch):
     if name == "PLOTTING":
         namespace["plt"].close("all")
     if name == "ASSOCIATE":
+        sac_trace = namespace["sac_trace"]
+        assert sac_trace.stats.sac.stla == sac_trace.stats.geocsv.Latitude
+        assert sac_trace.stats.sac.stlo == sac_trace.stats.geocsv.Longitude
         window = namespace["window"]
         assert window.stats.geocsv.association.type == "anchor_segment"
         assert window.stats.geocsv.association.waveform_start_offset_seconds > 0.9
@@ -75,6 +78,8 @@ def test_tutorial_examples(name, working_directory, monkeypatch):
         assert window.stats.geocsv.association.coverage_segments[0].source_record_index == 101433
         assert 0.001 < window.stats.geocsv.association.max_sample_grid_offset.seconds < window.stats.delta / 2
     if name == "WRITE_SAC":
+        assert "sac" in namespace["trace"].stats
+        assert namespace["request"].stats.sac.stdp == -12345.0
         assert namespace["trace"].stats.geocsv.association.type == "single_segment"
         assert namespace["written"].stdp is not None
         assert namespace["request_sac"].stdp is None

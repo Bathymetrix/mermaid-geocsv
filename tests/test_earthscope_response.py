@@ -70,7 +70,7 @@ def test_clipped_earthscope_response_association_and_sac_export(tmp_path):
     assert waveform.stats == original.stats
     np.testing.assert_array_equal(waveform.data, original.data)
     # Source-grid placement is automatic; no absolute time override is needed.
-    geocsv.associate(waveform, tables, allow_first_segment=True)
+    geocsv.associate(waveform, tables, allow_first_segment=True, create_sac_header=True)
     attached = waveform.stats.geocsv
     report = attached.association
     assert report.type == "anchor_segment"
@@ -98,7 +98,7 @@ def test_clipped_earthscope_response_association_and_sac_export(tmp_path):
 
     before_export = waveform.copy()
     output = tmp_path / "P0006_clipped.sac"
-    assert geocsv.write_sac(waveform, output) is None
+    assert waveform.write(str(output), format="SAC") is None
     actual = SACTrace.read(str(output))
     reference = SACTrace.read(str(FIXTURE / MANIFEST["originals"][0]["sac"]["path"]))
     for key, field in (("stla", "Latitude"), ("stlo", "Longitude")):

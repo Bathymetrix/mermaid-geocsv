@@ -234,9 +234,10 @@ Ordering has consequences:
 
 Quality is not part of either grouping/matching identity. Calling association
 again on retained destinations raises; there is no implicit clearing or
-reconciliation workflow. SAC export is a separate operation for associated
-waveforms with either association label, not a merge option. Associate the
-final clipped/combined window first. Use the
+reconciliation workflow. Optional `create_sac_header=True` creates the SAC
+station location projection for either association label. Associate the final
+clipped/combined window first, then use ObsPy's writer. Later writes do not
+revalidate the association; export verification belongs to the publisher. Use the
 [association guide](tutorials/ASSOCIATE.md) for the complete public contract.
 
 ## Verification limits

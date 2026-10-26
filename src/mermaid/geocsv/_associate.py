@@ -6,6 +6,7 @@ from math import isfinite
 
 from obspy import Stream, Trace, UTCDateTime
 from obspy.core.util import AttribDict
+from obspy.io.sac import SACTrace
 import numpy as np
 import pandas as pd
 
@@ -49,6 +50,30 @@ def _coordinates(trace, row, metadata):
         projected[key] = float(value)
     projected["elevation"] = 0.0  # Sea-level convention; no geoid model.
     return AttribDict(projected)
+
+
+def _sac_header(trace, row, metadata, coordinates):
+    """Create ObsPy's fresh SAC baseline plus four station location fields."""
+    pressure = row.get("WaterPressure")
+    if pressure is None or pd.isna(pressure):
+        quality = row.get("DataQuality")
+        if not isinstance(quality, str) or quality != "D":
+            raise ValueError(f"{trace.id}: missing WaterPressure; "
+                             "only REQ source records (DataQuality D) may omit depth")
+        depth = -12345.0  # SAC undefined; never borrow another record's pressure.
+    else:
+        if metadata.field_units.get("WaterPressure") != "mbar":
+            raise ValueError(f"{trace.id}: WaterPressure requires declared units mbar")
+        if not isfinite(float(pressure)) or pressure < 0:
+            raise ValueError(f"{trace.id}: requires finite nonnegative WaterPressure")
+        # Automaid convention: 100 mbar = 1 dbar, treated as approximately 1 m.
+        depth = float(pressure) / 100
+
+    sac = SACTrace.from_obspy_trace(trace, keep_sac_header=False)
+    headers = sac.to_obspy_trace(round_sampling_interval=False).stats.sac
+    headers.update({"stla": coordinates.latitude, "stlo": coordinates.longitude,
+                    "stel": 0.0, "stdp": depth})
+    return headers
 
 
 def _source_last_sample_ns(time_ns, row):
@@ -197,16 +222,18 @@ def _validate_coverage(trace, overlapping):
     return ranges
 
 
-def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=False):
+def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=False,
+              create_sac_header=False):
     """Associate a Trace or Stream with event rows returned by geocsv.read.
 
     Validate all matches before modifying any trace; return None. By default require exact
     SNCL, UTC times within 1 millisecond by default, exact
     sample count, and rate difference <= 0.00001 Hz. Waveform core fields remain
     authoritative. Quality is retained separately and is not a match filter.
-    Guarantees end at initial association. SAC export is a separate operation.
+    Guarantees end at initial association. Writing remains an ObsPy operation.
     Missing Latitude or Longitude fails. Destination containers must be absent:
-    geocsv and coordinates. Nothing is merged or overwritten.
+    geocsv and coordinates, and sac when create_sac_header=True.
+    Nothing is merged or overwritten.
     Source columns must not collide with association keys or attributes and
     methods of the ObsPy AttribDict used for stats.geocsv.
     Only Location may be a known empty string; no SNCL field may be missing.
@@ -230,6 +257,8 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
     """
     if not isinstance(allow_first_segment, bool):
         raise TypeError("allow_first_segment must be a bool")
+    if not isinstance(create_sac_header, bool):
+        raise TypeError("create_sac_header must be a bool")
     try:
         tolerance_ns = Decimal(str(time_tolerance)) * 1_000_000_000
     except InvalidOperation as exc:
@@ -243,8 +272,10 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
     else:
         raise TypeError("waveforms must be an ObsPy Trace or Stream")
 
+    destinations = (("geocsv", "coordinates", "sac") if create_sac_header
+                    else ("geocsv", "coordinates"))
     for trace in traces:
-        for key in ("geocsv", "coordinates"):
+        for key in destinations:
             if key in trace.stats:
                 raise ValueError(f"{trace.id}: stats.{key} already exists; "
                                  "association requires absent destination containers")
@@ -449,8 +480,12 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
                                  "dataset_index": dataset_index, "metadata": metadata,
                                  "association": _association_details(
                                      trace, anchor, association_type, ranges)})
-        plans.append((trace, attachment, _coordinates(trace, row, metadata)))
+        coordinates = _coordinates(trace, row, metadata)
+        headers = _sac_header(trace, row, metadata, coordinates) if create_sac_header else None
+        plans.append((trace, attachment, coordinates, headers))
 
-    for trace, attachment, coordinates in plans:
+    for trace, attachment, coordinates, headers in plans:
         trace.stats.geocsv = attachment
         trace.stats.coordinates = coordinates
+        if headers is not None:
+            trace.stats.sac = headers

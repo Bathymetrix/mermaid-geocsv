@@ -23,7 +23,8 @@ protocol and a standalone local test collection.
 `mermaid-publisher` owns snapshot creation, full-archive validation, the concrete
 acceptance-report format, publication gate and transfer. `bathymetrix-site` owns
 its read-only hosting. The publisher's
-validator uses this package's public `read`, `associate` and `write_sac` APIs
+validator uses this package's public `read` and `associate` APIs,
+optional SAC header creation, ObsPy writing and publisher-only export checks
 with independent paired waveform references and the documented scientific
 comparison rules. No publication-validator script or report protocol is planned
 in this package. See the [hosting workflow and status](HOSTING.md).
@@ -46,10 +47,13 @@ a particular merge. Use the [scientific questions](OPEN_QUESTIONS.md#association
 
 ## Project associated metadata into SAC headers
 
-Geographic SAC export is implemented separately as `geocsv.write_sac(trace,
-path)` for associated MiniSEED-derived waveforms with either label. Association has no SAC
-option and does not mutate `stats.sac`; the unused `project_sac` placeholder
-was removed on 2026-10-16. The [SAC writing guide](tutorials/WRITE_SAC.md) and
+SAC station location projection is implemented by
+`geocsv.associate(..., create_sac_header=True)` for MiniSEED-derived waveforms
+with either association label. It creates a fresh ObsPy-default `stats.sac`
+plus four geographic fields; the destination must be absent. ObsPy owns file
+writing. The former `geocsv.write_sac` API was removed in 0.25.0, with export
+checks retained in publisher-only verification. The unused `project_sac`
+placeholder was removed on 2026-10-16. The [SAC writing guide](tutorials/WRITE_SAC.md) and
 [notebook](tutorials/WRITE_SAC.ipynb) define current coverage, units, missing
 pressure handling, and key-by-key comparison precision against independent
 paired SAC references. Whole-header equivalence is not promised.
