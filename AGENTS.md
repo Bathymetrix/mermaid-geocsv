@@ -272,6 +272,22 @@ is `from mermaid import geocsv`. This is a package-local implementation of an
 immediate public interface, not premature shared cross-repository namespace
 infrastructure.
 
+Preserve `mermaid` as a native namespace package: do not add
+`src/mermaid/__init__.py`, and keep namespace package discovery enabled in the
+build configuration. Retain `src/mermaid/geocsv/__init__.py` for this component's
+public API and package metadata. This distribution owns `mermaid.geocsv`, not
+the entire `mermaid` namespace; do not package unrelated sibling components.
+
+A hypothetical future ecosystem may provide `from mermaid import foo` from a
+separate `mermaid-foo` repository with its own `src/mermaid/foo/` package,
+dependencies, version and releases. Such components need not live in this
+repository and must preserve the same native namespace convention without
+overlapping package ownership. An optional umbrella metapackage could depend
+on compatible component versions to provide one installation command; the
+component distributions would still be installed separately in the same Python
+environment. This is a possible future direction, not a committed roadmap or
+authorization to add sibling packages, shared infrastructure or a metapackage.
+
 The intended public Python API is deliberately small and must be documented.
 `geocsv.associate(waveforms, records, *, time_tolerance=0.001,
 allow_first_segment=False)` attaches uniquely matched event metadata to an ObsPy Trace
