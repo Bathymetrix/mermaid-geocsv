@@ -2,7 +2,7 @@
 
 `geocsv.associate` attaches source metadata and receiver coordinates to
 MiniSEED-derived ObsPy traces. The [association tutorial](tutorials/ASSOCIATE.md)
-defines the public API and provides executable examples. This reference
+provides introductory executable examples. This reference defines the public API and
 collects the scientific rationale and validation rules; waveform processing
 remains downstream.
 

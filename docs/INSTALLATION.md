@@ -95,8 +95,9 @@ python -m jupyterlab docs/tutorials/ASSOCIATE.ipynb
 ```
 
 The [SAC writing tutorial](tutorials/WRITE_SAC.md) and
-[notebook](tutorials/WRITE_SAC.ipynb) demonstrate export and comparison with
-independent automaid SAC references.
+[notebook](tutorials/WRITE_SAC.ipynb) demonstrate header creation and ObsPy export.
+Comparisons with independent automaid SAC references are retained in the
+[detailed SAC examples](development/WRITE_SAC.md).
 
 Each tutorial is standalone and has a synchronized Markdown companion.
 Start with the [read tutorial](tutorials/READ.md), then explore

@@ -115,7 +115,7 @@ declaration. `metadata.download` is None for bare paths and bytes, or the
 immutable `GeoCSVDownload` provenance supplied by a fetch result. It retains
 the instrument and release IDs, requested file and manifest URLs, verified byte
 count and SHA-256, test-collection flag, and original manifest bytes. It does
-not retain the GeoCSV payload. See the [fetch guide](tutorials/FETCH.md#provenance).
+not retain the GeoCSV payload. See the [fetch reference](development/FETCH.md#provenance).
 
 As of writing, pandas documents [`DataFrame.attrs`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.attrs.html)
 as experimental. We use it

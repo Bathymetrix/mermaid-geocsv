@@ -6,7 +6,9 @@ notebook setup.
 
 ## Tutorials
 
-Each pair contains the same prose and Python examples and runs independently.
+Each short walkthrough contains the same prose and Python examples as its
+notebook and runs independently. Read, associate, SAC, and plotting use included
+fixtures; fetch uses the public Bathymetrix testing collection.
 
 | Workflow | Guide | Notebook |
 | --- | --- | --- |
@@ -21,19 +23,19 @@ Each pair contains the same prose and Python examples and runs independently.
 - [Reader specification](READER_SPEC.md): input types, DataFrame dtypes and
   indices, immutable metadata, timestamp precision, and missing-value rules,
   including known empty SEED location codes.
-- [Fetch guide](tutorials/FETCH.md): release discovery, checksums, storage,
+- [Fetch reference](development/FETCH.md#the-fetch-interface): release discovery, checksums, storage,
   memory use, provenance, failure behavior, and the test collection layout.
   Production hosting is not deployed; callers supply `base_url`.
-- [Hosting workflow and build checklist](HOSTING.md): planned
-  `bathymetrix.com/geocsv/` publication, the cross-repository Mermaid diagram,
+- [Hosting workflow and build checklist](HOSTING.md): testing publication at
+  `bathymetrix.com/geocsv/`, the cross-repository Mermaid diagram,
   timestamp-based snapshots, publisher-owned creation, full-archive validation,
   evidence and transfer using this package's public APIs, and separate website hosting.
-- [Association guide](tutorials/ASSOCIATE.md): matching tolerances, source-row
+- [Association reference](OBSPY_ASSOCIATION.md): matching tolerances, source-row
   attachments, coordinate projections, validation, and processing limitations.
 - [Merged-trace policy](OBSPY_MERGED_TRACES.md): explicit first-segment location
   fallback for clipped/combined windows, sample-grid coverage, overlaps, and
   limits on reconstruction claims.
-- [SAC header and ObsPy writing guide](tutorials/WRITE_SAC.md): supported segments, geographic
+- [SAC header and ObsPy writing reference](development/WRITE_SAC.md): supported segments, geographic
   header mappings, pressure/depth conventions, missing pressure, float32
   precision, and independent automaid comparisons.
 
@@ -49,6 +51,9 @@ Each pair contains the same prose and Python examples and runs independently.
 
 ## Fixtures and maintenance
 
+- [Development examples and checks](development/README.md): extended pandas
+  and plotting examples, a local HTTP collection, detailed association
+  diagnostics, and independent SAC comparisons moved out of the tutorials.
 - [P0006 reader fixture](../data/fixtures/P0006/README.md).
 - [Association fixture inventory](../data/fixtures/association/README.md):
   paired MiniSEED/SAC files and tracked GeoCSV subsets. Ordinary tests use

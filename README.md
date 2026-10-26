@@ -44,7 +44,9 @@ metadata = records.attrs["geocsv"]
 
 ## API and tutorials
 
-Each tutorial is standalone, with matching Markdown and notebook versions.
+Each tutorial is a short, standalone walkthrough with matching Markdown and
+notebook versions. Local examples use included fixtures; fetch demonstrates
+the hosted testing collection.
 
 | Operation | Purpose | Guide | Notebook |
 | --- | --- | --- | --- |
@@ -55,10 +57,14 @@ Each tutorial is standalone, with matching Markdown and notebook versions.
 | Plot and analyze records | Use pandas and Matplotlib downstream. | [Plotting](docs/tutorials/PLOTTING.md) | [PLOTTING.ipynb](docs/tutorials/PLOTTING.ipynb) |
 
 Hosted GeoCSV collections remain testing only; `fetch` requires an explicit
-`base_url`. See the [hosting workflow](docs/HOSTING.md) for publication status.
+`base_url`. The [fetch tutorial](docs/tutorials/FETCH.md) downloads P0006 and
+P0045 from `https://bathymetrix.com/geocsv/testing/`. See the
+[hosting workflow](docs/HOSTING.md) for publication status.
 
 Detailed matching rules, association reports, SAC precision and provenance
 limits, format rules, and fixture references are in the
 [documentation index](docs/README.md).
+Extended examples and development checks are retained in the
+[development notes](docs/development/README.md).
 
 Developed and maintained by [Bathymetrix®](https://bathymetrix.com).
