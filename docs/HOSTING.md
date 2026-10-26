@@ -65,6 +65,13 @@ P0006/P0045 candidate, including current acceptance gates after the local layout
 change. See the publisher’s [fresh findings](../../mermaid-publisher/docs/geocsv/SCHEMA3_FINDINGS.md).
 These reports are distinct from the historical schema-2 acceptance.
 
+A subsequent local revalidation of the existing P0006/P0045 candidate passed all
+3,292 pairs and the current acceptance gate with frozen consumer `33ed5ff`.
+The original published report remains unchanged and records consumer `c1eb805`;
+the fresh report is separate local evidence. No consumer implementation or
+hosting change was required. See the publisher's
+[local revalidation findings](../../mermaid-publisher/docs/geocsv/SCHEMA3_FINDINGS.md#local-consumer-baseline-revalidation--2026-10-26).
+
 ## Release path contract
 
 The complete agreement is maintained in the publisher contract linked above.
