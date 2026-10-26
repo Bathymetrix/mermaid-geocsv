@@ -129,9 +129,12 @@ flowchart TB
 - [x] Publish the accepted two-instrument testing snapshot and record its local receipt.
 - [x] Verify live conditional-write rejection, successful-object labels, cache hits and exact bytes.
 - [x] Verify pinned/latest, one/all instruments, disk/memory, local reuse and all 3,292 scientific pairs.
-- [ ] Restore DNSSEC after hosting verification.
+- [x] Restore DNSSEC and verify DNS, HTTPS/downloads and email after hosting
+  verification (2026-10-26).
 
 As recorded on 2026-10-22, Cloudflare authority, proxy/TLS, email and scoped
-Python-client edge access passed. DNSSEC remains disabled. Current hosting status
-and recovery procedures belong in the website runbook. The sampled full-history
+Python-client edge access passed. DNSSEC was restored on 2026-10-26; independent
+DNS validation, post-activation HTTPS/download checks and email sending/receiving
+passed. Current hosting status and recovery procedures belong in the website
+runbook. The sampled full-history
 fixture checker remains package development tooling, not the publication gate.
