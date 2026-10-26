@@ -10,7 +10,7 @@ from obspy.io.sac import SACTrace
 import pandas as pd
 
 from ._associate import SAMPLE_RATE_TOLERANCE_HZ
-from .read import GeoCSVMetadata
+from ._read import GeoCSVMetadata
 
 
 def _float32_value(value, label):

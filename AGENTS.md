@@ -272,6 +272,10 @@ is `from mermaid import geocsv`. This is a package-local implementation of an
 immediate public interface, not premature shared cross-repository namespace
 infrastructure.
 
+Implementation modules use a leading underscore (`_read.py`, `_fetch.py`,
+`_associate.py` and `_write_sac.py`). Expose public operations and types through
+`src/mermaid/geocsv/__init__.py`; implementation module paths are private.
+
 Preserve `mermaid` as a native namespace package: do not add
 `src/mermaid/__init__.py`, and keep namespace package discovery enabled in the
 build configuration. Retain `src/mermaid/geocsv/__init__.py` for this component's

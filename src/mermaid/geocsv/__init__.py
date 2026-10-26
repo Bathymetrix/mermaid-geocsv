@@ -7,7 +7,7 @@
 """Fetch and read MERMAID GeoCSV, associate waveforms, and write located SAC files."""
 
 from ._fetch import GeoCSVDownload, GeoCSVFetchError, GeoCSVFetchResult, fetch
-from .read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
+from ._read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"

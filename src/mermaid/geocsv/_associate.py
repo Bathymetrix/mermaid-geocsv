@@ -9,7 +9,7 @@ from obspy.core.util import AttribDict
 import numpy as np
 import pandas as pd
 
-from .read import GeoCSVMetadata
+from ._read import GeoCSVMetadata
 
 
 IDENTITY = {"Network": "network", "Station": "station",
