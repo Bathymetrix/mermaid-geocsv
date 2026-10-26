@@ -1,6 +1,8 @@
 # mermaid-geocsv
 
 [![Tests](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml/badge.svg?branch=main&event=push)](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml)
+[![Python 3.11–3.14](https://img.shields.io/badge/Python-3.11%E2%80%933.14-blue)](docs/INSTALLATION.md#supported-python-versions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 Fetch and read MERMAID GeoCSV metadata, associate it with [ObsPy](https://docs.obspy.org/) waveforms,
 and optionally create SAC station location headers for writing with ObsPy.
