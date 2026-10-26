@@ -82,7 +82,12 @@ explicit release, validates manifest identity/testing flags, and checks sizes an
 SHA-256 of exact uncompressed bytes. Relative paths remain `latest.json` and
 `releases/{encoded ID}/manifest.json` with payloads alongside the manifest.
 The independent publisher pins consumer baseline 0.24.0 at package commit
-`c1eb805e420f7f8d4bfb8c6f737316c9f5766534` and retains fixed historical fixtures.
+`33ed5ff477b6c44447d472fc8e828b5ae930e0db`. The
+[2026-10-26 baseline review](../../mermaid-publisher/docs/geocsv/CONSUMER_BASELINE_REVIEW.md)
+covers the identical `read.py` to `_read.py` rename and three import updates.
+Historical download fixtures and the original `c1eb805` fingerprints remain
+retained. Published reports preserve their original software evidence; another
+publication requires fresh validation matching the active installed consumer.
 Changes to manifests, identities, paths or checksum semantics require explicit
 compatibility review, separate from publisher/report version changes.
 
