@@ -23,13 +23,18 @@ All hosted data remain testing only, including complete-corpus tests. Publisher
 0.1.0 requires `testing_only: true`, explicit testing destinations and complete
 schema-3 scientific evidence. The local website Worker isolates
 `/geocsv/testing/` and `geocsv/testing/` keys from future production activation.
-The read-only Worker was deployed on 2026-10-23. Private bucket access and
-uncached pointer/object misses passed live checks; no data objects or latest
-pointers have been uploaded. The public landing page now identifies the
-P0006/P0045 testing scope, cites the MH network (10.7914/SN/MH), and describes
-retirement of
-initial workflow-testing artifacts. Production promotion, first release tags,
-data uploads and claims of data availability remain separately unauthorized.
+The read-only Worker was deployed on 2026-10-23. The explicitly authorized
+P0006/P0045 testing snapshot `2026-10-21T22:48:33.277Z` was published on
+2026-10-26; testing latest selects it and production latest remains absent.
+The landing page identifies the scope, cites the MH network (10.7914/SN/MH),
+and describes retirement of initial workflow-testing artifacts. Further uploads,
+production promotion and first formal releases remain separately unauthorized.
+
+Live exact-byte HTTPS, cache hits and controls, conditional-write rejection,
+latest/pinned fetch, one/all instruments, memory/disk, local reuse and download
+provenance checks passed. A complete read/associate/write_sac rerun using hosted
+downloads passed all 3,292 original waveform pairs. See the publisher's
+[publication findings](../../mermaid-publisher/docs/geocsv/SCHEMA3_FINDINGS.md#initial-hosted-testing-publication--2026-10-26).
 
 The external archive is `$MERMAID/publisher`, a separate local Git repository.
 Testing GeoCSV artifacts use
@@ -116,8 +121,9 @@ flowchart TB
 - [x] Limit approved hosted testing to P0006/P0045 and prepare the MH network citation.
 - [x] Publish the testing scope, citation and retirement notice before data uploads (2026-10-26).
 - [x] Deploy approved R2/Worker configuration and verify read-only SDK/HTTPS access.
-- [ ] Verify live conditional writes, successful-object labels, caching and exact bytes.
-- [ ] Verify pinned/latest, one/all instruments, disk/memory and scientific use.
+- [x] Publish the accepted two-instrument testing snapshot and record its local receipt.
+- [x] Verify live conditional-write rejection, successful-object labels, cache hits and exact bytes.
+- [x] Verify pinned/latest, one/all instruments, disk/memory, local reuse and all 3,292 scientific pairs.
 - [ ] Restore DNSSEC after hosting verification.
 
 As recorded on 2026-10-22, Cloudflare authority, proxy/TLS, email and scoped
