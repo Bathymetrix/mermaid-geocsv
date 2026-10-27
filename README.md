@@ -19,15 +19,15 @@ Supports Python 3.11–3.14. From the cloned repository (macOS/Linux):
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-# Core install for GeoCSV `fetch` and `read` only
+# Minimal install for GeoCSV `fetch` and `read`
 python -m pip install .
-# Install with ObsPy support for GeoCSV `associate`, for trace location tagging
-python -m pip install '.[obspy]'
 ```
 
-If `.venv` already exists, activate it and skip the creation step. The base
-installation includes pandas 2.2 or newer. For waveform association and optional SAC
-header creation, add ObsPy 1.5.1 or newer.
+If `.venv` already exists, activate it and skip the creation step. The minimal
+installation includes pandas 2.2 or newer and supports `fetch` and `read`. For
+`associate` and optional SAC header creation, use
+`python -m pip install '.[obspy]'` instead of the minimal install command;
+the `obspy` extra includes the core dependencies and adds ObsPy 1.5.1 or newer.
 
 See the [installation guide](docs/INSTALLATION.md) for dependency support,
 CI coverage, and notebook setup.
