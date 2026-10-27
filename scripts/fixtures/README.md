@@ -65,6 +65,12 @@ ordinary restore commands still refuse to overwrite a differing snapshot.
 The sampled waveform pairs remain byte-identical to the current processed
 sources, so the original waveform sampling and header audit remain applicable.
 
+The [P0006 waveform tutorial fixtures](../../data/fixtures/P0006/waveforms/README.md)
+add three original MiniSEED/SAC pairs and raw EarthScope responses collected on
+2026-10-27. Their separate manifest preserves source and response hashes and
+request parameters. The EarthScope tutorial uses the same complete P0006
+GeoCSV snapshot; ordinary tests replay the saved responses offline.
+
 Future refreshes must replace superseded snapshots, check all dependent
 tests/tutorials, and update source hashes, record maps and provenance together.
 Never rewrite protected processed inputs or regenerate fixtures during tests.

@@ -46,7 +46,8 @@ metadata = records.attrs["geocsv"]
 
 Each tutorial is a short, standalone walkthrough with matching Markdown and
 notebook versions. Local examples use included fixtures; fetch demonstrates
-the hosted testing collection.
+the hosted testing collection. EarthScope downloads three P0006 detections,
+associates their metadata, and compares SAC exports with independent fixtures.
 
 | Operation | Purpose | Guide | Notebook |
 | --- | --- | --- | --- |
@@ -54,6 +55,7 @@ the hosted testing collection.
 | `geocsv.read(...)` | Parse local paths, bytes, or fetch results into dataset tables. | [Read](docs/tutorials/READ.md) | [READ.ipynb](docs/tutorials/READ.ipynb) |
 | `geocsv.associate(...)` | Attach uniquely matched metadata and coordinates to ObsPy waveforms in place. | [Associate](docs/tutorials/ASSOCIATE.md) | [ASSOCIATE.ipynb](docs/tutorials/ASSOCIATE.ipynb) |
 | SAC headers and ObsPy writing | Use `associate(..., create_sac_header=True)`, then ObsPy `Trace.write` or `Stream.write`. | [Write SAC](docs/tutorials/WRITE_SAC.md) | [WRITE_SAC.ipynb](docs/tutorials/WRITE_SAC.ipynb) |
+| EarthScope workflow | Download P0006 waveforms, associate metadata, and verify SAC exports. | [EarthScope](docs/tutorials/EARTHSCOPE.md) | [EARTHSCOPE.ipynb](docs/tutorials/EARTHSCOPE.ipynb) |
 | Plot and analyze records | Use pandas and Matplotlib downstream. | [Plotting](docs/tutorials/PLOTTING.md) | [PLOTTING.ipynb](docs/tutorials/PLOTTING.ipynb) |
 
 Hosted GeoCSV collections remain testing only; `fetch` requires an explicit

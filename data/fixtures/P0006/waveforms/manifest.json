@@ -1,0 +1,178 @@
+{
+  "description": "Three original P0006 MiniSEED/SAC pairs and unmodified EarthScope responses for the EarthScope tutorial",
+  "collected": "2026-10-27",
+  "obspy_version": "1.5.1",
+  "obspy_source_commit": "50033e1daf95233cd4f30e95a49c37fd50be2ccd",
+  "geocsv": {
+    "path": "../P0006.geocsv",
+    "size_bytes": 3001072,
+    "sha256": "93e8807306731191545845d58bb410480ed219b6e8129d381b22fcdcf9379080",
+    "source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/geo_DET_REQ.csv",
+    "release_id": "2026-10-21T22:48:33.277Z",
+    "testing_only": true
+  },
+  "examples": [
+    {
+      "source_record_index": 98,
+      "source_line_number": 108,
+      "basename": "20180629T170731.06_5B3F1904.MER.DET.WLT5",
+      "association_type": "single_segment",
+      "mseed": {
+        "path": "20180629T170731.06_5B3F1904.MER.DET.WLT5.mseed",
+        "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20180629T170731.06_5B3F1904.MER.DET.WLT5.mseed",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0002_20180628-19h20m09s/20180629T170731.06_5B3F1904.MER.DET.WLT5.mseed",
+        "size_bytes": 20480,
+        "sha256": "2ab20a4011fef0b0af57a00a89e904d538766bbcac14553246c0a0bb6eb69cdb"
+      },
+      "sac": {
+        "path": "20180629T170731.06_5B3F1904.MER.DET.WLT5.sac",
+        "source_path": "/Users/jdsimon/mermaid/waveforms/sac/20180629T170731.06_5B3F1904.MER.DET.WLT5.sac",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0002_20180628-19h20m09s/20180629T170731.06_5B3F1904.MER.DET.WLT5.sac",
+        "size_bytes": 19960,
+        "sha256": "3fe0f916ae874f3497f8db86258d10c265392423681aa686b9dc873feb3e47e0"
+      },
+      "request": {
+        "parameters": {
+          "network": "MH",
+          "station": "P0006",
+          "location": "00",
+          "channel": "BDH",
+          "starttime": "2018-06-29T17:07:30.205000",
+          "endtime": "2018-06-29T17:11:33.669739"
+        },
+        "url": "https://service.earthscope.org/fdsnws/dataselect/1/query?network=MH&station=P0006&location=00&channel=BDH&starttime=2018-06-29T17%3A07%3A30.205000&endtime=2018-06-29T17%3A11%3A33.669739",
+        "retrieved_utc": "2026-10-27T23:43:31.337422+00:00",
+        "retrieval_time_basis": "Raw response file modification time immediately after ObsPy get_waveforms(filename=...)",
+        "path": "earthscope/record_98.mseed",
+        "size_bytes": 20480,
+        "sha256": "b637eec5f34253302ea57cca2d8f945106b0086e91e51c5f4d971bf221134d53"
+      },
+      "waveform": {
+        "id": "MH.P0006.00.BDH",
+        "starttime": "2018-06-29T17:07:31.205618",
+        "starttime_ns": 1530292051205618000,
+        "endtime": "2018-06-29T17:11:32.670355",
+        "sample_count": 4832,
+        "sampling_rate_hz": 20.007062146892654,
+        "dataquality": "M"
+      },
+      "original_waveform": {
+        "id": "MH.P0006.00.BDH",
+        "starttime": "2018-06-29T17:07:31.205624",
+        "starttime_ns": 1530292051205624000,
+        "sample_count": 4832,
+        "sampling_rate_hz": 20.007062146892654,
+        "dataquality": "Q"
+      },
+      "download_minus_original_start_ns": -6000
+    },
+    {
+      "source_record_index": 169,
+      "source_line_number": 179,
+      "basename": "20180712T065158.06_5B4748AE.MER.DET.WLT5",
+      "association_type": "single_segment",
+      "mseed": {
+        "path": "20180712T065158.06_5B4748AE.MER.DET.WLT5.mseed",
+        "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20180712T065158.06_5B4748AE.MER.DET.WLT5.mseed",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0003_20180706-07h25m40s/20180712T065158.06_5B4748AE.MER.DET.WLT5.mseed",
+        "size_bytes": 20480,
+        "sha256": "b6538bb837339a4aaa9fc64d0d8ac0101a7e7b23444ba7d6971575e741c56cbc"
+      },
+      "sac": {
+        "path": "20180712T065158.06_5B4748AE.MER.DET.WLT5.sac",
+        "source_path": "/Users/jdsimon/mermaid/waveforms/sac/20180712T065158.06_5B4748AE.MER.DET.WLT5.sac",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0003_20180706-07h25m40s/20180712T065158.06_5B4748AE.MER.DET.WLT5.sac",
+        "size_bytes": 18424,
+        "sha256": "1c3438a9ce3abd469c1cf615f8d76ac4abeaaff1243a8382f1e2ab7f456e6e67"
+      },
+      "request": {
+        "parameters": {
+          "network": "MH",
+          "station": "P0006",
+          "location": "00",
+          "channel": "BDH",
+          "starttime": "2018-07-12T06:51:57.293000",
+          "endtime": "2018-07-12T06:55:41.564616"
+        },
+        "url": "https://service.earthscope.org/fdsnws/dataselect/1/query?network=MH&station=P0006&location=00&channel=BDH&starttime=2018-07-12T06%3A51%3A57.293000&endtime=2018-07-12T06%3A55%3A41.564616",
+        "retrieved_utc": "2026-10-27T23:45:47.890183+00:00",
+        "retrieval_time_basis": "Raw response file modification time immediately after ObsPy get_waveforms(filename=...)",
+        "path": "earthscope/record_169.mseed",
+        "size_bytes": 20480,
+        "sha256": "78d0791ad6403b4b1d9acc1cddc62182915a8c75b207f7b166bc1ac120ac20d1"
+      },
+      "waveform": {
+        "id": "MH.P0006.00.BDH",
+        "starttime": "2018-07-12T06:51:58.293418",
+        "starttime_ns": 1531378318293418000,
+        "endtime": "2018-07-12T06:55:40.565031",
+        "sample_count": 4448,
+        "sampling_rate_hz": 20.00705329153605,
+        "dataquality": "M"
+      },
+      "original_waveform": {
+        "id": "MH.P0006.00.BDH",
+        "starttime": "2018-07-12T06:51:58.293418",
+        "starttime_ns": 1531378318293418000,
+        "sample_count": 4448,
+        "sampling_rate_hz": 20.00705329153605,
+        "dataquality": "Q"
+      },
+      "download_minus_original_start_ns": 0
+    },
+    {
+      "source_record_index": 239,
+      "source_line_number": 249,
+      "basename": "20180715T224815.06_5B4C1D4F.MER.DET.WLT5",
+      "association_type": "single_segment",
+      "mseed": {
+        "path": "20180715T224815.06_5B4C1D4F.MER.DET.WLT5.mseed",
+        "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20180715T224815.06_5B4C1D4F.MER.DET.WLT5.mseed",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0004_20180712-12h26m18s/20180715T224815.06_5B4C1D4F.MER.DET.WLT5.mseed",
+        "size_bytes": 24576,
+        "sha256": "f376b17a8c9754611d20ae2e0d3e7f9e13e8ba82a9c3c3aed8b27331937a6d28"
+      },
+      "sac": {
+        "path": "20180715T224815.06_5B4C1D4F.MER.DET.WLT5.sac",
+        "source_path": "/Users/jdsimon/mermaid/waveforms/sac/20180715T224815.06_5B4C1D4F.MER.DET.WLT5.sac",
+        "resolved_source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/0004_20180712-12h26m18s/20180715T224815.06_5B4C1D4F.MER.DET.WLT5.sac",
+        "size_bytes": 22392,
+        "sha256": "015a15882d3e17784de56f843eb9e59051c38c52104206a10116c402f16d5775"
+      },
+      "request": {
+        "parameters": {
+          "network": "MH",
+          "station": "P0006",
+          "location": "00",
+          "channel": "BDH",
+          "starttime": "2018-07-15T22:48:14.969000",
+          "endtime": "2018-07-15T22:52:48.823144"
+        },
+        "url": "https://service.earthscope.org/fdsnws/dataselect/1/query?network=MH&station=P0006&location=00&channel=BDH&starttime=2018-07-15T22%3A48%3A14.969000&endtime=2018-07-15T22%3A52%3A48.823144",
+        "retrieved_utc": "2026-10-27T23:45:48.240215+00:00",
+        "retrieval_time_basis": "Raw response file modification time immediately after ObsPy get_waveforms(filename=...)",
+        "path": "earthscope/record_239.mseed",
+        "size_bytes": 24576,
+        "sha256": "195e0786080a1d86b82d7ef0e3d297bc5bc5aec4fa27d3ac3a282c0ad90870d0"
+      },
+      "waveform": {
+        "id": "MH.P0006.00.BDH",
+        "starttime": "2018-07-15T22:48:15.969094",
+        "starttime_ns": 1531694895969094000,
+        "endtime": "2018-07-15T22:52:47.823236",
+        "sample_count": 5440,
+        "sampling_rate_hz": 20.007052186177717,
+        "dataquality": "M"
+      },
+      "original_waveform": {
+        "id": "MH.P0006.00.BDH",
+        "starttime": "2018-07-15T22:48:15.969095",
+        "starttime_ns": 1531694895969095000,
+        "sample_count": 5440,
+        "sampling_rate_hz": 20.007052186177717,
+        "dataquality": "Q"
+      },
+      "download_minus_original_start_ns": -1000
+    }
+  ]
+}

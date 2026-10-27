@@ -8,6 +8,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import re
 from threading import Thread
+from types import SimpleNamespace
 
 import pytest
 
@@ -17,6 +18,7 @@ from mermaid import geocsv
 ROOT = Path(__file__).resolve().parents[1]
 TUTORIALS = ROOT / "docs" / "tutorials"
 NAMES = sorted(path.stem for path in TUTORIALS.glob("*.md"))
+DEVELOPMENT_NAMES = [name for name in NAMES if name != "EARTHSCOPE"]
 TEST_RELEASE = "2026-10-21T22:48:33.277Z"
 
 
@@ -92,12 +94,12 @@ def test_markdown_notebook_parity(name):
 @pytest.mark.parametrize("name", NAMES)
 @pytest.mark.parametrize("working_directory", [ROOT, ROOT / "docs", TUTORIALS])
 def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, request):
-    if name in {"ASSOCIATE", "WRITE_SAC"}:
+    if name in {"ASSOCIATE", "WRITE_SAC", "EARTHSCOPE"}:
         pytest.importorskip("obspy")
     if name == "PLOTTING":
         matplotlib = pytest.importorskip("matplotlib")
         matplotlib.use("Agg")
-    if name == "FETCH":
+    if name in {"FETCH", "EARTHSCOPE"}:
         collection_url = request.getfixturevalue("tutorial_collection")
         real_fetch = geocsv.fetch
 
@@ -110,6 +112,33 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
             return real_fetch(*args, **kwargs)
 
         monkeypatch.setattr(geocsv, "fetch", fetch_from_local_collection)
+    if name == "EARTHSCOPE":
+        import tempfile
+
+        fixtures = ROOT / "data/fixtures/P0006/waveforms"
+        manifest = json.loads((fixtures / "manifest.json").read_text())
+        waveform_requests = []
+
+        def replay_waveforms(**kwargs):
+            example = manifest["examples"][len(waveform_requests)]
+            parameters = example["request"]["parameters"]
+            assert set(kwargs) == set(parameters) | {"filename"}
+            for key, value in parameters.items():
+                if key in {"starttime", "endtime"}:
+                    assert kwargs[key].isoformat() == value
+                else:
+                    assert kwargs[key] == value
+            Path(kwargs["filename"]).write_bytes(
+                (fixtures / example["request"]["path"]).read_bytes())
+            waveform_requests.append(example["source_record_index"])
+
+        def replay_client(base_url, timeout):
+            assert base_url == "https://service.earthscope.org"
+            assert timeout == 30
+            return SimpleNamespace(get_waveforms=replay_waveforms)
+
+        monkeypatch.setattr("obspy.clients.fdsn.Client", replay_client)
+        monkeypatch.setattr(tempfile, "mkdtemp", partial(tempfile.mkdtemp, dir=tmp_path))
     markdown = (TUTORIALS / f"{name}.md").read_text()
     examples = re.findall(r"(?m)^```python\n(.*?)^```", markdown, flags=re.S)
     monkeypatch.chdir(working_directory)
@@ -148,9 +177,29 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         assert all(item.path.is_file() for item in saved)
         assert namespace["pinned"][0].provenance.release_id == TEST_RELEASE
         assert namespace["pinned"][0].content == namespace["downloads"][0].content
+    if name == "EARTHSCOPE":
+        assert waveform_requests == [98, 169, 239]
+        assert namespace["trace"].stats.geocsv.association.type == "single_segment"
+        assert namespace["waveform"].stats.geocsv.source_record_index == 239
+        output_dir = namespace["output_dir"]
+        assert len(list(output_dir.glob("*.mseed"))) == 3
+        assert len(list(output_dir.glob("*.sac"))) == 3
+        assert namespace["downloads"][0].provenance.release_id == TEST_RELEASE
 
 
-@pytest.mark.parametrize("name", NAMES)
+def test_earthscope_tutorial_fixture_provenance():
+    fixtures = ROOT / "data/fixtures/P0006/waveforms"
+    manifest = json.loads((fixtures / "manifest.json").read_text())
+    entries = [manifest["geocsv"]]
+    for example in manifest["examples"]:
+        entries.extend(example[key] for key in ("mseed", "sac", "request"))
+    for entry in entries:
+        content = (fixtures / entry["path"]).read_bytes()
+        assert len(content) == entry["size_bytes"]
+        assert hashlib.sha256(content).hexdigest() == entry["sha256"]
+
+
+@pytest.mark.parametrize("name", DEVELOPMENT_NAMES)
 def test_development_examples(name, monkeypatch):
     """Retain executable checks moved out of the introductory tutorials."""
     if name in {"ASSOCIATE", "WRITE_SAC"}:

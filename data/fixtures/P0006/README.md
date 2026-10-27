@@ -23,6 +23,11 @@ bytes over loopback HTTP. They do not depend on a website checkout, public
 hosting, or equality with an older website test release. These fixtures are
 scientific metadata examples, not a published scientific data release.
 
+The [waveform fixtures](waveforms/README.md) contain three original
+MiniSEED/SAC pairs and their saved EarthScope responses for the complete
+[EarthScope tutorial](../../../docs/tutorials/EARTHSCOPE.md). Their separate
+manifest records request parameters, source paths, and hashes.
+
 The separately tracked P0006 association subset is a verbatim selection from
 this same processed export, with its record mapping and full-source hash in
 [the association manifest](../association/manifest.json). It exists to keep

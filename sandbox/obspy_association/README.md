@@ -5,6 +5,9 @@ waveform timing, quality, segmentation, and coverage. The association
 implementation is part of the package; use the public
 [association tutorial](../../docs/tutorials/ASSOCIATE.md) or its
 [notebook](../../docs/tutorials/ASSOCIATE.ipynb) for `geocsv.associate`.
+The [EarthScope tutorial](../../docs/tutorials/EARTHSCOPE.md) and its
+[notebook](../../docs/tutorials/EARTHSCOPE.ipynb) download three verified P0006
+detections, associate metadata, write SAC, and compare independent fixtures.
 
 Run from the repository root with the package and optional ObsPy dependency:
 

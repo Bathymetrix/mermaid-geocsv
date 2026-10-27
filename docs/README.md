@@ -8,7 +8,9 @@ notebook setup.
 
 Each short walkthrough contains the same prose and Python examples as its
 notebook and runs independently. Read, associate, SAC, and plotting use included
-fixtures; fetch uses the public Bathymetrix testing collection.
+fixtures; fetch uses the public Bathymetrix testing collection. EarthScope
+downloads three P0006 detections and combines hosted metadata, waveform
+retrieval, association, and independent SAC comparisons.
 
 | Workflow | Guide | Notebook |
 | --- | --- | --- |
@@ -16,6 +18,7 @@ fixtures; fetch uses the public Bathymetrix testing collection.
 | Fetch releases | [Fetch](tutorials/FETCH.md) | [FETCH.ipynb](tutorials/FETCH.ipynb) |
 | Associate waveforms | [Associate](tutorials/ASSOCIATE.md) | [ASSOCIATE.ipynb](tutorials/ASSOCIATE.ipynb) |
 | Create SAC station headers and write with ObsPy | [Write SAC](tutorials/WRITE_SAC.md) | [WRITE_SAC.ipynb](tutorials/WRITE_SAC.ipynb) |
+| Download EarthScope waveforms and verify SAC export | [EarthScope](tutorials/EARTHSCOPE.md) | [EARTHSCOPE.ipynb](tutorials/EARTHSCOPE.ipynb) |
 | Plot and analyze records | [Plotting](tutorials/PLOTTING.md) | [PLOTTING.ipynb](tutorials/PLOTTING.ipynb) |
 
 ## API and scientific conventions
