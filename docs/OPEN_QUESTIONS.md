@@ -232,6 +232,54 @@ changes, before proposing quality-based validation or precedence rules.
 The current associator retains GeoCSV and waveform quality independently
 and does not filter matches by equality.
 
+### P0006 July 6 REQ response: DET start with REQ count
+
+**Open upstream investigation; rechecked 2026-10-27.** The sandbox's short
+REQ request returns a waveform whose start agrees with a DET segment but
+whose sample count agrees with a different, overlapping REQ segment. All
+entries below have SNCL `MH.P0006.00.BDH` on 2018-07-06:
+
+| Source | Start UTC | Sample count | Quality |
+| --- | --- | ---: | --- |
+| Complete GeoCSV record 100, REQ | 01:49:28.590000 | 4,800 | D |
+| Complete GeoCSV record 101, DET | 01:49:28.613000 | 4,736 | Q |
+| EarthScope response | 01:49:28.613021 | 4,800 | M |
+
+Record indices are zero-based in the shared
+[P0006 GeoCSV fixture](../data/fixtures/P0006/README.md). The corresponding
+local original MiniSEED starts are 01:49:28.590640 for REQ and
+01:49:28.613021 for DET, with the counts shown above. The response sample
+array is not identical to either original. The 2026-10-27 response is
+byte-identical to the historical saved sandbox response; the same start/count
+mismatch was already [recorded on 2026-10-08](OBSPY_RETRIEVAL_OBSERVATIONS.md#short-requests).
+This evidence does not attribute the mismatch to the recent GeoCSV format
+refresh or establish which upstream processing step produced it.
+
+Strict association matches neither source row: the response starts 23.021 ms
+after record 100, beyond the default 1 ms tolerance, and has 64 more samples
+than record 101. With `allow_first_segment=True`, both source intervals
+contain the downloaded first sample, so anchor selection is ambiguous. The
+package correctly rejects both attempts; no row is selected or rewritten.
+
+**Upstream follow-up:**
+
+- Compare the original MER timing/counts, automaid waveform export, and the
+  exact MiniSEED files submitted to EarthScope. Current processed originals
+  alone do not establish which bytes were submitted historically.
+- Compare submitted and returned MiniSEED record starts, time corrections,
+  boundaries, and sample arrays to determine whether the mismatch arose during
+  source export, submission, archive overlap selection, or reader assembly.
+  The raw-response filename path bypasses client trimming, but reading those
+  bytes still assembles MiniSEED records into traces.
+- Resolve any demonstrated source/export or archive defect with the responsible
+  upstream project or service, then repeat the original request and document
+  the resulting start, count, sample provenance, and association outcome.
+
+The cause and responsible upstream component remain unresolved. Do not widen
+association tolerances, discard competing source rows, infer lineage from M,
+or revise fixtures to hide this discrepancy. This example is excluded from
+the successful-download [EarthScope tutorial](tutorials/EARTHSCOPE.md).
+
 ### Timing across producers and instrument generations
 
 How do raw timing, serialized GeoCSV starts, waveform headers, and physical
