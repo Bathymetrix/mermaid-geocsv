@@ -2,7 +2,8 @@
 
 Run with the wheel environment's Python in isolated mode (-I), passing the
 absolute path to data/fixtures/association. CI builds and installs the wheel
-in a fresh environment before running this script at both supported bounds.
+in a fresh environment before running this script on each supported Python
+minor version.
 """
 
 from importlib.metadata import distribution

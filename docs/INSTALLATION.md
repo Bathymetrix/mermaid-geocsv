@@ -17,32 +17,59 @@ runs the named module using that interpreter.
 
 ## Supported Python versions
 
-The supported Python range is 3.11–3.14. CI runs the full suite, including
-association, SAC export, and tutorial examples, at these bounds:
+The supported Python range is 3.11–3.14. CI checks a fresh full installation
+and runs the full suite, including association, SAC export, and tutorial
+examples, on every supported minor version:
 
 | Python | pandas | ObsPy | NumPy |
 | --- | --- | --- | --- |
-| 3.11 | 2.2.0 (minimum) | 1.5.1 (minimum) | Latest 1.x compatible with pandas 2.2.0 |
-| 3.14 | Latest compatible | Latest compatible | Latest compatible |
+| 3.11 | 2.3.3 (minimum) and latest compatible | 1.5.1 (minimum) and latest compatible | Latest compatible |
+| 3.12 | 2.3.3 (minimum) and latest compatible | 1.5.1 (minimum) and latest compatible | Latest compatible |
+| 3.13 | 2.3.3 (minimum) and latest compatible | 1.5.1 (minimum) and latest compatible | Latest compatible |
+| 3.14 | 2.3.3 (minimum) and latest compatible | 1.5.1 (minimum) and latest compatible | Latest compatible |
 
-Python 3.12 and 3.13 are supported intermediate versions without separate CI
-jobs. The package metadata lists supported Python minor versions using standard
+The package metadata lists supported Python minor versions using standard
 classifiers. `Requires-Python >=3.11` sets the installation minimum; it does not
 certify untested future Python versions. Supporting 3.11 also means package
 code must use syntax and standard-library APIs available in that version.
 
-Each CI job also builds the universal pure-Python wheel, installs it with that
-job's dependencies in a fresh environment, and runs
+Pandas 2.3.3 is the common minimum across Python 3.11–3.14. Its
+[release metadata lists all four Python versions](https://pypi.org/project/pandas/2.3.3/),
+and its [release notes introduce Python 3.14 support](https://pandas.pydata.org/docs/whatsnew/v2.3.3.html).
+Pandas 2.2 does not support Python 3.14. The package requires `pandas>=2.3.3`
+so fresh installs and existing environments use the same supported minimum.
+
+[`scripts/check_installation.py`](../scripts/check_installation.py) creates a
+temporary virtual environment for each interpreter and runs the documented
+full install (`python -m pip install '.[obspy]'`) without installing dependencies
+in advance. Packaging inputs are copied to a temporary source directory,
+excluding existing build output, to reproduce installation from a fresh
+download. Pip builds and installs the package wheel. The check records the
+resolved versions, runs `pip check`, and runs
 [`scripts/check_wheel.py`](../scripts/check_wheel.py) outside the checkout in
-Python's isolated mode. The check verifies the installed import location and
+Python's isolated mode. The smoke check verifies the installed import location and
 version, lazy ObsPy loading, and a real-data `read → associate(create_sac_header=True) → Trace.write`
 round trip with sample, timing, identity and coordinate checks. Fixtures remain
 external test inputs; they are not needed in the installed package. The check
 does not contact EarthScope or require production GeoCSV hosting.
 
+After the smoke check, the runner installs pytest and runs the full suite
+against the installed distribution, with the checkout's `src` path disabled.
+Each interpreter also runs a separate fresh installation with minimum pandas
+and ObsPy versions. Environments are removed after each case. Existing project
+environments are unchanged. Reproduce the matrix locally with:
+
+```bash
+.venv/bin/python scripts/check_installation.py python3.11 python3.12 python3.13 python3.14
+```
+
+Pass absolute interpreter paths if the executables are not on `PATH`. The
+runner needs network access to download dependencies. It tests each listed
+dependency combination, rather than every historical dependency release.
+
 ## Minimal parser installation
 
-Install the parser and its required dependency, pandas 2.2 or newer:
+Install the parser and its required dependency, pandas 2.3.3 or newer:
 
 ```bash
 python -m pip install .

@@ -23,7 +23,7 @@ python -m pip install .
 ```
 
 If `.venv` already exists, activate it and skip the creation step. The minimal
-installation above includes pandas 2.2 or newer and supports `fetch` and
+installation above includes pandas 2.3.3 or newer and supports `fetch` and
 `read`. For `associate` and optional SAC header creation, use `python -m pip
 install '.[obspy]'` instead of the minimal install command; the `obspy` extra
 includes the core dependencies and adds ObsPy 1.5.1 or newer.
