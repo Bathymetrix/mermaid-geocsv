@@ -15,6 +15,15 @@ If `.venv` already exists, just activate it. Choose one of the two installation
 workflows below. In both, `python` uses the activated environment, and `-m`
 runs the named module using that interpreter.
 
+On macOS, python.org installers for Python 3.11–3.14 include
+`Install Certificates.command` in `/Applications/Python 3.x/` (use the
+installed version's folder). Run it once to complete HTTPS certificate setup.
+If `fetch` reports `CERTIFICATE_VERIFY_FAILED`, run it and restart Python. See
+[Python's macOS installation instructions](https://docs.python.org/3/using/mac.html#installation-steps).
+
+On Linux, distribution-provided Python normally uses the system CA bundle.
+Ensure the distribution's `ca-certificates` package is installed and current.
+
 ## Supported Python versions
 
 The supported Python range is 3.11–3.14. CI checks a fresh full installation
