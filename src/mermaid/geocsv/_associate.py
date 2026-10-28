@@ -1,4 +1,4 @@
-"""In-memory original-segment and containing-anchor MERMAID association."""
+"""Match event rows and build fresh ObsPy metadata projections."""
 
 from bisect import bisect_left, bisect_right
 from decimal import Decimal, InvalidOperation
@@ -25,7 +25,7 @@ def _source_name(metadata):
 
 
 def _invalid_identity_fields(codes):
-    """Only Location may be a known empty string; missing codes are invalid."""
+    """Return invalid SNCL field names; only Location may be a known empty string."""
     return [field for field, code in zip(IDENTITY, codes)
             if not isinstance(code, str)
             or (not code.strip() and not (field == "Location" and code == ""))]
@@ -77,7 +77,7 @@ def _sac_header(trace, row, metadata, coordinates):
 
 
 def _source_last_sample_ns(time_ns, row):
-    """Return the inclusive source endpoint when count and rate are usable."""
+    """Return last-sample UTC nanoseconds, or None for unusable count/rate."""
     count, rate = row["SampleCount"], row["SampleRate"]
     if (pd.isna(count) or not isfinite(float(count)) or count <= 0
             or not float(count).is_integer() or pd.isna(rate)
@@ -93,7 +93,7 @@ def _record_context(dataset_index, record_index, metadata):
 
 
 def _overlapping_events(trace, datasets, tolerance_ns):
-    """Find source intervals intersecting the trace, including earlier starts."""
+    """Yield same-SNCL interval candidates overlapping the trace within tolerance."""
     sncl = tuple(trace.stats[key] for key in IDENTITY.values())
     for dataset_index, event_index, metadata in datasets:
         indexed = event_index.get(sncl)
@@ -167,7 +167,7 @@ def _association_details(trace, anchor, association_type, ranges):
 
 
 def _validate_coverage(trace, overlapping):
-    """Require gap-free source sample coverage, clipped to the waveform grid."""
+    """Return clipped source ranges with unambiguous, gap-free grid coverage."""
     rate = Decimal(str(trace.stats.sampling_rate))
     intervals = []
     ranges = []
@@ -224,36 +224,9 @@ def _validate_coverage(trace, overlapping):
 
 def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=False,
               create_sac_header=False):
-    """Associate a Trace or Stream with event rows returned by geocsv.read.
+    """Validate and attach metadata for the public association operation.
 
-    Validate all matches before modifying any trace; return None. By default require exact
-    SNCL, UTC times within 1 millisecond by default, exact
-    sample count, and rate difference <= 0.00001 Hz. Waveform core fields remain
-    authoritative. Quality is retained separately and is not a match filter.
-    Guarantees end at initial association. Writing remains an ObsPy operation.
-    Missing Latitude or Longitude fails. Destination containers must be absent:
-    geocsv and coordinates, and sac when create_sac_header=True.
-    Nothing is merged or overwritten.
-    Source columns must not collide with association keys or attributes and
-    methods of the ObsPy AttribDict used for stats.geocsv.
-    Only Location may be a known empty string; no SNCL field may be missing.
-    Source preflight rejects invalid event identities and duplicate complete
-    SNCL/UTC-time/count/rate keys. All trace matches resolve before projections.
-    ``time_tolerance`` is finite nonnegative seconds, including
-    zero for exact matching. Comparisons preserve full nanosecond values.
-    ``allow_first_segment=True`` requires a unique same-SNCL source interval
-    containing the first sample, never merely the nearest preceding row.
-    Require gap-free source sample coverage after clipping to the waveform
-    grid and counting overlaps once. Retained boundaries must have unique
-    nearest-sample placement within half a waveform interval, independent of
-    time_tolerance. Exact half-sample ties and accumulated drift beyond the
-    allowance raise. Multiple containing anchors raise.
-    No waveform merging is performed. ``stats.geocsv.association`` contains a
-    fresh report with type ``single_segment`` or ``anchor_segment``, waveform
-    and source snapshots, clipped ranges, and measured alignment differences.
-    In the latter case, source fields describe only the anchor; its location
-    is adopted for the entire trace without reconstructing merge provenance.
-    Source record indices and physical starting line numbers identify failures.
+    See ``mermaid.geocsv.associate`` for parameters, errors, and guarantees.
     """
     if not isinstance(allow_first_segment, bool):
         raise TypeError("allow_first_segment must be a bool")

@@ -20,19 +20,38 @@ from urllib.request import Request, urlopen
 
 
 class GeoCSVFetchError(RuntimeError):
-    """A download, release manifest, or file integrity check failed."""
+    """Error raised for download, manifest, or file-integrity failures."""
 
 
 @dataclass(frozen=True)
 class GeoCSVDownload:
-    """Immutable retrieval provenance, without retaining the GeoCSV payload.
+    """Immutable provenance for one verified GeoCSV download.
 
-    ``url`` and ``manifest_url`` are the requested file and manifest URLs.
-    ``manifest`` retains the exact UTF-8 JSON response bytes, including source
-    provenance and the complete release inventory. ``size_bytes`` and
-    ``sha256`` describe the verified, uncompressed GeoCSV bytes. The checksum
-    verifies integrity against the publisher's manifest, not authenticity.
-    ``testing_only`` distinguishes a test collection from scientific releases.
+    Attributes
+    ----------
+    instrument_id : str
+        Exact instrument identifier from the release manifest.
+    release_id : str
+        Selected release identifier, retaining its original spelling.
+    url : str
+        Requested GeoCSV file URL; redirects do not replace it.
+    manifest_url : str
+        Requested release manifest URL; redirects do not replace it.
+    size_bytes : int
+        Verified GeoCSV payload size in bytes.
+    sha256 : str
+        Verified SHA-256 checksum as 64 lowercase hexadecimal digits.
+    testing_only : bool
+        Whether the manifest labels the release as testing only.
+    manifest : bytes
+        Exact UTF-8 JSON manifest response, including the complete release
+        inventory and source provenance.
+
+    Notes
+    -----
+    The GeoCSV payload is not retained in this object. Checksums establish
+    integrity against the supplied manifest, not authenticity. Verification
+    is performed by ``fetch``, not by constructing this provenance value.
     """
 
     instrument_id: str
@@ -45,18 +64,38 @@ class GeoCSVDownload:
     manifest: bytes
 
     def __deepcopy__(self, memo: dict) -> GeoCSVDownload:
+        """Return this immutable provenance value when deep-copied."""
         return self
 
 
 @dataclass(frozen=True)
 class GeoCSVFetchResult:
-    """One verified download, saved at ``path`` or retained as ``content``.
+    """Immutable download result with one disk or memory location.
 
-    Exactly one of ``path`` (an absolute Path) and ``content`` (bytes) is set.
-    ``provenance`` records the selected release and its original manifest.
-    Pass a result, or the result list from :func:`fetch`, to :func:`read` to
-    retain that provenance on freshly parsed tables. Reading a bare saved path
-    records only local provenance; it does not discover adjacent manifests.
+    Attributes
+    ----------
+    provenance : GeoCSVDownload
+        Selected release, requested URLs, integrity checks, and manifest bytes.
+    path : pathlib.Path or None
+        Saved GeoCSV file, or None for memory results. Paths returned by
+        ``fetch`` are absolute.
+    content : bytes or None
+        GeoCSV bytes retained in memory, or None for disk results.
+
+    Raises
+    ------
+    ValueError
+        Both ``path`` and ``content`` are set, or both are None.
+
+    See Also
+    --------
+    read : Parse a result or result list while retaining retrieval provenance.
+    fetch : Retrieve verified files and construct these results.
+
+    Notes
+    -----
+    Construction checks the storage choice, not payload integrity. Use ``fetch``
+    to retrieve and verify data.
     """
 
     provenance: GeoCSVDownload
@@ -64,6 +103,7 @@ class GeoCSVFetchResult:
     content: bytes | None = None
 
     def __post_init__(self) -> None:
+        """Require exactly one of a saved path and in-memory content."""
         if (self.path is None) == (self.content is None):
             raise ValueError("a fetch result requires exactly one of path and content")
 
@@ -81,38 +121,33 @@ def fetch(
     Parameters
     ----------
     instrument_ids : str or sequence of str, optional
-        Exact, case-sensitive manifest identifiers. Omit or pass None to fetch
-        every file in manifest order. A selection retains the requested order;
-        empty or repeated selections raise ValueError. Missing identifiers
-        raise GeoCSVFetchError before any file download or directory creation.
+        Exact, case-sensitive manifest identifiers. Default None selects every
+        file in manifest order; a selection retains its requested order.
+        Empty selections and repeated identifiers are invalid. Missing
+        identifiers raise before file download or output directory creation.
     base_url : str
-        HTTP(S) collection URL containing ``latest.json`` and ``releases/``.
-        Required while production hosting is not deployed. A trailing slash is
-        optional. HTTP supports local testing; use HTTPS for public hosting.
+        HTTP(S) collection root containing ``latest.json`` and ``releases/``,
+        without a query or fragment. Use HTTPS for public hosting.
     output_dir : path-like or None, optional
-        Default "." saves files and the original ``manifest.json`` beneath
-        ``<output_dir>/<release_component>/``. The component is the release ID
-        with colons percent-encoded as ``%3A``. Missing directories are created.
-        None retains file bytes and manifests in memory without writing files.
-        Existing identical files are verified and reused; differing files or
-        manifests raise FileExistsError and are never overwritten. There is no
-        implicit persistent cache or discovery of previously saved releases.
+        Default "." saves files and ``manifest.json`` beneath
+        ``<output_dir>/<URL-encoded release ID>/``. Missing directories are
+        created. None retains verified bytes in memory without writing files.
+        Existing identical files are checked and reused; differing files or
+        manifests raise ``FileExistsError``.
     release : str, optional
-        An explicit release ID bypasses latest. None resolves latest once for
-        the whole operation. Unavailable releases never fall back to another.
-        Pass UTC timestamps as ``YYYY-MM-DDTHH:MM:SS[.digits]Z``, retaining
-        their exact spelling. Plain ASCII token IDs such as ``test-001`` are
-        also supported. Pass the literal ID, not its URL-encoded spelling.
+        Literal release ID: a UTC timestamp or plain ASCII token. Default None
+        resolves latest once per call. An explicit ID bypasses latest and never
+        falls back to another release. Do not URL-encode the argument.
     timeout : float, optional
         Positive finite socket timeout in seconds, default 30; not a total
         batch deadline. Downloads are sequential.
 
     Returns
     -------
-    list of GeoCSVFetchResult
-        Always a list, including for one file. Every file is checked against
-        the manifest's byte count and SHA-256 before acceptance. Disk downloads
-        use a temporary file so incomplete payloads are never accepted.
+    results : list of GeoCSVFetchResult
+        One result per selected file, in selection or manifest order. Every
+        payload is checked against the manifest's byte count and SHA-256.
+        Each result contains provenance and either a disk path or memory bytes.
 
     Raises
     ------
@@ -123,14 +158,21 @@ def fetch(
         saved to disk remain available, together with the manifest.
     ValueError, TypeError
         Invalid arguments.
+    FileExistsError
+        An existing output file or manifest differs from the selected release.
     OSError
-        Local filesystem failure, including conflicting existing outputs.
+        Another local filesystem operation fails.
+
+    See Also
+    --------
+    read : Parse results into typed tables while retaining download provenance.
 
     Notes
     -----
-    This retrieves bytes without parsing or changing scientific content.
-    Memory-only batches retain the complete selected payload; parsing and
-    retaining pandas tables can require substantially more memory.
+    A failed batch returns no partial list. Previously verified disk files and
+    their manifest remain available. Memory results retain all selected bytes.
+    Storage, provenance, and protocol details are documented in the reference:
+    https://github.com/Bathymetrix/mermaid-geocsv/blob/main/docs/development/FETCH.md#the-fetch-interface
     """
     base = urlsplit(base_url)
     if base.scheme not in {"http", "https"} or not base.netloc or base.query or base.fragment:

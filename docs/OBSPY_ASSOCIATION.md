@@ -14,7 +14,7 @@ against GeoCSV; it never repairs a mismatch by rewriting either source.
 Paired SAC files are independent comparison references, never association
 inputs or sources of missing metadata.
 
-Eligible source rows have `MethodIdentifier` beginning with `Algorithm(event)`.
+Eligible source rows have `MethodIdentifier` beginning with `Algorithm(event):`.
 This includes detected and requested acquisitions, not just confirmed
 seismic events, and is independent of producer version. GPS, pressure, and
 thermocline observations are not waveform candidates.
@@ -110,7 +110,7 @@ both key and attribute access. It contains outputs only, not input tolerances.
 | --- | --- |
 | `type` | `single_segment` for strict original-segment matching; `anchor_segment` for the explicit containing-anchor fallback. A clipped window within one source segment can have type `anchor_segment`. |
 | `waveform` | Association-time snapshot: `network`, `station`, `location`, `channel`, `starttime`, `endtime`, `sampling_rate_hz`, and `sample_count`. Times are fresh ObsPy `UTCDateTime` values preserving nanoseconds. |
-| `coverage_segments` | Chronological tuple of contributing source-segment descriptions; the first entry is the geographic anchor. For a strict match, contains only the matched source segment. |
+| `coverage_segments` | Chronological tuple of contributing source-segment descriptions. For a strict match, contains only the matched source segment. |
 | `waveform_start_offset_seconds` | Signed waveform start minus anchor start, computed using integer nanoseconds. An interior window can have a large positive offset; this is not its sample-grid error, a clock correction, or an uncertainty. |
 | `max_sample_grid_offset` | `seconds`, `dataset_index`, `source_record_index`, `source_line_number`, and `waveform_sample_index` identifying the largest absolute timing difference among retained first/last sample pairs of contributing source ranges. |
 | `max_sample_rate_difference` | `hz`, `dataset_index`, `source_record_index`, and `source_line_number` identifying the largest absolute source/waveform rate difference. |
@@ -131,6 +131,11 @@ Each `coverage_segments` entry contains:
 record and line numbers refer to the file actually parsed, including a fixture
 subset; they are not indices into an unparsed full history. Dataset indices
 refer to the supplied list, which can combine files.
+
+The geographic anchor is identified by `stats.geocsv.dataset_index` and
+`stats.geocsv.source_record_index`. It need not be the first chronological
+coverage entry: an earlier segment ending just before the waveform start can
+contribute a retained boundary sample under the half-sample placement rule.
 
 Grid diagnostics use the retained boundary pairs evaluated by the coverage
 check, with the same integer-nanosecond arithmetic. The per-segment grids have

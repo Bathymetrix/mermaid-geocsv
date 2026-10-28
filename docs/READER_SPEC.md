@@ -46,8 +46,9 @@ explicit offsets retain those offsets. A column with one consistent timezone
 has a pandas datetime dtype; if it mixes naive and timezone-aware values or
 different offsets, its values are preserved as `Timestamp` objects in an
 `object` column. Depending on pandas version, parsing mixed timezone entries
-may issue a warning or become unsupported; the reader does not normalize them
-by default.
+may issue a warning. If pandas rejects a mixed-timezone array, the reader
+parses its entries individually and retains them in an object column; it does
+not normalize them by default.
 
 In version 0.16.0 the first argument is named `source` rather than `path`, to
 cover local and in-memory inputs. Positional path calls remain unchanged;
@@ -103,7 +104,9 @@ each comment's original text (`raw`), physical `line_number`, and parsed
 use the exact source header names; `metadata.delimiter` is the decoded CSV
 character. `field_long_names` and `field_standard_names` contain individually
 trimmed values aligned with the source columns; absent attributes have empty
-values. Optional `field_missing` declarations are preserved as well.
+values. Optional `field_missing` declarations are preserved as well. If the
+declaration is absent, `metadata.field_missing` is an empty mapping; if present,
+it has one entry per column, and empty entries add no missing-value marker.
 `metadata.source_path` is the resolved absolute path opened by the reader,
 or None for in-memory input. `metadata.record_line_numbers` is a read-only
 mapping from file-wide source record indices to one-based physical starting
@@ -116,6 +119,19 @@ immutable `GeoCSVDownload` provenance supplied by a fetch result. It retains
 the instrument and release IDs, requested file and manifest URLs, verified byte
 count and SHA-256, test-collection flag, and original manifest bytes. It does
 not retain the GeoCSV payload. See the [fetch reference](development/FETCH.md#provenance).
+
+`metadata.datetime_resolution_ns` is a read-only nested mapping from datetime
+column names to source record indices and source-spelling resolutions in
+nanoseconds. Missing timestamps have no entry. Fractional digit counts include
+trailing zeros; this records notation, not clock accuracy or pandas storage
+resolution. Timestamp values are unchanged.
+
+| Source timestamp spelling | Nominal resolution |
+| --- | --- |
+| Date only | One day |
+| Hours and minutes | One minute |
+| Seconds without a fraction | One second |
+| Fractional seconds with `n` digits | `10 ** (9 - n)` nanoseconds |
 
 As of writing, pandas documents [`DataFrame.attrs`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.attrs.html)
 as experimental. We use it

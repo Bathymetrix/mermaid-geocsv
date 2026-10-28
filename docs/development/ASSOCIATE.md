@@ -193,8 +193,8 @@ start inclusive and stop exclusive. They describe the clipped portion supporting
 the waveform, while source times/count remain those of the complete segment.
 All end times mean the last sample, not an exclusive window boundary.
 
-`waveform_start_offset_seconds` is signed waveform start minus the first
-coverage segment's start. A positive offset can be large for an interior
+`waveform_start_offset_seconds` is signed waveform start minus the geographic
+anchor's start. A positive offset can be large for an interior
 window; it is not the sample-grid error, a clock correction or an uncertainty.
 `max_sample_grid_offset` records the largest absolute retained boundary-sample
 time difference in `seconds`, its source dataset/record/line, and the
@@ -204,7 +204,9 @@ the first chronological segment (dataset then record index break time ties),
 then its first boundary sample before its last. No input tolerances are stored.
 See the [complete report definitions](../OBSPY_ASSOCIATION.md#association-report).
 
-Coverage segments are chronological, with the geographic anchor first.
+Coverage segments are chronological. The geographic anchor is identified by
+the attached `dataset_index` and `source_record_index`; it need not be the
+first coverage entry when an earlier segment contributes a boundary sample.
 `len(report.coverage_segments)` gives their count; overlaps count once toward
 coverage but may appear in multiple entries. A clipped window within one source
 segment still has type `anchor_segment`. These are coverage evidence, not proof

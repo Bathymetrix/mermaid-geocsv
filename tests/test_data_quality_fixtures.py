@@ -15,7 +15,7 @@ EVENT_QUALITY = {"DET": "Q", "REQ": "D"}
 
 
 def test_mermaid_geocsv_event_quality_values_follow_stream_map() -> None:
-    """GeoCSV marks DET as Q and REQ as D, independent of sample rate."""
+    """Check event quality values and their independence from sample rate."""
     paths = sorted(
         path
         for station_directory in MERMAID_FIXTURES.glob("P*")

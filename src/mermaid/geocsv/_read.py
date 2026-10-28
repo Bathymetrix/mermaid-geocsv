@@ -23,11 +23,18 @@ from ._fetch import GeoCSVDownload, GeoCSVFetchResult, _verify_file
 
 @dataclass(frozen=True)
 class GeoCSVComment:
-    """One source comment, with its physical line number and original text.
+    """Immutable comment preserved from a GeoCSV source line.
 
-    ``raw`` excludes the line ending but retains quoting and whitespace.
-    ``key`` is stripped and lowercased, and ``value`` is stripped. Both are
-    ``None`` for free-text comments without a keyword/value pair.
+    Attributes
+    ----------
+    raw : str
+        Original text without the line ending, retaining quotes and whitespace.
+    line_number : int
+        One-based physical line number in the source file.
+    key : str or None
+        Stripped, lowercase keyword, or None if no colon is present.
+    value : str or None
+        Stripped text after the first colon, or None if no colon is present.
     """
 
     raw: str
@@ -38,27 +45,44 @@ class GeoCSVComment:
 
 @dataclass(frozen=True)
 class GeoCSVMetadata:
-    """Source provenance and GeoCSV declarations at ``frame.attrs["geocsv"]``.
+    """Immutable dataset metadata stored at ``frame.attrs["geocsv"]``.
 
-    ``source_path`` is the resolved absolute path opened by the reader, not a
-    declaration found in the file. It is None for in-memory input. ``download``
-    retains immutable retrieval provenance when reading a fetch result; it is
-    None for bare local paths and bytes. It never retains the GeoCSV payload.
+    Attributes
+    ----------
+    source_path : pathlib.Path or None
+        Resolved absolute path opened by the reader, or None for memory input.
+    comments : tuple of GeoCSVComment
+        Source comments in order, including repeated and unknown keywords.
+    field_types : mapping of str to str
+        Declared types by exact column name. Empty values mean undeclared;
+        those columns are parsed as strings.
+    field_units : mapping of str to str
+        Declared units by column name; empty values mean undeclared or empty.
+    field_long_names : mapping of str to str
+        Declared long names by column name; empty values mean no description.
+    field_standard_names : mapping of str to str
+        Declared standard names by column name; empty values mean no description.
+    field_missing : mapping of str to str
+        Declared missing-value markers by column name. Empty mapping when the
+        declaration is absent; empty entries add no marker.
+    delimiter : str
+        Decoded, single-character CSV delimiter.
+    datetime_resolution_ns : mapping of str to mapping of int to int
+        Datetime column names mapped to source record indices and timestamp
+        spelling resolutions in nanoseconds. Missing timestamps have no entry.
+    download : GeoCSVDownload or None
+        Retrieval provenance from a fetch result, or None for bare paths/bytes.
+    record_line_numbers : mapping of int to int
+        Source record indices mapped to one-based physical starting lines,
+        including records spanning multiple lines.
 
-    Comments retain source order and repeated or unknown keys. Field mappings
-    use the exact header names; values are the stripped source declarations.
-    An empty ``field_types`` value means the type was undeclared and the reader
-    represented that column as a string. Empty values in the other field
-    mappings mean those attributes were undeclared or empty. The mappings are
-    read-only. ``delimiter`` is the decoded CSV character.
-    ``datetime_resolution_ns`` maps datetime column names to source record
-    indices and the resolution of each non-missing source timestamp spelling
-    in nanoseconds. It preserves fractional digit counts including trailing
-    zeros; seconds-only, minutes-only, and dates have nominal resolutions of
-    one second, one minute, and one day. It describes notation, not clock
-    accuracy. Both mapping levels are read-only; timestamp values are unchanged.
-    ``record_line_numbers`` maps source record indices to their one-based
-    physical starting line numbers, including for multiline CSV records.
+    Notes
+    -----
+    All mappings are read-only, including nested timestamp-resolution mappings.
+    Resolution describes source notation, not clock accuracy. Metadata is
+    guaranteed on freshly parsed frames; pandas transformations may discard it.
+    See the reader specification for metadata and format details:
+    https://github.com/Bathymetrix/mermaid-geocsv/blob/main/docs/READER_SPEC.md
     """
 
     source_path: Path | None
@@ -74,6 +98,7 @@ class GeoCSVMetadata:
     record_line_numbers: Mapping[int, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        """Freeze comments and metadata mappings, including nested resolutions."""
         object.__setattr__(self, "comments", tuple(self.comments))
         for name in (
             "field_types",
@@ -90,13 +115,14 @@ class GeoCSVMetadata:
         }))
 
     def __deepcopy__(self, memo: dict) -> GeoCSVMetadata:
+        """Return this immutable value when frame metadata is deep-copied."""
         # pandas copies attrs during normal selection. This value is immutable,
         # so sharing it is safe and avoids copying read-only mapping proxies.
         return self
 
 
 class GeoCSVError(ValueError):
-    """A GeoCSV declaration, CSV record, or typed field is invalid/unsupported."""
+    """Error raised for invalid or unsupported GeoCSV content."""
 
 
 # Adding a keyword here may also require handling its parsing semantics below.
@@ -140,48 +166,51 @@ def read(
 ) -> list[pd.DataFrame]:
     """Read UTF-8 GeoCSV datasets into one DataFrame per dataset.
 
-    ``source`` may be a local path, raw bytes, one GeoCSVFetchResult, or a list
-    or tuple of fetch results. Batches return a flat list in result/dataset
-    order, with source record indices restarting for each file. Fetch results
-    retain download provenance; saved files are reverified before parsing.
-    Bare paths/bytes do not infer download provenance from adjacent files.
+    Parameters
+    ----------
+    source : str, path-like, bytes, GeoCSVFetchResult, list, or tuple
+        Local path, UTF-8 bytes, or results returned by ``fetch``. Fetch results
+        retain retrieval provenance; saved files are checked against their byte
+        count and checksum before parsing. Bare paths and bytes do not infer
+        retrieval provenance from adjacent files. Lists and tuples may contain
+        only fetch results.
+    datetime_timezone : str or datetime.tzinfo, optional
+        Target timezone accepted by pandas. Default None preserves source
+        timezones and leaves timezone-free values naive. Conversion requires
+        a timezone on every non-missing datetime value. An empty or all-missing
+        datetime column remains timezone-naive because no timestamp is converted.
 
-    Requires ``dataset`` before the header. ``field_type`` and ``field_unit``
-    are optional; undeclared field types are read as strings, and undeclared
-    units remain empty. The delimiter defaults to comma. Source field names and
-    data order are unchanged. Datetimes use extended calendar dates
-    (``YYYY-MM-DD``), optionally with ``HH:MM``, seconds, a period fraction of
-    at most nine digits, and ``Z`` or a numeric offset (``±HH``, ``±HHMM``, or
-    ``±HH:MM``). ``T`` is strongly recommended between date and time, though a
-    space is accepted. By default, explicit timezones are preserved
-    and timezone-free values remain naive. Mixed timezone entries are retained
-    as objects and may produce a pandas warning or become unsupported in a
-    future pandas version. Set ``datetime_timezone`` to a timezone accepted by
-    pandas' ``DatetimeIndex.tz_convert`` to convert aware values. When set,
-    every non-missing datetime must include a timezone; naive values raise
-    ``GeoCSVError``. Conversion is performed by pandas. Duplicate times are
-    retained.
-    ``nan`` (case-insensitive) is missing for every field type, including
-    strings; a literal string ``nan`` cannot be represented. Empty cells in
-    the string-valued ``Location`` column remain empty strings (known empty
-    SEED location codes); other empty cells are missing. Numeric and
-    datetime cells are trimmed; string cells
-    retain their whitespace. A per-column ``field_missing`` sentinel also
-    denotes missing data. In datetime columns, ``NaT`` (case-insensitive) also
-    denotes missing data by default.
-    Comments and keyword declarations begin with a literal ``#`` at record
-    boundaries. Quoted cells beginning with ``#`` are header or data values;
-    lines inside multiline quoted cells remain cell content.
-    Malformed CSV quotes, invalid UTF-8, and lines without LF or CRLF endings
-    are rejected with ``GeoCSVError``.
+    Returns
+    -------
+    frames : list of pandas.DataFrame
+        One typed table per dataset, in source order. Batches are flattened in
+        result/dataset order. Each file has a zero-based ``source_record_index``
+        continuing across its datasets. Original column names and duplicate
+        timestamps are retained. Immutable ``GeoCSVMetadata`` is stored at
+        ``frame.attrs["geocsv"]`` on each freshly parsed frame.
 
-    Returns a list of DataFrames, one per dataset. Each frame is indexed by the
-    file-wide, zero-based data-record position (``source_record_index``) and
-    stores immutable GeoCSV metadata, including the resolved source path (None
-    for in-memory input) and download provenance when supplied, at
-    ``frame.attrs["geocsv"]``. Each file is parsed once and all tables are loaded
-    into memory; saved fetch results also undergo an integrity pass. Raises
-    ``GeoCSVError`` for malformed or unsupported content.
+    Raises
+    ------
+    GeoCSVError
+        Content is malformed or unsupported, or timezone conversion is requested
+        for a non-missing timezone-naive datetime.
+    GeoCSVFetchError
+        A saved fetch result no longer matches its recorded size or checksum.
+    TypeError
+        The source type is unsupported, or a batch contains non-fetch results.
+    OSError
+        A local input file cannot be opened or read.
+
+    See Also
+    --------
+    fetch : Retrieve verified GeoCSV files to disk or memory.
+    associate : Attach parsed event metadata to ObsPy waveforms.
+
+    Notes
+    -----
+    All datasets are loaded into memory. Supported syntax, missing values,
+    datetime handling, and metadata guarantees are defined in the specification:
+    https://github.com/Bathymetrix/mermaid-geocsv/blob/main/docs/READER_SPEC.md
     """
     if isinstance(source, (list, tuple)):
         if any(not isinstance(item, GeoCSVFetchResult) for item in source):
@@ -356,7 +385,7 @@ def _parse_datetime_value(value: str, line_number: int, field_name: str) -> pd.T
 
 
 def _datetime_resolution_ns(value: str) -> int:
-    """Resolution of the source spelling, independently of pandas storage."""
+    """Return source-spelling resolution in nanoseconds, independent of storage."""
     clock = re.search(r"[Tt ]\d{2}:\d{2}(?::(\d{2})(?:\.(\d+))?)?", value)
     if clock is None:
         return 86_400_000_000_000  # Calendar date only.
