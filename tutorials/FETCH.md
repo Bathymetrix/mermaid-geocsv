@@ -54,7 +54,10 @@ for item in saved:
 ```
 
 Files and their manifest are saved in a snapshot directory beneath
-`geocsv-downloads/`. Repeating the call verifies and reuses identical files;
+`geocsv-downloads/`. With 0.26.0 or newer, a creation timestamp such as
+`2026-10-21T22:48:33.277Z` produces directory `2026-10-21T22-48-33.277Z`.
+Only the directory representation changes; metadata retains the original timestamp.
+Repeating the call verifies and reuses identical files;
 conflicting files raise an error. Pass `saved` directly to `geocsv.read` to
 retain download provenance. For a selection, use `fetch(["P0006", "P0045"], ...)`.
 
@@ -73,6 +76,8 @@ pinned = geocsv.fetch(
 print(pinned[0].provenance.release_id)
 ```
 
-Pass the timestamp literally; `fetch` handles URL encoding.
+Pass the timestamp literally; `fetch` derives the hyphenated path component.
+The replaced testing collection requires mermaid-geocsv 0.26.0 or newer.
+Earlier encoded-path testing URLs may be retired.
 For result fields, memory use, error behavior, and protocol details, see the
 [fetch reference](../docs/FETCH.md#the-fetch-interface).

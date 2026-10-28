@@ -9,7 +9,6 @@ from pathlib import Path
 import shutil
 from threading import Thread
 from types import SimpleNamespace
-from urllib.parse import quote, unquote
 
 import pandas as pd
 import pytest
@@ -92,9 +91,9 @@ def update_manifest(collection):
     ("2026-10-21T22:48:33.277000000001Z", False, True),
 ])
 def test_timestamp_release_identity_urls_and_storage(collection, release, memory, pinned):
-    component = quote(release, safe="")
-    # An HTTP server decodes the URL once: storage uses the literal timestamp.
-    directory = collection.root / "releases" / release
+    component = release.replace(":", "-")
+    # Storage, URLs and local output use the same hyphenated component.
+    directory = collection.root / "releases" / component
     collection.directory.rename(directory)
     collection.manifest["release_id"] = release
     manifest_path = directory / "manifest.json"
@@ -123,7 +122,7 @@ def test_timestamp_release_identity_urls_and_storage(collection, release, memory
         assert list(collection.client.iterdir()) == []
     else:
         assert result.path.parent.name == component
-        assert unquote(result.path.parent.name) == release
+        assert "%" not in result.path.parent.name
         assert ":" not in result.path.parent.name
         assert result.path.read_bytes() == (directory / "P0006.geocsv").read_bytes()
         assert (result.path.parent / "manifest.json").read_bytes() == result.provenance.manifest
@@ -152,8 +151,9 @@ def test_invalid_timestamp_release_rejected_from_arguments_and_pointer(collectio
 
 
 @pytest.mark.parametrize("component", ["2026-10-21T22:48:33.277Z",
+                                       "2026-10-21T22%3A48%3A33.277Z",
                                        "2026-10-21T22%253A48%253A33.277Z"])
-def test_latest_requires_exactly_once_encoded_timestamp_path(collection, component):
+def test_latest_requires_hyphenated_timestamp_path(collection, component):
     (collection.root / "latest.json").write_text(json.dumps({
         "release_id": "2026-10-21T22:48:33.277Z", "testing_only": True,
         "manifest": f"releases/{component}/manifest.json",

@@ -35,6 +35,27 @@ local implementation alone does not establish deployed behavior. Successful
 validation or testing publication does not authorize production promotion or
 a first scientific/software release.
 
+## Hyphenated release paths — 2026-10-28
+
+Consumer 0.26.0 and publisher 0.3.0 replace only the creation timestamp's colons
+with hyphens when deriving release components. URLs, R2 keys and new local
+snapshot/staging/validation/download directories use
+`2026-10-21T22-48-33.277Z`; the GeoCSV `#created`, manifest `release_id`, fetch
+argument and download provenance retain `2026-10-21T22:48:33.277Z` exactly.
+Fractional precision and all other timestamps are unchanged.
+
+The P0006/P0045 testing collection is authorized for replacement. Its previous
+encoded URLs may be retired. New downloads require consumer 0.26.0 or newer;
+the fixed 0.24.0 baseline and original fixtures remain historical scientific
+and download checks, not compatibility promises for this new path protocol.
+The Worker and testing replacement were deployed and verified on 2026-10-28.
+All 3,292 original pairs passed fresh acceptance; live exact-byte downloads,
+latest/pinned fetch and disk/memory/reuse passed. The four old testing objects
+were retired, and their encoded URLs return uncached 404. Local historical
+evidence is retained. Replacement/deployment evidence is recorded in the publisher's
+[path review](../../mermaid-publisher/docs/geocsv/RELEASE_PATH_REVIEW.md).
+Production remains inactive. Local code alone does not establish deployment.
+
 ## Cross-repository workflow
 
 ```mermaid

@@ -51,10 +51,21 @@ manifest; published release bytes are assumed immutable.
 
 Release IDs accept plain ASCII tokens or valid UTC timestamps
 `YYYY-MM-DDTHH:MM:SS[.digits]Z`. Pass the literal ID, without pre-encoding or
-normalizing fractional digits. URL and local directory components use
-`quote(release_id, safe="")`: timestamp colons become `%3A`. For example,
-`2026-10-21T22:48:33.277Z` uses directory component
-`2026-10-21T22%3A48%3A33.277Z`.
+normalizing fractional digits. Starting with 0.26.0, URL and local directory
+components replace only the creation timestamp's time-separator colons with
+hyphens: `release_id.replace(":", "-")`. For example,
+`2026-10-21T22:48:33.277Z` uses `2026-10-21T22-48-33.277Z`. Every fractional
+digit is retained. Plain test-token IDs are unchanged. GeoCSV contents,
+`#created`, manifest/provenance release IDs and other timestamps retain their
+original spelling. Pass the literal creation timestamp as `release`, rather
+than its directory spelling.
+
+The initial encoded-path testing collection was replaced under the
+[2026-10-28 compatibility review](../../mermaid-publisher/docs/geocsv/RELEASE_PATH_REVIEW.md).
+Old testing URLs may be retired; 0.25.x and the frozen 0.24.0 client cannot
+fetch the new timestamped collection. There is no automatic legacy-path
+fallback or local directory migration. Existing downloads remain on disk;
+a new call writes to the hyphenated directory and retains the exact manifest.
 
 The manifest contains `release_id`, `testing_only`, and `files`. Each entry
 requires a nonempty string `instrument_id`, a `filename`, a nonnegative

@@ -25,7 +25,7 @@ TEST_RELEASE = "2026-10-21T22:48:33.277Z"
 def tutorial_collection(tmp_path):
     """Keep hosted tutorial examples runnable without the public service."""
     server_root = tmp_path / "server"
-    release_directory = server_root / "releases" / TEST_RELEASE
+    release_directory = server_root / "releases" / TEST_RELEASE.replace(":", "-")
     release_directory.mkdir(parents=True)
     entries = []
     for instrument in ("P0006", "P0045"):
@@ -42,7 +42,7 @@ def tutorial_collection(tmp_path):
     (release_directory / "manifest.json").write_text(json.dumps(manifest))
     (server_root / "latest.json").write_text(json.dumps({
         "release_id": TEST_RELEASE, "testing_only": True,
-        "manifest": "releases/2026-10-21T22%3A48%3A33.277Z/manifest.json",
+        "manifest": "releases/2026-10-21T22-48-33.277Z/manifest.json",
     }))
     handler = partial(SimpleHTTPRequestHandler, directory=str(server_root))
     with ThreadingHTTPServer(("127.0.0.1", 0), handler) as server:

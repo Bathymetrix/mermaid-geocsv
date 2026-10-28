@@ -15,7 +15,7 @@ from http.client import HTTPException
 from os import PathLike
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from urllib.parse import quote, urljoin, urlsplit
+from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
 
 
@@ -130,7 +130,7 @@ def fetch(
         without a query or fragment. Use HTTPS for public hosting.
     output_dir : path-like or None, optional
         Default "." saves files and ``manifest.json`` beneath
-        ``<output_dir>/<URL-encoded release ID>/``. Missing directories are
+        ``<output_dir>/<release ID with timestamp colons replaced by hyphens>/``. Missing directories are
         created. None retains verified bytes in memory without writing files.
         Existing identical files are checked and reused; differing files or
         manifests raise ``FileExistsError``.
@@ -200,13 +200,13 @@ def fetch(
         release = pointer.get("release_id")
         if not _is_release_id(release):
             raise GeoCSVFetchError("latest release_id must be a plain token or UTC timestamp")
-        if pointer.get("manifest") != f"releases/{quote(release, safe='')}/manifest.json":
+        if pointer.get("manifest") != f"releases/{release.replace(':', '-')}/manifest.json":
             raise GeoCSVFetchError("latest manifest path must identify its selected release")
     else:
         if not _is_release_id(release):
             raise ValueError("release must be a plain token or UTC timestamp")
 
-    release_component = quote(release, safe="")
+    release_component = release.replace(":", "-")
     manifest_url = urljoin(base_url, f"releases/{release_component}/manifest.json")
     manifest, manifest_bytes = _get_json(manifest_url, timeout)
     entries = _check_manifest(manifest, release, manifest_url)

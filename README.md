@@ -59,9 +59,10 @@ associates their metadata, and compares SAC exports with independent fixtures.
 | Plot and analyze records | Use pandas and Matplotlib downstream. | [Plotting](tutorials/PLOTTING.md) | [PLOTTING.ipynb](tutorials/PLOTTING.ipynb) |
 
 Hosted GeoCSV collections remain testing only; `fetch` requires an explicit
-`base_url`. The [fetch tutorial](tutorials/FETCH.md) downloads P0006 and
-P0045 from `https://bathymetrix.com/geocsv/testing/`. See the
-[hosting workflow](docs/HOSTING.md) for publication status.
+`base_url`. The [fetch tutorial](tutorials/FETCH.md) downloads P0006 and P0045
+from `https://bathymetrix.com/geocsv/testing/`. See the [hosting
+workflow](docs/HOSTING.md) for publication status. See the [fetch
+reference](docs/FETCH.md) for compatibility and storage details.
 
 Detailed matching rules, association reports, SAC precision and provenance
 limits, format rules, and fixture references are in the

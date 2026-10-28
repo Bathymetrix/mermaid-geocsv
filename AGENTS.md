@@ -174,8 +174,11 @@ The publisher calls public `read`, `associate` and `fetch` APIs, uses optional
 SAC header creation and ObsPy writing, and owns export verification.
 This package owns scientific API behavior and package defect fixes. Do not add
 publication validators or report schemas here, or duplicate matching/projection
-logic in the publisher. Keep a fixed supported consumer baseline and historical
-fixtures; publisher edits do not implicitly redefine fetch behavior. The sampled
+logic in the publisher. Keep the fixed 0.24.0 historical consumer baseline and download
+fixtures; new hyphenated-path publication/download requires consumer >= 0.26.0.
+The 2026-10-28 path review explicitly replaces the initial testing collection;
+old testing URLs may be retired. Publisher edits do not implicitly redefine
+fetch behavior. The sampled
 fixture checker is package development tooling, not the publication gate.
 
 The external archive is `$MERMAID/publisher`, a separate local Git repository.

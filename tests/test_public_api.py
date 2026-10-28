@@ -12,7 +12,7 @@ from mermaid import geocsv
 
 
 def test_fetch_public_api():
-    assert geocsv.__version__ == "0.25.1"
+    assert geocsv.__version__ == "0.26.0"
     assert {"fetch", "GeoCSVFetchResult", "GeoCSVDownload", "GeoCSVFetchError"} <= set(geocsv.__all__)
     parameters = inspect.signature(geocsv.fetch).parameters
     assert parameters["instrument_ids"].default is None
