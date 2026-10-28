@@ -141,3 +141,17 @@ Start with the [read tutorial](../tutorials/READ.md), then explore
 [fetching](../tutorials/FETCH.md), [plotting](../tutorials/PLOTTING.md), or the
 [association tutorial](../tutorials/ASSOCIATE.md), and the
 [reader specification](READER_SPEC.md) for API and format details.
+
+## Development tests
+
+The `dev` extra installs pytest. Combine it with `obspy` to run the full test
+suite, including waveform association, SAC export, and tutorial examples:
+
+```bash
+python -m pip install '.[dev,obspy]'
+python -B -m pytest -q -p no:cacheprovider
+```
+
+The minimal and `obspy` installations do not include pytest. Building or
+reinstalling the package includes development dependencies only when the
+`dev` extra is explicitly selected.

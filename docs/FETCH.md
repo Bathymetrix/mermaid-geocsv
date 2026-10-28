@@ -62,10 +62,10 @@ than its directory spelling.
 
 The initial encoded-path testing collection was replaced under the
 [2026-10-28 compatibility review](../../mermaid-publisher/docs/geocsv/RELEASE_PATH_REVIEW.md).
-Old testing URLs may be retired; 0.25.x and the frozen 0.24.0 client cannot
-fetch the new timestamped collection. There is no automatic legacy-path
-fallback or local directory migration. Existing downloads remain on disk;
-a new call writes to the hyphenated directory and retains the exact manifest.
+The old encoded testing URLs were retired on 2026-10-28; 0.25.x and the frozen
+0.24.0 client cannot fetch the new timestamped collection. There is no automatic
+legacy-path fallback or local directory migration. Existing downloads remain
+on disk; a new call writes to the hyphenated directory and retains the exact manifest.
 
 The manifest contains `release_id`, `testing_only`, and `files`. Each entry
 requires a nonempty string `instrument_id`, a `filename`, a nonnegative

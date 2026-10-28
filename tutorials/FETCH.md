@@ -17,6 +17,7 @@ python -m pip install .
 
 See [installation and notebook setup](../docs/INSTALLATION.md) if needed. Run the
 Python examples below in order. They require an internet connection.
+The replacement testing collection requires mermaid-geocsv 0.26.0 or newer.
 
 ## 1. Fetch one float into memory
 
@@ -77,7 +78,7 @@ print(pinned[0].provenance.release_id)
 ```
 
 Pass the timestamp literally; `fetch` derives the hyphenated path component.
-The replaced testing collection requires mermaid-geocsv 0.26.0 or newer.
-Earlier encoded-path testing URLs may be retired.
+The earlier encoded-path testing URLs were retired on 2026-10-28; no automatic
+fallback is provided.
 For result fields, memory use, error behavior, and protocol details, see the
 [fetch reference](../docs/FETCH.md#the-fetch-interface).

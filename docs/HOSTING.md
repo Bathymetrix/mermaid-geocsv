@@ -22,9 +22,10 @@ and software evidence.
 
 The recorded hosted testing collection is
 `https://bathymetrix.com/geocsv/testing/`. Its P0006/P0045 snapshot
-`2026-10-21T22:48:33.277Z` was published on 2026-10-26. Testing latest selects
-that snapshot in the recorded publication evidence; production latest was
-absent. These are recorded deployment observations, not a fresh live check.
+`2026-10-21T22:48:33.277Z` was first published on 2026-10-26 and replaced with
+hyphenated paths on 2026-10-28. Testing latest selects that snapshot;
+production latest remains absent in the recorded deployment evidence.
+These are recorded deployment observations, not a fresh live check.
 Current receipts and scientific results belong in the
 [publisher findings](../../mermaid-publisher/docs/geocsv/SCHEMA3_FINDINGS.md).
 
@@ -44,10 +45,10 @@ snapshot/staging/validation/download directories use
 argument and download provenance retain `2026-10-21T22:48:33.277Z` exactly.
 Fractional precision and all other timestamps are unchanged.
 
-The P0006/P0045 testing collection is authorized for replacement. Its previous
-encoded URLs may be retired. New downloads require consumer 0.26.0 or newer;
-the fixed 0.24.0 baseline and original fixtures remain historical scientific
-and download checks, not compatibility promises for this new path protocol.
+The P0006/P0045 testing collection was replaced on 2026-10-28. New downloads
+require consumer 0.26.0 or newer; the fixed 0.24.0 baseline and original fixtures
+remain historical scientific and download checks, not compatibility promises
+for this new path protocol.
 The Worker and testing replacement were deployed and verified on 2026-10-28.
 All 3,292 original pairs passed fresh acceptance; live exact-byte downloads,
 latest/pinned fetch and disk/memory/reuse passed. The four old testing objects
@@ -55,6 +56,8 @@ were retired, and their encoded URLs return uncached 404. Local historical
 evidence is retained. Replacement/deployment evidence is recorded in the publisher's
 [path review](../../mermaid-publisher/docs/geocsv/RELEASE_PATH_REVIEW.md).
 Production remains inactive. Local code alone does not establish deployment.
+Consumer 0.26.0 and publisher 0.3.0 identify source versions; these version
+bumps do not establish published software packages or release tags.
 
 ## Cross-repository workflow
 
@@ -63,12 +66,12 @@ flowchart TB
     upstream["automaid: GeoCSV and original MiniSEED/SAC"] --> source["$MERMAID/processed: read only"]
     source --> create["publisher create_snapshot.py"]
     inspect["inspect_snapshot.py: internal integrity"] -.-> create
-    create --> candidate["$MERMAID/publisher/geocsv/testing/snapshots/{ID}"]
+    create --> candidate["$MERMAID/publisher/geocsv/testing/snapshots/{release_component}"]
     candidate --> validate["validate_snapshot.py: scientific comparisons"]
     source --> validate
     api["geocsv.read and associate(create_sac_header=True)"] -.-> validate
     sac["ObsPy writing and publisher _verify_sac.py"] -.-> validate
-    validate --> report["testing/validation/{ID}: evidence"]
+    validate --> report["testing/validation/{release_component}: evidence"]
     report --> gate["gate_snapshot.py: acceptance"]
     candidate --> gate
     gate --> publish["publish_snapshot.py: conditional transfer"]

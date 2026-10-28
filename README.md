@@ -61,7 +61,8 @@ associates their metadata, and compares SAC exports with independent fixtures.
 Hosted GeoCSV collections remain testing only; `fetch` requires an explicit
 `base_url`. The [fetch tutorial](tutorials/FETCH.md) downloads P0006 and P0045
 from `https://bathymetrix.com/geocsv/testing/`. See the [hosting
-workflow](docs/HOSTING.md) for publication status. See the [fetch
+workflow](docs/HOSTING.md) for publication status. The replacement timestamped
+collection requires consumer 0.26.0 or newer. See the [fetch
 reference](docs/FETCH.md) for compatibility and storage details.
 
 Detailed matching rules, association reports, SAC precision and provenance
