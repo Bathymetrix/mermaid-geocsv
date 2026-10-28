@@ -207,6 +207,34 @@ def test_clipped_real_det_uses_containing_anchor_geography(subsets, tmp_path, st
     assert actual.stel == 0
 
 
+def test_stream_mixes_standard_and_anchor_matches_with_fresh_sac_headers(subsets):
+    """Create independent SAC projections for strict and clipped Stream members."""
+    original, frame = event(subsets)
+    clipped = original.copy()
+    clipped.stats.starttime += 10 / clipped.stats.sampling_rate
+    clipped.data = clipped.data[10:35].copy()
+    stream = obspy.Stream([original, clipped])
+    before = stream.copy()
+
+    assert geocsv.associate(stream, [frame], allow_first_segment=True,
+                            create_sac_header=True) is None
+    assert [trace.stats.geocsv.association.type for trace in stream] == [
+        "single_segment", "anchor_segment"]
+    row = frame.iloc[0]
+    expected = {"stla": float(row.Latitude), "stlo": float(row.Longitude),
+                "stel": 0.0, "stdp": float(row.WaterPressure) / 100}
+    for trace, native in zip(stream, before):
+        assert trace.stats.geocsv.source_record_index == frame.index[0]
+        assert trace.stats.geocsv.SampleCount == row.SampleCount
+        assert trace.stats.geocsv.association.waveform.sample_count == trace.stats.npts
+        assert {key: trace.stats.sac[key] for key in expected} == expected
+        assert all(trace.stats[key] == value for key, value in native.stats.items())
+        np.testing.assert_array_equal(trace.data, native.data)
+    for key in ("geocsv", "coordinates", "sac"):
+        assert stream[0].stats[key] is not stream[1].stats[key]
+    assert stream[0].stats.geocsv.association is not stream[1].stats.geocsv.association
+
+
 def test_native_nanoseconds_and_calibration_survive_header_initialization(subsets):
     trace, frame = event(subsets)
     trace.stats.starttime += 0.000000123
