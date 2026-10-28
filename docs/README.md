@@ -24,3 +24,7 @@ maintained references.
 - [P0045 metadata](../data/fixtures/P0045/README.md) and [combined-window waveforms](../tests/fixtures/association/P0045_20220115/README.md).
 - [Association inventory](../data/fixtures/association/README.md): paired waveforms, subsets, record maps, and measurement evidence.
 - [Fixture maintenance](../scripts/fixtures/README.md): optional full-history restoration and checks.
+
+## Audit records
+
+- [Development readiness audit, 2026-10-28](AUDIT_2026-10-28.md): I/O and ObsPy findings, test evidence, and open release/hosting verification.
