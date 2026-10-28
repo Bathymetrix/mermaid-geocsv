@@ -1,7 +1,7 @@
 # mermaid-geocsv
 
 [![Tests](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml/badge.svg?branch=main&event=push)](https://github.com/Bathymetrix/mermaid-geocsv/actions/workflows/tests.yml)
-[![Python 3.11–3.14](https://img.shields.io/badge/Python-3.11%E2%80%933.14-blue)](docs/INSTALLATION.md#supported-python-versions)
+[![Python 3.11–3.14](https://img.shields.io/badge/Python-3.11%E2%80%933.14-blue)](docs/installation.md#supported-python-versions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 Fetch and read MERMAID GeoCSV metadata, associate it with [ObsPy](https://docs.obspy.org/) waveforms,
@@ -9,7 +9,7 @@ and optionally create SAC station location headers for writing with ObsPy.
 
 The reader returns typed pandas DataFrames while preserving source column
 names, record order, timestamps, units, comments, and provenance. It follows
-[MERMAID reader conventions](docs/READER_SPEC.md); general GeoCSV conformance
+[MERMAID reader conventions](docs/reader-spec.md); general GeoCSV conformance
 is not promised. Scientific analysis stays in downstream tools.
 
 ## Install
@@ -28,7 +28,7 @@ installation above includes pandas 2.3.3 or newer and supports `fetch` and
 install '.[obspy]'` instead of the minimal install command; the `obspy` extra
 includes the core dependencies and adds ObsPy 1.5.1 or newer.
 
-See the [installation guide](docs/INSTALLATION.md) for dependency support,
+See the [installation guide](docs/installation.md) for dependency support,
 CI coverage, and notebook setup.
 
 ## Quick start
@@ -51,19 +51,19 @@ associates their metadata, and compares SAC exports with independent fixtures.
 
 | Operation | Purpose | Guide | Notebook |
 | --- | --- | --- | --- |
-| `geocsv.fetch(...)` | Retrieve verified GeoCSV files to disk or memory. | [Fetch](tutorials/FETCH.md) | [FETCH.ipynb](tutorials/FETCH.ipynb) |
-| `geocsv.read(...)` | Parse local paths, bytes, or fetch results into dataset tables. | [Read](tutorials/READ.md) | [READ.ipynb](tutorials/READ.ipynb) |
-| `geocsv.associate(...)` | Attach uniquely matched metadata and coordinates to ObsPy waveforms in place. | [Associate](tutorials/ASSOCIATE.md) | [ASSOCIATE.ipynb](tutorials/ASSOCIATE.ipynb) |
-| SAC headers and ObsPy writing | Use `associate(..., create_sac_header=True)`, then ObsPy `Trace.write` or `Stream.write`. | [Write SAC](tutorials/WRITE_SAC.md) | [WRITE_SAC.ipynb](tutorials/WRITE_SAC.ipynb) |
-| EarthScope workflow | Download P0006 waveforms, associate metadata, and verify SAC exports. | [EarthScope](tutorials/EARTHSCOPE.md) | [EARTHSCOPE.ipynb](tutorials/EARTHSCOPE.ipynb) |
-| Plot and analyze records | Use pandas and Matplotlib downstream. | [Plotting](tutorials/PLOTTING.md) | [PLOTTING.ipynb](tutorials/PLOTTING.ipynb) |
+| `geocsv.fetch(...)` | Retrieve verified GeoCSV files to disk or memory. | [fetch.md](tutorials/fetch.md) | [fetch.ipynb](tutorials/fetch.ipynb) |
+| `geocsv.read(...)` | Parse local paths, bytes, or fetch results into dataset tables. | [read.md](tutorials/read.md) | [read.ipynb](tutorials/read.ipynb) |
+| `geocsv.associate(...)` | Attach uniquely matched metadata and coordinates to ObsPy waveforms in place. | [associate.md](tutorials/associate.md) | [associate.ipynb](tutorials/associate.ipynb) |
+| SAC headers and ObsPy writing | Use `associate(..., create_sac_header=True)`, then ObsPy `Trace.write` or `Stream.write`. | [write_sac.md](tutorials/write-sac.md) | [write-sac.ipynb](tutorials/write-sac.ipynb) |
+| EarthScope workflow | Download P0006 waveforms, associate metadata, and verify SAC exports. | [earthscope.md](tutorials/earthscope.md) | [earthscope.ipynb](tutorials/earthscope.ipynb) |
+| Plot and analyze records | Use pandas and Matplotlib downstream. | [plotting.md](tutorials/plotting.md) | [plotting.ipynb](tutorials/plotting.ipynb) |
 
 Hosted GeoCSV collections remain testing only; `fetch` requires an explicit
-`base_url`. The [fetch tutorial](tutorials/FETCH.md) downloads P0006 and P0045
+`base_url`. The [fetch tutorial](tutorials/fetch.md) downloads P0006 and P0045
 from `https://bathymetrix.com/geocsv/testing/`. See the [hosting
-workflow](docs/HOSTING.md) for publication status. The replacement timestamped
+workflow](docs/hosting.md) for publication status. The replacement timestamped
 collection requires consumer 0.26.0 or newer. See the [fetch
-reference](docs/FETCH.md) for compatibility and storage details.
+reference](docs/fetch.md) for compatibility and storage details.
 
 Detailed matching rules, association reports, SAC precision and provenance
 limits, format rules, and fixture references are in the

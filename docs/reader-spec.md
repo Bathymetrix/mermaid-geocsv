@@ -24,10 +24,10 @@ records = tables[0]  # P0006 contains one dataset
 ```
 
 For a hands-on introduction using the included P0006 file, see the
-[pandas tutorial](../tutorials/READ.md).
-For retrieval into memory or local files, see [Fetching GeoCSV](../tutorials/FETCH.md).
-Association is documented in the [association tutorial](../tutorials/ASSOCIATE.md);
-unresolved scope is recorded in [open questions](OPEN_QUESTIONS.md).
+[pandas tutorial](../tutorials/read.md).
+For retrieval into memory or local files, see [Fetching GeoCSV](../tutorials/fetch.md).
+Association is documented in the [association tutorial](../tutorials/associate.md);
+unresolved scope is recorded in [open questions](open-questions.md).
 
 `geocsv.read(source, *, datetime_timezone=None)` accepts a local path, raw
 UTF-8 bytes, one `GeoCSVFetchResult`, or a list/tuple of fetch results. It
@@ -114,7 +114,7 @@ declaration. `metadata.download` is None for bare paths and bytes, or the
 immutable `GeoCSVDownload` provenance supplied by a fetch result. It retains
 the instrument and release IDs, requested file and manifest URLs, verified byte
 count and SHA-256, test-collection flag, and original manifest bytes. It does
-not retain the GeoCSV payload. See the [fetch reference](FETCH.md#provenance).
+not retain the GeoCSV payload. See the [fetch reference](fetch.md#provenance).
 
 `metadata.datetime_resolution_ns` is a read-only nested mapping from datetime
 column names to source record indices and source-spelling resolutions in
@@ -169,7 +169,7 @@ key repeats with a changed value after the header, the reader requires a new
 different values before the header; the last pre-header value is the baseline
 for later comparisons. Free-text comments are not compared. This is a
 provisional reader policy; the scope of custom keys remains an
-[open format question](OPEN_QUESTIONS.md#1-do-custom-keyword-lines-define-dataset-wide-metadata).
+[open format question](open-questions.md#1-do-custom-keyword-lines-define-dataset-wide-metadata).
 Every present `field_*` declaration must have exactly one entry per header
 column. For `A,B`, `#field_type: ,` declares two empty type entries, while bare
 `#field_type:` has only one and raises an error. The declaration may be omitted
@@ -256,5 +256,5 @@ values raise `geocsv.GeoCSVError` (a `ValueError`). The reader preserves row
 order and duplicate timestamps. It does not derive scientific quantities, interpolate
 locations, or choose between same-time records.
 
-The [open questions](OPEN_QUESTIONS.md) document format details that GeoCSV
+The [open questions](open-questions.md) document format details that GeoCSV
 v2.0.4 does not settle and the reader's current choices for those cases.

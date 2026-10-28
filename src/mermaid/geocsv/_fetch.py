@@ -172,7 +172,7 @@ def fetch(
     A failed batch returns no partial list. Previously verified disk files and
     their manifest remain available. Memory results retain all selected bytes.
     Storage, provenance, and protocol details are documented in the reference:
-    https://github.com/Bathymetrix/mermaid-geocsv/blob/main/docs/FETCH.md#the-fetch-interface
+    https://github.com/Bathymetrix/mermaid-geocsv/blob/main/docs/fetch.md#the-fetch-interface
     """
     base = urlsplit(base_url)
     if base.scheme not in {"http", "https"} or not base.netloc or base.query or base.fragment:

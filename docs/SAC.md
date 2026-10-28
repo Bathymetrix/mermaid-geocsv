@@ -1,9 +1,9 @@
 # SAC station headers and ObsPy writing
 
 Use `associate(..., create_sac_header=True)` on the final MiniSEED-derived
-waveform, then ObsPy `Trace.write` or `Stream.write`. The [SAC tutorial](../tutorials/WRITE_SAC.md)
+waveform, then ObsPy `Trace.write` or `Stream.write`. The [SAC tutorial](../tutorials/write-sac.md)
 provides runnable examples. Matching, fresh destinations, and the in-memory
-report are defined in the [association reference](OBSPY_ASSOCIATION.md).
+report are defined in the [association reference](obspy-association.md).
 
 ## Geographic mapping
 
@@ -22,7 +22,7 @@ The pressure conversion follows automaid's approximation, 100 mbar = 1 dbar
 treated as approximately one metre. It uses no density model, latitude
 correction, or additional atmospheric-pressure correction. Depth is the event's
 receiver depth, not earthquake-source `evdp`. It is not a reconstructed depth
-trajectory. The [coordinate convention](OBSPY_ASSOCIATION.md#adopted-sea-level-reference)
+trajectory. The [coordinate convention](obspy-association.md#adopted-sea-level-reference)
 defines the vertical-reference limits.
 
 Missing pressure is accepted only for source `DataQuality="D"` (REQ).
@@ -57,7 +57,7 @@ multi-trace Stream and overwrites existing filenames. An exclusively opened
 binary file (`open(..., "xb")`) can enforce overwrite refusal. An I/O failure
 can leave partial files; batch writing is not transactional. The package
 performs no export-time validation. The publisher owns
-[final waveform and SAC verification](../../mermaid-publisher/docs/geocsv/SAC_VERIFICATION.md).
+[final waveform and SAC verification](../../mermaid-publisher/docs/geocsv/sac-verification.md).
 
 ## Independent comparison references
 
@@ -80,7 +80,7 @@ without a GeoCSV mapping. Compare absolute sample times rather than requiring
 the same split between reference-time fields and `b`.
 
 See [fixture provenance](../data/fixtures/association/README.md) for sampled
-product coverage and [open questions](OPEN_QUESTIONS.md#deferred-workflows-and-mappings)
+product coverage and [open questions](open-questions.md#deferred-workflows-and-mappings)
 for deferred mappings. The read-only source reference is ObsPy commit
 `50033e1daf95233cd4f30e95a49c37fd50be2ccd`, especially
 [conversion](https://github.com/obspy/obspy/blob/50033e1daf95233cd4f30e95a49c37fd50be2ccd/obspy/io/sac/util.py)

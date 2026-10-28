@@ -82,7 +82,7 @@ class GeoCSVMetadata:
     Resolution describes source notation, not clock accuracy. Metadata is
     guaranteed on freshly parsed frames; pandas transformations may discard it.
     See the reader specification for metadata and format details:
-    https://github.com/Bathymetrix/mermaid-geocsv/blob/main/docs/READER_SPEC.md
+    https://github.com/Bathymetrix/mermaid-geocsv/blob/main/docs/reader-spec.md
     """
 
     source_path: Path | None
@@ -210,7 +210,7 @@ def read(
     -----
     All datasets are loaded into memory. Supported syntax, missing values,
     datetime handling, and metadata guarantees are defined in the specification:
-    https://github.com/Bathymetrix/mermaid-geocsv/blob/main/docs/READER_SPEC.md
+    https://github.com/Bathymetrix/mermaid-geocsv/blob/main/docs/reader-spec.md
     """
     if isinstance(source, (list, tuple)):
         if any(not isinstance(item, GeoCSVFetchResult) for item in source):

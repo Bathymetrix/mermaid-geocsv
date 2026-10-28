@@ -19,7 +19,7 @@ fill or match association metadata. SAC-input association is outside scope
 until further instruction. Optional `create_sac_header=True` creates fresh
 SAC station location headers during association for either label. Use ObsPy's
 Trace/Stream writer for serialization; see the
-[SAC writing tutorial](../../../tutorials/WRITE_SAC.md).
+[SAC writing tutorial](../../../tutorials/write-sac.md).
 
 Complete `geo_DET_REQ.csv` histories are verbatim, local, Git-ignored corpus
 references; ordinary tests use tracked subsets. See the
@@ -138,5 +138,5 @@ maximum rate difference was approximately 0.000001296 Hz.
 This is historical measurement evidence, not a current acceptance report or
 the publisher's full-archive gate. Its method field names the former package
 SAC writer used in that run. Current APIs and tolerances are defined in the
-[association reference](../../../docs/OBSPY_ASSOCIATION.md); reproducing a
+[association reference](../../../docs/obspy-association.md); reproducing a
 release check requires fresh execution against its recorded inputs.

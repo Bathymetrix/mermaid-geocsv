@@ -7,15 +7,15 @@ maintained references.
 
 ## Package references
 
-- [Installation](INSTALLATION.md): Python/dependency support, certificate setup, notebooks, and clean-install checks.
-- [Reader specification](READER_SPEC.md): inputs, dtypes, record order, metadata, timestamps, and format conventions.
-- [Fetch](FETCH.md): selection, release protocol, storage, integrity, provenance, and failures.
-- [Association](OBSPY_ASSOCIATION.md): matching, clipped/combined coverage, coordinates, reports, and lifetime limits.
-- [SAC](SAC.md): geographic mappings, missing pressure, precision, writing, and independent comparisons.
-- [ObsPy Stats](OBSPY_STATS_REFERENCE.md): source-based core defaults, optional namespaces, and processing history.
-- [MERMAID product identity](MERMAID_DATA_QUALITY.md): DET/REQ, nominal configurations, and independent quality indicators.
-- [Open questions](OPEN_QUESTIONS.md): unresolved format/scientific questions and deferred workflows/mappings.
-- [Hosting](HOSTING.md): ownership, testing-only status, and links to canonical publisher/site contracts.
+- [Installation](installation.md): Python/dependency support, certificate setup, notebooks, and clean-install checks.
+- [Reader specification](reader-spec.md): inputs, dtypes, record order, metadata, timestamps, and format conventions.
+- [Fetch](fetch.md): selection, release protocol, storage, integrity, provenance, and failures.
+- [Association](obspy-association.md): matching, clipped/combined coverage, coordinates, reports, and lifetime limits.
+- [SAC](sac.md): geographic mappings, missing pressure, precision, writing, and independent comparisons.
+- [ObsPy Stats](obspy-stats-reference.md): source-based core defaults, optional namespaces, and processing history.
+- [MERMAID product identity](mermaid-data-quality.md): DET/REQ, nominal configurations, and independent quality indicators.
+- [Open questions](open-questions.md): unresolved format/scientific questions and deferred workflows/mappings.
+- [Hosting](hosting.md): ownership, testing-only status, and links to canonical publisher/site contracts.
 
 ## Fixtures and sources
 
@@ -27,4 +27,4 @@ maintained references.
 
 ## Audit records
 
-- [Development readiness audit, 2026-10-28](AUDIT_2026-10-28.md): I/O and ObsPy findings, test evidence, and open release/hosting verification.
+- [Development readiness audit, 2026-10-28](audit-2026-10-28.md): I/O and ObsPy findings, test evidence, and open release/hosting verification.

@@ -3,7 +3,7 @@
 Read the included P0006 data and make two plots with pandas and Matplotlib.
 These examples run offline and perform analysis after parsing.
 
-Companions: [Markdown](PLOTTING.md) · [Notebook](PLOTTING.ipynb).
+Companions: [Markdown](plotting.md) · [Notebook](plotting.ipynb).
 
 ## Setup
 
@@ -14,7 +14,7 @@ source .venv/bin/activate
 python -m pip install . matplotlib
 ```
 
-See [installation and notebook setup](../docs/INSTALLATION.md) if needed. Run the
+See [installation and notebook setup](../docs/installation.md) if needed. Run the
 Python examples in order from the repository root, `docs/`, or `tutorials/`.
 
 ## 1. Read the data

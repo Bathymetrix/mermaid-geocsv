@@ -4,7 +4,7 @@
 source columns, timestamps, units, and metadata. This example uses the
 included P0006 file.
 
-Companions: [Markdown](READ.md) · [Notebook](READ.ipynb).
+Companions: [Markdown](read.md) · [Notebook](read.ipynb).
 
 ## Setup
 
@@ -15,7 +15,7 @@ source .venv/bin/activate
 python -m pip install .
 ```
 
-See [installation and notebook setup](../docs/INSTALLATION.md) if needed. Run the
+See [installation and notebook setup](../docs/installation.md) if needed. Run the
 Python examples in order from the repository root, `docs/`, or `tutorials/`.
 
 ## 1. Read a file
@@ -68,7 +68,7 @@ print(metadata.source_path)
 Keep `metadata` separately if needed later; arbitrary pandas transformations
 and exports may lose `attrs`.
 
-`read` also accepts UTF-8 bytes and results from [fetch](FETCH.md). The optional
+`read` also accepts UTF-8 bytes and results from [fetch](fetch.md). The optional
 `datetime_timezone` argument converts zoned timestamps to a requested timezone:
 
 ```python
@@ -77,5 +77,5 @@ converted[0]["StartTime"].head()
 ```
 
 This changes the displayed timezone while preserving the instant.
-See the [reader specification](../docs/READER_SPEC.md) for format and timestamp
-rules, or [plotting](PLOTTING.md) for a quick visualization.
+See the [reader specification](../docs/reader-spec.md) for format and timestamp
+rules, or [plotting](plotting.md) for a quick visualization.

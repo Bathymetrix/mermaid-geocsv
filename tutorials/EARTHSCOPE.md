@@ -5,7 +5,7 @@ with ObsPy, associate each waveform, and save and compare its SAC export with
 independent MiniSEED/SAC fixtures. Start with one detection, then repeat the
 workflow for two more.
 
-Companions: [Markdown](EARTHSCOPE.md) · [Notebook](EARTHSCOPE.ipynb).
+Companions: [Markdown](earthscope.md) · [Notebook](earthscope.ipynb).
 
 ## Setup
 
@@ -16,7 +16,7 @@ source .venv/bin/activate
 python -m pip install '.[obspy]'
 ```
 
-See [installation and notebook setup](../docs/INSTALLATION.md) if needed. Run the
+See [installation and notebook setup](../docs/installation.md) if needed. Run the
 Python examples in order from the repository root, `docs/`, or `tutorials/`.
 Internet access is required for the metadata and waveform downloads. Paired
 reference files are included in the repository; see their
@@ -34,8 +34,8 @@ The examples use three isolated DET segments with complete pressure metadata:
 These are zero-based data-record indices in the pinned complete GeoCSV file.
 Its timestamps have millisecond precision; downloaded MiniSEED retains finer
 timing. All three associate as `single_segment`. The
-[association tutorial](ASSOCIATE.md#3-associate-a-clipped-window) demonstrates
-`anchor_segment` and a [combined window](ASSOCIATE.md#4-associate-a-combined-window).
+[association tutorial](associate.md#3-associate-a-clipped-window) demonstrates
+`anchor_segment` and a [combined window](associate.md#4-associate-a-combined-window).
 
 ## 1. Fetch the matching GeoCSV snapshot
 
@@ -113,7 +113,7 @@ print(trace.stats.geocsv.association.type)
 The single-trace unpacking and association checks intentionally fail if a
 future service response no longer represents this original segment. The
 source history includes nearby candidates; no rows are discarded to force a
-match. The [July 6 REQ discrepancy](../docs/OPEN_QUESTIONS.md#p0006-july-6-req-response-det-start-with-req-count)
+match. The [July 6 REQ discrepancy](../docs/open-questions.md#p0006-july-6-req-response-det-start-with-req-count)
 is excluded because its returned start does not match its original row and the
 containing-anchor candidates are ambiguous against this history.
 

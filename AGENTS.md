@@ -18,7 +18,7 @@ changes. If instructions conflict, this file takes precedence.
 
 Repository ethos: **simple rules, clear projections, and no surprise side effects**.
 Before changing association or describing ObsPy's main Stats attributes, consult
-`docs/OBSPY_STATS_REFERENCE.md`, which records the relevant supplied source.
+`docs/obspy-stats-reference.md`, which records the relevant supplied source.
 Keep the ten core defaults distinct from optional namespaces and processing
 history; `_add_processing_info` is a decorator, not a core Stats field.
 
@@ -101,7 +101,7 @@ and fallback types `"anchor_segment"`; never change raw anchor row values.
 Association is a nested AttribDict report with a fresh waveform snapshot,
 chronological source coverage descriptions/ranges, signed waveform-start offset,
 and maximum measured grid/rate differences. Follow the schema in
-`docs/OBSPY_ASSOCIATION.md`; do not store input tolerances or a segment ordinal.
+`docs/obspy-association.md`; do not store input tolerances or a segment ordinal.
 Association provenance is guaranteed only in the in-memory attachment at initial
 association. Users may write sidecars in any format; package-managed sidecar
 writing, schemas and persistence guarantees are outside the v1 scope.
@@ -141,7 +141,7 @@ response removal and counts-to-pressure calibration are outside repository scope
 Preserve association-time waveform sample count
 separately from raw source SampleCount so publisher verification can detect later length changes.
 The unused `project_sac` option was removed on 2026-10-16 before package
-exposure. Keep deferred mappings in `docs/OPEN_QUESTIONS.md`; do not
+exposure. Keep deferred mappings in `docs/open-questions.md`; do not
 reserve an unimplemented argument in the current associator.
 
 ### Automaid Source Reference
@@ -153,7 +153,7 @@ unless the user separately and explicitly requests those changes.
 
 ### Hosting Workflow and Related Repositories
 
-`docs/HOSTING.md` records the hosting design, Mermaid workflow diagram, script
+`docs/hosting.md` records the hosting design, Mermaid workflow diagram, script
 ownership, and implementation checklist. Consult it before hosting, snapshot,
 release-protocol, or full-archive validation work. Keep this work aware of
 current changes in `/Users/jdsimon/programs/automaid/` and
@@ -168,7 +168,7 @@ recording. Its six modules live under `scripts/geocsv/`: create_snapshot,
 inspect_snapshot, validate_snapshot, _verify_sac, gate_snapshot and publish_snapshot. Only
 create, validate and publish are runnable commands. `bathymetrix-site` owns only
 its read-only Worker, landing page and hosting infrastructure. The canonical
-publication/download agreement is `mermaid-publisher/docs/geocsv/CONTRACT.md`.
+publication/download agreement is `mermaid-publisher/docs/geocsv/contract.md`.
 
 The publisher calls public `read`, `associate` and `fetch` APIs, uses optional
 SAC header creation and ObsPy writing, and owns export verification.
@@ -262,6 +262,9 @@ parser are behavioral references. Do not reproduce their structure or
 incidental limitations without an explicit reason.
 
 ## Naming and Public Interface
+
+Documentation and tutorial filenames use lowercase kebab-case. Retain
+the conventional `README.md`, `LICENSE`, and `AGENTS.md` names.
 
 Use the following canonical names:
 
@@ -361,15 +364,15 @@ explicitly requested for the document.
 ## Development and Verification
 
 Every public function or method must have a dedicated, standalone tutorial
-pair under `tutorials/`, named for that operation (for example, `READ.md`
-and `READ.ipynb`, `FETCH.md` and `FETCH.ipynb`, or `ASSOCIATE.md` and
-`ASSOCIATE.ipynb`). Each tutorial must include its own setup, imports, and
+pair under `tutorials/`, named for that operation (for example, `read.md`
+and `read.ipynb`, `fetch.md` and `fetch.ipynb`, or `associate.md` and
+`associate.ipynb`). Each tutorial must include its own setup, imports, and
 examples runnable from top to bottom without another tutorial's state.
 Start each tutorial with the simplest working example, then build toward
 increasing input and option complexity. Explain additional options when they
 are first introduced.
 Downstream analysis examples may have additional standalone pairs, such as
-`PLOTTING.md` and `PLOTTING.ipynb`.
+`plotting.md` and `plotting.ipynb`.
 
 Link both companions from each tutorial and list every pair in the README.
 Any change to explanations, examples, scientific assumptions, or setup

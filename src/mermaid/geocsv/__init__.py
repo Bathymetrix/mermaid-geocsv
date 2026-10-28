@@ -89,7 +89,7 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
     Source DataQuality and waveform quality are retained independently, without
     filtering matches. Later processing does not refresh the association snapshot.
     Matching rules, report fields, and projection conventions are documented at:
-    https://github.com/Bathymetrix/mermaid-geocsv/blob/main/docs/OBSPY_ASSOCIATION.md
+    https://github.com/Bathymetrix/mermaid-geocsv/blob/main/docs/obspy-association.md
     """
     try:
         from ._associate import associate as _associate

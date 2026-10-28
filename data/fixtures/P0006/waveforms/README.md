@@ -13,7 +13,7 @@ from the authorized read-only `$MERMAID/waveforms/mseed/` and
 
 The detections are isolated examples in the complete history. REQ record 100
 is excluded because its saved response has a different start and ambiguous
-containing anchors; see the [unresolved discrepancy](../../../../docs/OPEN_QUESTIONS.md#p0006-july-6-req-response-det-start-with-req-count).
+containing anchors; see the [unresolved discrepancy](../../../../docs/open-questions.md#p0006-july-6-req-response-det-start-with-req-count).
 
 `earthscope/record_*.mseed` stores the unmodified public service responses
 saved by ObsPy `Client.get_waveforms(filename=...)`. Each request uses complete
@@ -35,7 +35,7 @@ not duplicate the complete history or create a subset.
 
 SAC files are independent output comparison references, never association
 inputs. Their samples agree with the downloaded counts at SAC float32
-precision. The [EarthScope tutorial](../../../../tutorials/EARTHSCOPE.md)
+precision. The [EarthScope tutorial](../../../../tutorials/earthscope.md)
 compares identity, absolute start, count, interval, samples, and stla/stlo/stel/stdp
 after export. It documents units, precision, and the limited header coverage.
 Tests replay these raw responses offline; later live downloads need not have

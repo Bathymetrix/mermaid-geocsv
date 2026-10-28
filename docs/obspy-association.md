@@ -1,7 +1,7 @@
 # Waveform association
 
 `geocsv.associate` attaches source metadata and receiver coordinates to
-MiniSEED-derived ObsPy traces. The [association tutorial](../tutorials/ASSOCIATE.md)
+MiniSEED-derived ObsPy traces. The [association tutorial](../tutorials/associate.md)
 provides introductory executable examples. This reference defines the public API and
 collects the scientific rationale and validation rules; waveform processing
 remains downstream.
@@ -55,7 +55,7 @@ A standard match requires:
    accuracy bound or proof that whole-trace sampling grids agree.
 
 DataQuality is retained independently from MiniSEED quality and does not
-filter or disambiguate matches. See the [data-quality reference](MERMAID_DATA_QUALITY.md)
+filter or disambiguate matches. See the [data-quality reference](mermaid-data-quality.md)
 for DET Q, REQ D, raw-buffer R, and legacy archive M distinctions.
 
 Before matching, source preflight rejects invalid identities on every event
@@ -97,7 +97,7 @@ Coordinates require a complete finite latitude/longitude pair, within
 [-90, 90] and [-180, 180], declared in `degrees_north` and `degrees_east`.
 Missing either component raises; there are no per-field missing-data switches.
 The ten core Stats defaults, optional namespaces, and processing history are
-distinguished in the [source-based Stats reference](OBSPY_STATS_REFERENCE.md).
+distinguished in the [source-based Stats reference](obspy-stats-reference.md).
 
 ### Association report
 
@@ -263,7 +263,7 @@ sample-contribution history is reconstructed.
 
 Optional `create_sac_header=True` adds fresh SAC station headers for either
 association label. The flag must be a Python bool; the default False leaves
-existing SAC headers untouched. The [SAC reference](SAC.md) owns the mapping,
+existing SAC headers untouched. The [SAC reference](sac.md) owns the mapping,
 missing-pressure rules, and storage limits. ObsPy owns writing, and the
 publisher owns final export verification.
 
@@ -283,11 +283,11 @@ accuracy. Rate from an independently measured first-to-last duration is
 `(npts - 1) / duration`; a duration spanning `npts` whole intervals uses
 `npts / duration`. Deriving rate from ObsPy's rate-derived endtime is circular.
 Raw-MER and encoding precision remain an
-[open investigation](OPEN_QUESTIONS.md#mermaid-sampling-rate-follow-up).
+[open investigation](open-questions.md#mermaid-sampling-rate-follow-up).
 
 The [P0045 fixture](../tests/fixtures/association/P0045_20220115/README.md)
 and [preserved P0006 service response](../tests/fixtures/association/P0006_20180713_earthscope/README.md)
 exercise differing source-grid phases and overlapping ranges. Their provenance,
 counts, and measured offsets are maintained with the fixtures. Coverage cannot
 identify which source supplied overlap values or detect gaps filled upstream;
-see [open scientific questions](OPEN_QUESTIONS.md#association-scientific-questions).
+see [open scientific questions](open-questions.md#association-scientific-questions).

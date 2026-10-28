@@ -1,7 +1,7 @@
 # Open scientific questions and deferred scope
 
-The [reader specification](READER_SPEC.md), [association reference](OBSPY_ASSOCIATION.md),
-and [SAC mapping](SAC.md) define current behavior. The questions here remain
+The [reader specification](reader-spec.md), [association reference](obspy-association.md),
+and [SAC mapping](sac.md) define current behavior. The questions here remain
 unresolved; they do not authorize silently changing scientific values or
 matching rules. The [GeoCSV v2.0.4 specification](references/GeoCSV_v2.0.4.pdf)
 does not settle every MERMAID convention or interoperability question.
@@ -14,7 +14,7 @@ Clarify whether custom declarations such as `#GeodeticDatum: WGS84` have
 dataset scope, and how they differ from free-text comments. If declarations
 can vary by row, define inheritance and the meaning of records preceding a
 declaration. Dataset-wide pandas attrs cannot represent row-varying values.
-The reader's [changed-declaration policy](READER_SPEC.md#comments-and-metadata-declarations)
+The reader's [changed-declaration policy](reader-spec.md#comments-and-metadata-declarations)
 is provisional for unknown keys, rather than a requirement established by v2.0.4.
 
 ### 2. What is the exact grammar of `field_*` lists?
@@ -32,7 +32,7 @@ that width rule.
 Define default missing tokens, `field_missing` precedence, and a representation
 for literal reserved strings. The reader's universal case-insensitive `nan`
 handling and special empty string-valued `Location` are MERMAID conventions,
-not v2.0.4 requirements. Current [missing-value rules](READER_SPEC.md#field-types-and-missing-values)
+not v2.0.4 requirements. Current [missing-value rules](reader-spec.md#field-types-and-missing-values)
 are maintained in the reader reference.
 
 ### 4. Does a datetime unit establish its timezone?
@@ -45,7 +45,7 @@ The reader preserves units without inferring a timezone.
 
 Publish an interoperable profile covering date forms, offsets, fractional
 precision, range, and handling of otherwise valid forms outside that profile.
-The reader accepts its documented [extended-calendar subset](READER_SPEC.md#numeric-limits-and-datetime-syntax);
+The reader accepts its documented [extended-calendar subset](reader-spec.md#numeric-limits-and-datetime-syntax);
 it does not claim support for all ISO 8601 forms.
 
 ### 6. How should container versions be recognized?
@@ -136,7 +136,7 @@ Do not generalize those claims across the archive.
 Check source MER classification and scale for the non-20-Hz DET.WLT2 example;
 the processed-header audit did not independently inspect every raw MER header.
 Preserve historical location codes as source evidence. The
-[product reference](MERMAID_DATA_QUALITY.md) distinguishes requested RAW events
+[product reference](mermaid-data-quality.md) distinguishes requested RAW events
 from recovered continuous-buffer data.
 
 Resolve the missing P0006 buffer average rate and verify the P0023 value and
@@ -152,9 +152,9 @@ These are scope decisions requiring concrete consumers and scientific rules,
 not promised APIs: GeoCSV authoring, resampled/transformed acquisition
 reconstruction, StationXML/Inventory conversion and position epochs, live
 metadata synchronization, and package-managed association persistence.
-Production promotion remains a separate [hosting decision](HOSTING.md).
+Production promotion remains a separate [hosting decision](hosting.md).
 
-Only four geographic SAC mappings are implemented; see [SAC](SAC.md).
+Only four geographic SAC mappings are implemented; see [SAC](sac.md).
 Additional mappings require explicit agreement:
 
 | Concern | Constraint |

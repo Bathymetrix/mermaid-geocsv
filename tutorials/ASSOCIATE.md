@@ -4,7 +4,7 @@
 coordinates to an ObsPy Trace or Stream. These examples use included MiniSEED
 and GeoCSV fixtures and run offline.
 
-Companions: [Markdown](ASSOCIATE.md) · [Notebook](ASSOCIATE.ipynb).
+Companions: [Markdown](associate.md) · [Notebook](associate.ipynb).
 
 ## Setup
 
@@ -15,7 +15,7 @@ source .venv/bin/activate
 python -m pip install '.[obspy]'
 ```
 
-See [installation and notebook setup](../docs/INSTALLATION.md) if needed. Run the
+See [installation and notebook setup](../docs/installation.md) if needed. Run the
 Python examples in order from the repository root, `docs/`, or `tutorials/`.
 
 ## 1. Read and associate one MiniSEED trace
@@ -112,5 +112,5 @@ The final window must have a unique containing anchor and complete source-grid
 coverage. Overlapping ranges count once. Association performs no merge itself.
 
 For optional `create_sac_header=True` and writing with ObsPy, see the
-[SAC tutorial](WRITE_SAC.md). Detailed tolerances, report fields, and projection
-rules are in the [association reference](../docs/OBSPY_ASSOCIATION.md).
+[SAC tutorial](write-sac.md). Detailed tolerances, report fields, and projection
+rules are in the [association reference](../docs/obspy-association.md).

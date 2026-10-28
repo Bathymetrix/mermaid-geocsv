@@ -3,7 +3,7 @@
 Create station location headers with `geocsv.associate`, then write the
 waveform with ObsPy.
 
-Companions: [Markdown](WRITE_SAC.md) · [Notebook](WRITE_SAC.ipynb).
+Companions: [Markdown](write-sac.md) · [Notebook](write-sac.ipynb).
 
 ## Setup
 
@@ -14,7 +14,7 @@ source .venv/bin/activate
 python -m pip install '.[obspy]'
 ```
 
-See [installation and notebook setup](../docs/INSTALLATION.md) if needed. Run the
+See [installation and notebook setup](../docs/installation.md) if needed. Run the
 Python examples in order from the repository root, `docs/`, or `tutorials/`.
 These examples use included fixtures and run offline.
 
@@ -43,7 +43,7 @@ print(trace.stats.sac)
 
 `create_sac_header=True` requires an absent `stats.sac`. It creates ObsPy's
 standard headers and adds station latitude, longitude, the adopted sea-level
-reference, and approximate pressure-derived depth. The [SAC mapping](../docs/SAC.md#geographic-mapping)
+reference, and approximate pressure-derived depth. The [SAC mapping](../docs/sac.md#geographic-mapping)
 defines units and the missing-REQ-pressure exception. Samples remain raw counts.
 
 ## 2. Write and reopen a SAC file
@@ -80,6 +80,6 @@ with TemporaryDirectory() as directory:
 ```
 
 Associate the final waveform after clipping or merging. Later edits do not
-refresh the headers. See the [association tutorial](ASSOCIATE.md) and the
-[SAC reference](../docs/SAC.md) for missing-value rules,
+refresh the headers. See the [association tutorial](associate.md) and the
+[SAC reference](../docs/sac.md) for missing-value rules,
 precision, independent SAC comparisons, and export checks.

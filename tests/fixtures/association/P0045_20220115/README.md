@@ -31,7 +31,7 @@ refreshed verbatim from the current processed automaid v4.5.14 export on
 zero-based **data-record indices in that full file**, not subset indices.
 Its source timestamp, rate, count, and position values are never edited.
 
-The [association tutorial](../../../../tutorials/ASSOCIATE.md) merges the
+The [association tutorial](../../../../tutorials/associate.md) merges the
 loaded originals with ObsPy `method=1`, `interpolation_samples=0`, and
 `misalignment_threshold=0`. The later trace supplies overlap values. Its start
 falls about 24.8 ms off the first trace's grid and is placed at integer sample

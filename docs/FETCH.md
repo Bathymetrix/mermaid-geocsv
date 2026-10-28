@@ -1,9 +1,9 @@
 # Fetching GeoCSV collections
 
-The [fetch tutorial](../tutorials/FETCH.md) demonstrates memory retrieval,
+The [fetch tutorial](../tutorials/fetch.md) demonstrates memory retrieval,
 disk downloads, and release pinning. This reference defines client behavior;
-the publisher owns the [publication/download contract](../../mermaid-publisher/docs/geocsv/CONTRACT.md).
-Hosted collections are currently testing only; see [hosting](HOSTING.md).
+the publisher owns the [publication/download contract](../../mermaid-publisher/docs/geocsv/contract.md).
+Hosted collections are currently testing only; see [hosting](hosting.md).
 
 ## The fetch interface
 
@@ -61,7 +61,7 @@ original spelling. Pass the literal creation timestamp as `release`, rather
 than its directory spelling.
 
 The initial encoded-path testing collection was replaced under the
-[2026-10-28 compatibility review](../../mermaid-publisher/docs/geocsv/RELEASE_PATH_REVIEW.md).
+[2026-10-28 compatibility review](../../mermaid-publisher/docs/geocsv/release-path-review.md).
 The old encoded testing URLs were retired on 2026-10-28; 0.25.x and the frozen
 0.24.0 client cannot fetch the new timestamped collection. There is no automatic
 legacy-path fallback or local directory migration. Existing downloads remain
@@ -92,7 +92,7 @@ Pass fetch results directly to `read` to retain this provenance as
 `frame.attrs["geocsv"].download`. Saved results are reverified before parsing.
 Reading a bare path records its resolved local path but does not discover an
 adjacent manifest; bare bytes have neither path nor download provenance.
-The [reader specification](READER_SPEC.md) defines table order, record indices,
+The [reader specification](reader-spec.md) defines table order, record indices,
 and the lifetime of parsed metadata.
 
 Memory retrieval retains every selected raw payload, and parsing needs

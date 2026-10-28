@@ -47,7 +47,7 @@ association fixture inventory.
 Keep `trace.stats.geocsv.DataQuality` and
 `trace.stats.mseed.dataquality` as independent evidence. Association neither
 rewrites them nor requires equality. Complete SNCL, time, count, rate, and
-coverage follow the [association reference](OBSPY_ASSOCIATION.md).
+coverage follow the [association reference](obspy-association.md).
 
 Preserved [EarthScope responses](../data/fixtures/P0006/waveforms/README.md)
 have quality M while their original DET files have Q. M alone does not prove
@@ -55,4 +55,4 @@ that a waveform combines acquisitions or identify overlap precedence.
 Requested products can also return M. Any proposed quality-based matching or
 lineage reconstruction needs independent source and archive evidence.
 Instrument-generation timing claims, raw-buffer rates, and incomplete
-citations remain [open questions](OPEN_QUESTIONS.md#instrument-and-product-evidence).
+citations remain [open questions](open-questions.md#instrument-and-product-evidence).

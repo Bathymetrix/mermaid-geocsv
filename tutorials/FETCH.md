@@ -4,7 +4,7 @@ Download GeoCSV metadata from the [Bathymetrix test collection](https://bathymet
 `geocsv.fetch` checks each file's size and checksum and returns a list of results.
 Use `geocsv.read` to turn those results into pandas tables.
 
-Companions: [Markdown](FETCH.md) · [Notebook](FETCH.ipynb).
+Companions: [Markdown](fetch.md) · [Notebook](fetch.ipynb).
 
 ## Setup
 
@@ -15,7 +15,7 @@ source .venv/bin/activate
 python -m pip install .
 ```
 
-See [installation and notebook setup](../docs/INSTALLATION.md) if needed. Run the
+See [installation and notebook setup](../docs/installation.md) if needed. Run the
 Python examples below in order. They require an internet connection.
 The replacement testing collection requires mermaid-geocsv 0.26.0 or newer.
 
@@ -81,4 +81,4 @@ Pass the timestamp literally; `fetch` derives the hyphenated path component.
 The earlier encoded-path testing URLs were retired on 2026-10-28; no automatic
 fallback is provided.
 For result fields, memory use, error behavior, and protocol details, see the
-[fetch reference](../docs/FETCH.md#the-fetch-interface).
+[fetch reference](../docs/fetch.md#the-fetch-interface).

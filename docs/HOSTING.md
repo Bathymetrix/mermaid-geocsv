@@ -7,13 +7,13 @@ gates, transfer, latest activation, and local archive recording.
 `bathymetrix-site` owns the read-only Worker, landing page, and infrastructure.
 Publication implementations and report schemas do not belong in this package.
 
-The publisher maintains the canonical [publication/download contract](../../mermaid-publisher/docs/geocsv/CONTRACT.md),
-[workflow](../../mermaid-publisher/docs/geocsv/WORKFLOW.md),
-[scientific validation](../../mermaid-publisher/docs/geocsv/VALIDATION.md), and
-[SAC export verification](../../mermaid-publisher/docs/geocsv/SAC_VERIFICATION.md).
-The website [hosting runbook](../../bathymetrix-site/docs/GEOCSV_HOSTING.md)
+The publisher maintains the canonical [publication/download contract](../../mermaid-publisher/docs/geocsv/contract.md),
+[workflow](../../mermaid-publisher/docs/geocsv/workflow.md),
+[scientific validation](../../mermaid-publisher/docs/geocsv/validation.md), and
+[SAC export verification](../../mermaid-publisher/docs/geocsv/sac-verification.md).
+The website [hosting runbook](../../bathymetrix-site/docs/geocsv-hosting.md)
 owns deployment status and recovery procedures. These links refer to sibling
-checkouts; the package's [fetch reference](FETCH.md) documents consumer behavior.
+checkouts; the package's [fetch reference](fetch.md) documents consumer behavior.
 Publisher changes do not implicitly redefine the supported consumer baseline
 or fetch contract. Published reports remain bound to their original bytes
 and software evidence.
@@ -27,7 +27,7 @@ hyphenated paths on 2026-10-28. Testing latest selects that snapshot;
 production latest remains absent in the recorded deployment evidence.
 These are recorded deployment observations, not a fresh live check.
 Current receipts and scientific results belong in the
-[publisher findings](../../mermaid-publisher/docs/geocsv/SCHEMA3_FINDINGS.md).
+[publisher findings](../../mermaid-publisher/docs/geocsv/schema3-findings.md).
 
 All hosted data remain testing only, including full-corpus tests. Keep
 `testing_only: true`, isolated testing paths and pointers, and public testing
@@ -54,7 +54,7 @@ All 3,292 original pairs passed fresh acceptance; live exact-byte downloads,
 latest/pinned fetch and disk/memory/reuse passed. The four old testing objects
 were retired, and their encoded URLs return uncached 404. Local historical
 evidence is retained. Replacement/deployment evidence is recorded in the publisher's
-[path review](../../mermaid-publisher/docs/geocsv/RELEASE_PATH_REVIEW.md).
+[path review](../../mermaid-publisher/docs/geocsv/release-path-review.md).
 Production remains inactive. Local code alone does not establish deployment.
 Consumer 0.26.0 and publisher 0.3.0 identify source versions; these version
 bumps do not establish published software packages or release tags.

@@ -31,4 +31,4 @@ the declaration, not from a successful R2R read.
 
 `tests/test_spec_examples.py` verifies three successful reads and two
 expected rejections. Unresolved specification questions are maintained in
-[open questions](../../../docs/OPEN_QUESTIONS.md#questions-for-the-geocsv-specification).
+[open questions](../../../docs/open-questions.md#questions-for-the-geocsv-specification).

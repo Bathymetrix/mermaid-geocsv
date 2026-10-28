@@ -78,8 +78,8 @@ or evidence of which archive layer selected the values. The test preserves
 this evidence without inferring acquisition lineage from quality M.
 
 See [`tests/test_earthscope_response.py`](../../../test_earthscope_response.py),
-[open archive questions](../../../../docs/OPEN_QUESTIONS.md#association-scientific-questions), and
-[current coverage policy](../../../../docs/OBSPY_ASSOCIATION.md#clipped-and-combined-windows).
+[open archive questions](../../../../docs/open-questions.md#association-scientific-questions), and
+[current coverage policy](../../../../docs/obspy-association.md#clipped-and-combined-windows).
 ObsPy source was inspected read-only at
 `50033e1daf95233cd4f30e95a49c37fd50be2ccd`, separately from installed 1.5.1,
 including the FDSN client's parse/trim boundary. The fixture test reads the

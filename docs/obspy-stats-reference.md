@@ -42,8 +42,8 @@ is another stored core default.
 independent of source GeoCSV quality and is not part of Trace.id.
 `stats.sac`, `stats.coordinates`, `stats.geocsv`, `response`, and other
 application or format entries are not core defaults. Association creates only
-its documented [destinations](OBSPY_ASSOCIATION.md#fresh-attachments-and-coordinates),
-including optional [SAC headers](SAC.md). It does not infer a Response from an
+its documented [destinations](obspy-association.md#fresh-attachments-and-coordinates),
+including optional [SAC headers](sac.md). It does not infer a Response from an
 instrument report URL, perform calibration, or populate orientation metadata.
 
 `_add_processing_info` is a decorator, not a Stats field. After an operation
