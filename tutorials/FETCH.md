@@ -15,7 +15,7 @@ source .venv/bin/activate
 python -m pip install .
 ```
 
-See [installation and notebook setup](../INSTALLATION.md) if needed. Run the
+See [installation and notebook setup](../docs/INSTALLATION.md) if needed. Run the
 Python examples below in order. They require an internet connection.
 
 ## 1. Fetch one float into memory
@@ -32,7 +32,8 @@ records = geocsv.read(downloads)[0]
 records.head()
 ```
 
-The collection is **testing only** and currently contains P0006 and P0045.
+The documented collection is **testing only**; its recorded inventory contains
+P0006 and P0045.
 These initial test snapshots may be retired. To see which snapshot supplied
 the file:
 
@@ -74,4 +75,4 @@ print(pinned[0].provenance.release_id)
 
 Pass the timestamp literally; `fetch` handles URL encoding.
 For result fields, memory use, error behavior, and protocol details, see the
-[fetch reference](../development/FETCH.md#the-fetch-interface).
+[fetch reference](../docs/FETCH.md#the-fetch-interface).

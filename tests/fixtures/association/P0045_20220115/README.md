@@ -31,7 +31,7 @@ refreshed verbatim from the current processed automaid v4.5.14 export on
 zero-based **data-record indices in that full file**, not subset indices.
 Its source timestamp, rate, count, and position values are never edited.
 
-The [association tutorial](../../../../docs/tutorials/ASSOCIATE.md) merges the
+The [association tutorial](../../../../tutorials/ASSOCIATE.md) merges the
 loaded originals with ObsPy `method=1`, `interpolation_samples=0`, and
 `misalignment_threshold=0`. The later trace supplies overlap values. Its start
 falls about 24.8 ms off the first trace's grid and is placed at integer sample
@@ -40,13 +40,11 @@ falls about 24.8 ms off the first trace's grid and is placed at integer sample
 between first and last samples). This timing placement is explicit and is not
 a statement that the original grids were identical.
 
-Strict association rejects the changed count. Since 0.21.0,
+Strict association rejects the changed count.
 `allow_first_segment=True` succeeds without a time-tolerance override:
 source ranges `[0, 9696)` and `[9683, 45683)` uniquely fit within half a
 waveform interval, approximately 24.991 ms. It attaches row 101433 with type
-`anchor_segment` without changing the source row or merged samples. Earlier
-probes needed explicit 25 ms because source-grid validation then reused the
-absolute `time_tolerance`; that is no longer the current policy. Strict start
+`anchor_segment` without changing the source row or merged samples. Strict start
 matching, containing-anchor uniqueness, counts, rates and full coverage still
 apply. No clock accuracy or acquisition reconstruction is inferred.
 

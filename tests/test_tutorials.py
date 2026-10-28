@@ -16,9 +16,8 @@ from mermaid import geocsv
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TUTORIALS = ROOT / "docs" / "tutorials"
+TUTORIALS = ROOT / "tutorials"
 NAMES = sorted(path.stem for path in TUTORIALS.glob("*.md"))
-DEVELOPMENT_NAMES = [name for name in NAMES if name != "EARTHSCOPE"]
 TEST_RELEASE = "2026-10-21T22:48:33.277Z"
 
 
@@ -160,6 +159,11 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         assert window.stats.geocsv.association.waveform_start_offset_seconds > 0.9
         assert window.stats.geocsv.association.waveform.sample_count == window.stats.npts
         assert len(window.stats.geocsv.association.coverage_segments) == 1
+        combined, = namespace["combined"]
+        assert combined.stats.npts == 45683
+        assert combined.stats.geocsv.association.type == "anchor_segment"
+        assert combined.stats.geocsv.source_record_index == 101433
+        assert len(combined.stats.geocsv.association.coverage_segments) == 2
     if name == "WRITE_SAC":
         import numpy as np
 
@@ -169,6 +173,9 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         assert reopened.stats.sac.stla == np.float32(namespace["trace"].stats.geocsv.Latitude)
         assert reopened.stats.sac.stlo == np.float32(namespace["trace"].stats.geocsv.Longitude)
         np.testing.assert_array_equal(reopened.data, namespace["trace"].data.astype(np.float32))
+        assert namespace["written_names"] == [
+            "segment01.sac", "segment02.sac", "segment03.sac"]
+        assert all("sac" in trace.stats for trace in namespace["stream"])
     if name == "FETCH":
         assert namespace["downloads"][0].provenance.testing_only is True
         assert namespace["records"]["Station"].eq("P0006").all()
@@ -197,40 +204,3 @@ def test_earthscope_tutorial_fixture_provenance():
         content = (fixtures / entry["path"]).read_bytes()
         assert len(content) == entry["size_bytes"]
         assert hashlib.sha256(content).hexdigest() == entry["sha256"]
-
-
-@pytest.mark.parametrize("name", DEVELOPMENT_NAMES)
-def test_development_examples(name, monkeypatch):
-    """Retain executable checks moved out of the introductory tutorials."""
-    if name in {"ASSOCIATE", "WRITE_SAC"}:
-        pytest.importorskip("obspy")
-    if name == "PLOTTING":
-        matplotlib = pytest.importorskip("matplotlib")
-        matplotlib.use("Agg")
-    markdown = (ROOT / "docs/development" / f"{name}.md").read_text()
-    examples = re.findall(r"(?m)^```python\n(.*?)^```", markdown, flags=re.S)
-    monkeypatch.chdir(ROOT)
-    namespace = {"__name__": "__main__"}
-    for number, example in enumerate(examples, start=1):
-        exec(compile(example, f"development/{name}.md:block-{number}", "exec"),
-             namespace)
-    if name == "PLOTTING":
-        namespace["plt"].close("all")
-    if name == "ASSOCIATE":
-        sac_trace = namespace["sac_trace"]
-        assert sac_trace.stats.sac.stla == sac_trace.stats.geocsv.Latitude
-        assert sac_trace.stats.sac.stlo == sac_trace.stats.geocsv.Longitude
-        window = namespace["window"]
-        assert window.stats.geocsv.association.type == "anchor_segment"
-        assert window.stats.geocsv.association.waveform_start_offset_seconds > 0.9
-        assert window.stats.geocsv.association.waveform.sample_count == window.stats.npts
-        assert len(window.stats.geocsv.association.coverage_segments) == 2
-        assert window.stats.geocsv.association.coverage_segments[0].source_record_index == 101433
-        assert 0.001 < window.stats.geocsv.association.max_sample_grid_offset.seconds < window.stats.delta / 2
-    if name == "WRITE_SAC":
-        assert namespace["request"].stats.sac.stdp == -12345.0
-        assert namespace["written"].stdp is not None
-        assert namespace["request_sac"].stdp is None
-        assert namespace["merged"].stats.geocsv.association.type == "anchor_segment"
-        assert namespace["merged_sac"].npts == namespace["merged"].stats.npts
-        assert namespace["merged_sac"].stdp is None

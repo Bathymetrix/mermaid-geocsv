@@ -1,8 +1,7 @@
 # Association fixture maintenance
 
 These repository scripts maintain and check the association fixture snapshot.
-They are separate from the package API and the exploratory
-[EarthScope retrieval sandbox](../../sandbox/obspy_association/README.md).
+They are separate from the package API and publisher acceptance gate.
 Run commands from the repository root with its `.venv`; the corpus check also
 requires the optional ObsPy dependency.
 
@@ -28,9 +27,6 @@ waveform associations against complete histories. It writes nothing. A subset
 alone cannot establish uniqueness among omitted source records. See the
 [fixture inventory and provenance](../../data/fixtures/association/README.md).
 
-These scripts previously lived under `sandbox/obspy_association/`; use the
-paths above for current maintenance commands.
-
 ## Initial collection script: historical scope
 
 `collect_processed_examples.py` records the initial 2026-10-13 sampling
@@ -49,28 +45,13 @@ fixture directory to run it.
 
 ## Current fixture snapshots
 
-The shared complete instrument files are
-[`P0006`](../../data/fixtures/P0006/README.md) and
-[`P0045`](../../data/fixtures/P0045/README.md), copied verbatim from current
-`$MERMAID/processed/` GeoCSV on 2026-10-21 (automaid v4.5.14). Parser,
-fetch, plotting, association and export examples use these canonical paths.
-The older general/download exports were replaced, not retained as alternate
-versions. Existing website test releases are independent of these local tests.
+Canonical fixture provenance is maintained with the data:
 
-The 14 tracked association subsets were refreshed from the same current
-processed snapshot, retaining original headers/records and nearby candidates.
-The manifest records new full/subset hashes and index maps. Optional ignored
-full-history copies were replaced as part of this explicitly authorized update;
-ordinary restore commands still refuse to overwrite a differing snapshot.
-The sampled waveform pairs remain byte-identical to the current processed
-sources, so the original waveform sampling and header audit remain applicable.
+- [P0006](../../data/fixtures/P0006/README.md) and [P0045](../../data/fixtures/P0045/README.md): complete shared GeoCSV files.
+- [Association](../../data/fixtures/association/README.md): paired waveforms, sampled subsets, and record mappings.
+- [P0006 responses](../../data/fixtures/P0006/waveforms/README.md): three original pairs and unmodified EarthScope responses for offline tutorial replay.
+- [Combined P0045 window](../../tests/fixtures/association/P0045_20220115/README.md) and [clipped P0006 response](../../tests/fixtures/association/P0006_20180713_earthscope/README.md): coverage examples.
 
-The [P0006 waveform tutorial fixtures](../../data/fixtures/P0006/waveforms/README.md)
-add three original MiniSEED/SAC pairs and raw EarthScope responses collected on
-2026-10-27. Their separate manifest preserves source and response hashes and
-request parameters. The EarthScope tutorial uses the same complete P0006
-GeoCSV snapshot; ordinary tests replay the saved responses offline.
-
-Future refreshes must replace superseded snapshots, check all dependent
-tests/tutorials, and update source hashes, record maps and provenance together.
-Never rewrite protected processed inputs or regenerate fixtures during tests.
+Future refreshes must replace superseded snapshots, check dependent tests and
+tutorials, and update hashes, record maps, and provenance together. Never
+rewrite protected processed inputs or regenerate fixtures during tests.

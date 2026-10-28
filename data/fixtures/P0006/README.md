@@ -25,7 +25,7 @@ scientific metadata examples, not a published scientific data release.
 
 The [waveform fixtures](waveforms/README.md) contain three original
 MiniSEED/SAC pairs and their saved EarthScope responses for the complete
-[EarthScope tutorial](../../../docs/tutorials/EARTHSCOPE.md). Their separate
+[EarthScope tutorial](../../../tutorials/EARTHSCOPE.md). Their separate
 manifest records request parameters, source paths, and hashes.
 
 The separately tracked P0006 association subset is a verbatim selection from

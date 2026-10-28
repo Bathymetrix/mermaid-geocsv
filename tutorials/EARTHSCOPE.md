@@ -16,16 +16,16 @@ source .venv/bin/activate
 python -m pip install '.[obspy]'
 ```
 
-See [installation and notebook setup](../INSTALLATION.md) if needed. Run the
-Python examples in order from the repository root, `docs/`, or `docs/tutorials/`.
+See [installation and notebook setup](../docs/INSTALLATION.md) if needed. Run the
+Python examples in order from the repository root, `docs/`, or `tutorials/`.
 Internet access is required for the metadata and waveform downloads. Paired
 reference files are included in the repository; see their
-[provenance manifest](../../data/fixtures/P0006/waveforms/manifest.json) and
-[fixture notes](../../data/fixtures/P0006/waveforms/README.md).
+[provenance manifest](../data/fixtures/P0006/waveforms/manifest.json) and
+[fixture notes](../data/fixtures/P0006/waveforms/README.md).
 
 The examples use three isolated DET segments with complete pressure metadata:
 
-| Source record index | Source start UTC | Samples | Download minus original start (µs) |
+| Source record index | Source start UTC | Samples | Recorded download minus original start (µs) |
 | ---: | --- | ---: | ---: |
 | 98 | 2018-06-29T17:07:31.205Z | 4,832 | −6 |
 | 169 | 2018-07-12T06:51:58.293Z | 4,448 | 0 |
@@ -35,8 +35,7 @@ These are zero-based data-record indices in the pinned complete GeoCSV file.
 Its timestamps have millisecond precision; downloaded MiniSEED retains finer
 timing. All three associate as `single_segment`. The
 [association tutorial](ASSOCIATE.md#3-associate-a-clipped-window) demonstrates
-`anchor_segment`; the [development notes](../development/ASSOCIATE.md) include
-a combined-window example.
+`anchor_segment` and a [combined window](ASSOCIATE.md#4-associate-a-combined-window).
 
 ## 1. Fetch the matching GeoCSV snapshot
 
@@ -57,9 +56,7 @@ from obspy.io.sac import SACTrace
 from mermaid import geocsv
 
 root = Path.cwd()
-if root.name == "tutorials":
-    root = root.parent.parent
-elif root.name == "docs":
+if root.name in {"docs", "tutorials"}:
     root = root.parent
 fixtures = root / "data/fixtures/P0006/waveforms"
 
@@ -116,9 +113,9 @@ print(trace.stats.geocsv.association.type)
 The single-trace unpacking and association checks intentionally fail if a
 future service response no longer represents this original segment. The
 source history includes nearby candidates; no rows are discarded to force a
-match. The sandbox's July 6 REQ request is excluded because its returned start
-does not match its original row and the containing-anchor candidates are
-ambiguous against this history.
+match. The [July 6 REQ discrepancy](../docs/OPEN_QUESTIONS.md#p0006-july-6-req-response-det-start-with-req-count)
+is excluded because its returned start does not match its original row and the
+containing-anchor candidates are ambiguous against this history.
 
 Association uses MiniSEED identity, timing, rate, and count plus the fetched
 GeoCSV records. SAC references supply no matching hints or missing values.

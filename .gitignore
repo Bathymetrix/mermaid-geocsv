@@ -9,3 +9,6 @@ dist/
 
 # Complete local association histories; provenance stays in manifest.json.
 /data/fixtures/association/*/geo_DET_REQ.csv
+
+# Local retrieval evidence; portable fixtures have their own tracked manifests.
+/data/local/

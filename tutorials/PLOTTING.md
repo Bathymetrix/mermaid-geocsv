@@ -14,8 +14,8 @@ source .venv/bin/activate
 python -m pip install . matplotlib
 ```
 
-See [installation and notebook setup](../INSTALLATION.md) if needed. Run the
-Python examples in order from the repository root, `docs/`, or `docs/tutorials/`.
+See [installation and notebook setup](../docs/INSTALLATION.md) if needed. Run the
+Python examples in order from the repository root, `docs/`, or `tutorials/`.
 
 ## 1. Read the data
 
@@ -25,9 +25,7 @@ import matplotlib.pyplot as plt
 from mermaid import geocsv
 
 root = Path.cwd()
-if root.name == "tutorials":
-    root = root.parent.parent
-elif root.name == "docs":
+if root.name in {"docs", "tutorials"}:
     root = root.parent
 
 records = geocsv.read(root / "data/fixtures/P0006/P0006.geocsv")[0]
@@ -75,6 +73,5 @@ plt.show()
 ```
 
 Use `fig.savefig("p0006_gps.png", dpi=180)` to save the current figure.
-For longitude/latitude tracks, distance estimates, and pressure-derived 3D
-plots with their scientific assumptions, see the
-[extended plotting examples](../development/PLOTTING.md).
+Further analysis is downstream of parsing; choose coordinate systems and any
+pressure-to-depth model explicitly for the scientific question.

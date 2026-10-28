@@ -1,129 +1,68 @@
 # ObsPy Stats reference for association
 
-Consult this file before changing association or discussing core Stats fields.
-Repository ethos: **simple rules, clear projections, and no surprise side effects**.
+Consult this reference before changing association or describing core Stats.
+The read-only source checkout is ObsPy commit
+`50033e1daf95233cd4f30e95a49c37fd50be2ccd`, including `core/trace.py`,
+`core/stream.py`, `core/util/attribdict.py`, nearby tests, contribution guidance,
+and coding style. The checked installed release is separately ObsPy 1.5.1.
+Relevant executable Stats methods agreed with that release, ignoring docstrings.
 
-## Source
-
-Relevant excerpts from the user's supplied ObsPy `core/trace.py` source,
-received 2026-10-14 (attachment `Pasted text.txt`). SHA-256:
+The supplied `core/trace.py` attachment received 2026-10-14 has SHA-256
 `c365cdc6f1515c3cee87853be344905a93f2bee2619c23566f20d3d5dcd487ca`.
-The installed ObsPy 1.5.1 defaults were checked against this list.
-Excerpts are ObsPy source, copyright the ObsPy Development Team, LGPLv3.
-The broader [metadata survey](OBSPY_STATS.md) covers other namespaces and consumers.
+This records source provenance, not an additional runtime dependency. ObsPy
+source is copyright the ObsPy Development Team, LGPLv3.
 
-Reverified 2026-10-16 against `/Users/jdsimon/programs/obspy/` at commit
-`50033e1daf95233cd4f30e95a49c37fd50be2ccd`: the ten defaults, refresh keys,
-read-only endtime, and processing-history distinction still agree. The
-relevant executable methods also match the separately installed ObsPy 1.5.1
-(ignoring docstrings). This checkout check supplements, rather than replaces,
-the supplied attachment provenance above. See [Stream merging](STREAM.md)
-for behavior that can leave attached metadata describing an earlier segment.
+## Ten default attributes
 
-Rechecked 2026-10-19 for public association exposure against the same checkout
-commit `50033e1daf95233cd4f30e95a49c37fd50be2ccd`, including Stats/AttribDict,
-nearby Stats tests, contribution instructions, and coding style. The
-repository `.venv` separately uses ObsPy 1.5.1. Promotion retains the existing
-matching and projection behavior; it does not add native Stats fields.
+| Field | ObsPy default | Association responsibility |
+| --- | --- | --- |
+| `network` | `""` | Match complete identity; never fill or relabel. |
+| `station` | `""` | Match complete identity; never fill or relabel. |
+| `location` | `""` | Match exactly, including a known empty location. |
+| `channel` | `""` | Match complete identity; never fill or relabel. |
+| `starttime` | `UTCDateTime(0)` | Validate with full nanoseconds; preserve native time. |
+| `sampling_rate` | `1.0` | Validate against source; preserve native rate. |
+| `delta` | `1.0` | ObsPy maintains the reciprocal rate; do not assign separately. |
+| `npts` | `0` | Validate loaded data and source count/coverage; preserve native count. |
+| `endtime` | `UTCDateTime(0)` | Read-only derived last-sample time. |
+| `calib` | `1.0` | Preserve; GeoCSV supplies no replacement. |
 
-## The ten default Stats attributes
+For a nonempty positive-rate trace, endtime is
+`starttime + (npts - 1) * delta`, rounded to integer nanoseconds; for an empty
+trace it equals starttime. Changing delta, sampling_rate, starttime, or npts
+refreshes derived values. Assigning Trace.data updates npts; assigning npts
+does not resize data. Stats permits zero rate/delta with reciprocal zero;
+association requires positive rates. A zero calib warns rather than raising.
+`component` is a channel view and `Trace.id` combines identity codes; neither
+is another stored core default.
 
-```python
-    # set of read only attrs
-    readonly = {'endtime'}
-    # default values
-    defaults = {
-        'sampling_rate': 1.0,
-        'delta': 1.0,
-        'starttime': UTCDateTime(0),
-        'endtime': UTCDateTime(0),
-        'npts': 0,
-        'calib': 1.0,
-        'network': '',
-        'station': '',
-        'location': '',
-        'channel': '',
-    }
-    # keys which need to refresh derived values
-    _refresh_keys = {'delta', 'sampling_rate', 'starttime', 'npts'}
-```
+## Optional namespaces and processing history
 
-| Fields | Association responsibility |
-| --- | --- |
-| network, station, location, channel | Match the complete MiniSEED identity; never fill or relabel it from GeoCSV. |
-| starttime | Validate against GeoCSV under the explicit tolerance; preserve the original UTCDateTime and its nanoseconds. |
-| sampling_rate | Check the source rate; preserve the waveform rate. |
-| npts | Check source SampleCount and loaded data length by default; preserve the waveform count. The explicit containing-anchor fallback permits clipped or combined windows; source coverage is still required. |
-| delta | ObsPy maintains its reciprocal relationship with sampling_rate; do not assign separately. |
-| endtime | Read-only last-sample time derived by ObsPy from starttime, npts, and sampling_rate. |
-| calib | Preserve the calibration factor; current GeoCSV supplies no replacement. |
+`stats.mseed` is format metadata inherited from MiniSEED. Its dataquality is
+independent of source GeoCSV quality and is not part of Trace.id.
+`stats.sac`, `stats.coordinates`, `stats.geocsv`, `response`, and other
+application or format entries are not core defaults. Association creates only
+its documented [destinations](OBSPY_ASSOCIATION.md#fresh-attachments-and-coordinates),
+including optional [SAC headers](SAC.md). It does not infer a Response from an
+instrument report URL, perform calibration, or populate orientation metadata.
 
-These ten defaults are the mainline fields. `component` is a convenience view
-of channel, and `Trace.id` is assembled from identity codes, not extra stored
-core attributes. Assigning Trace.data updates npts; assigning stats.npts does
-not resize the sample array.
+`_add_processing_info` is a decorator, not a Stats field. After an operation
+succeeds it calls `_internal_add_processing_info`, which creates/appends the
+optional `stats.processing` list subject to its size limit. Association neither
+adds to nor clears this history.
 
-For a nonempty positive-rate trace, `endtime` is
-`starttime + (npts - 1) * delta`, rounded to integer nanoseconds by Stats.
-For an empty trace it equals `starttime`. Zero sampling rate/delta is allowed
-by Stats with reciprocal zero; association rejects nonpositive rates. A zero
-calibration factor emits a warning, not a validation error.
+AttribDict converts nested mappings on assignment but does not recursively
+convert mappings inside tuples. The association implementation explicitly
+allocates AttribDict entries in coverage tuples and fresh UTCDateTime snapshots.
+Mutable attachments are fresh per trace; only the matched dataset's immutable
+provenance may be shared.
 
-## Processing history is not a core field or projection
+## Metadata lifetime
 
-The supplied source defines the decorator:
-
-```python
-@decorator
-def _add_processing_info(func, *args, **kwargs):
-    # Build an operation-description string, then:
-    result = func(*args, **kwargs)
-    self = args[0]
-    self._internal_add_processing_info(info)
-    return result
-```
-
-This is an abbreviated illustration of the decorator's execution order.
-Its history helper contains:
-
-```python
-proc = self.stats.setdefault('processing', [])
-# Subject to the processing-history size limit:
-proc.append(info)
-```
-
-`_add_processing_info` is the decorator; `stats.processing`, when present, is
-the list it populates. It is absent from Stats.defaults. Association does not
-create, reconstruct, append to, or clear it. Existing history remains unchanged.
-
-## Explicit non-core destinations
-
-The current adapter adds only `stats.geocsv` (source row, provenance, and nested association report) and
-`stats.coordinates` (complete source latitude/longitude plus the adopted
-sea-level reference elevation). With `create_sac_header=True`, association
-also creates a fresh `stats.sac` using ObsPy's default conversion plus four
-station location fields: stla, stlo, stel and stdp. The destination must be
-absent. The default False leaves existing SAC headers untouched. ObsPy owns
-subsequent Trace/Stream writing; the publisher owns export verification. See the [SAC writing tutorial](tutorials/WRITE_SAC.md).
-`stats.mseed` is inherited MiniSEED format metadata and remains untouched.
-Response, paz, distance, rotation metadata, and other sensor-specific entries
-are not implicitly inferred or projected.
-
-Each requested destination container must be absent, even if an existing one
-is empty or looks equivalent. Build fresh complete projections, validate the
-whole batch, then attach. No merge, overwrite, deletion, fallback, or per-field
-missing-data policy switches. Missing required inputs raise. Source fields
-that have no agreed projection remain faithfully available under stats.geocsv.
-
-`stats.geocsv.association.type` records `single_segment` or `anchor_segment` at initial
-association. The latter requires explicit `allow_first_segment=True`; see the
-[merged-trace policy](OBSPY_MERGED_TRACES.md). It adopts the containing source anchor's geographic metadata
-without rewriting native waveform fields or source-row values.
-
-Rechecked 2026-10-21 against ObsPy checkout commit
-`50033e1daf95233cd4f30e95a49c37fd50be2ccd`, including Stats/AttribDict,
-nearby tests, contribution guidance and coding style. The `.venv` separately
-uses ObsPy 1.5.1. Association reports explicitly allocate AttribDict entries
-inside the coverage tuple: ObsPy converts nested mappings on assignment but
-does not recursively convert mappings contained in tuples. Time snapshots
-are freshly constructed from nanoseconds rather than shared with native Stats.
+Core Stats update with supported ObsPy operations; arbitrary attached
+namespaces do not track those changes. In particular, trimming, resampling,
+and merging do not refresh GeoCSV reports or projected SAC geography. Merge
+can retain earlier metadata while changing samples and waveform extent.
+Associate the final waveform, and retain provenance separately if needed for
+exports. ObsPy's ordinary MiniSEED/SAC writers do not serialize arbitrary
+GeoCSV attachments or revalidate their scientific meaning.

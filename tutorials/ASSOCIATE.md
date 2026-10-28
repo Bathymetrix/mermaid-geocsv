@@ -15,8 +15,8 @@ source .venv/bin/activate
 python -m pip install '.[obspy]'
 ```
 
-See [installation and notebook setup](../INSTALLATION.md) if needed. Run the
-Python examples in order from the repository root, `docs/`, or `docs/tutorials/`.
+See [installation and notebook setup](../docs/INSTALLATION.md) if needed. Run the
+Python examples in order from the repository root, `docs/`, or `tutorials/`.
 
 ## 1. Read and associate one MiniSEED trace
 
@@ -26,9 +26,7 @@ from obspy import read as read_waveforms
 from mermaid import geocsv
 
 root = Path.cwd()
-if root.name == "tutorials":
-    root = root.parent.parent
-elif root.name == "docs":
+if root.name in {"docs", "tutorials"}:
     root = root.parent
 
 example_dir = root / "data/fixtures/association/452.020-P-0030"
@@ -58,7 +56,7 @@ association requires fresh `stats.geocsv` and `stats.coordinates` destinations.
 
 These small GeoCSV subsets are demonstration fixtures. Use complete histories
 for research; omitted records could affect uniqueness. See the
-[fixture provenance](../../data/fixtures/association/README.md).
+[fixture provenance](../data/fixtures/association/README.md).
 
 ## 2. Associate a Stream
 
@@ -92,8 +90,27 @@ remains the source segment's first-sample position, adopted for the window
 under the MERMAID negligible-drift convention. Clip or combine waveforms before
 association; later waveform edits do not refresh the attachment.
 
+## 4. Associate a combined window
+
+This real P0045 example explicitly merges two overlapping original segments
+with ObsPy, taking the later trace's values in the overlap. This is a processing
+choice, not a reconstruction of archive lineage. The
+[fixture notes](../tests/fixtures/association/P0045_20220115/README.md) record
+the sample placement and source provenance.
+
+```python
+combined_dir = root / "tests/fixtures/association/P0045_20220115"
+combined = read_waveforms(str(combined_dir / "*.mseed"))
+combined.merge(method=1, interpolation_samples=0, misalignment_threshold=0)
+combined_tables = geocsv.read(root / "data/fixtures/P0045/P0045.geocsv")
+geocsv.associate(combined, combined_tables, allow_first_segment=True)
+print(combined[0].stats.geocsv.association.type)  # anchor_segment
+print(combined[0].stats.geocsv.association.coverage_segments)
+```
+
+The final window must have a unique containing anchor and complete source-grid
+coverage. Overlapping ranges count once. Association performs no merge itself.
+
 For optional `create_sac_header=True` and writing with ObsPy, see the
 [SAC tutorial](WRITE_SAC.md). Detailed tolerances, report fields, and projection
-rules are in the [association reference](../OBSPY_ASSOCIATION.md); extended
-batch, failure, and merged-window examples are in the
-[development notes](../development/ASSOCIATE.md).
+rules are in the [association reference](../docs/OBSPY_ASSOCIATION.md).

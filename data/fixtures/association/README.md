@@ -19,23 +19,13 @@ fill or match association metadata. SAC-input association is outside scope
 until further instruction. Optional `create_sac_header=True` creates fresh
 SAC station location headers during association for either label. Use ObsPy's
 Trace/Stream writer for serialization; see the
-[SAC writing tutorial](../../../docs/tutorials/WRITE_SAC.md).
+[SAC writing tutorial](../../../tutorials/WRITE_SAC.md).
 
-Complete `geo_DET_REQ.csv` histories are verbatim, local, and Git-ignored.
-They are optional corpus references, not test prerequisites. To restore and
-check them against the same processed snapshot, from the repository root:
-
-```bash
-.venv/bin/python scripts/fixtures/restore_geocsv_histories.py
-.venv/bin/python scripts/fixtures/check_full_histories.py
-```
-
-Restoration checks recorded hashes and refuses to replace a different local
-history. The second command verifies each subset byte-for-byte against the
-recorded full-history extraction and independently runs all 18 sampled
-waveform associations against complete histories. Neither command modifies
-protected source data. A newer source snapshot requires a deliberate
-fixture/provenance update.
+Complete `geo_DET_REQ.csv` histories are verbatim, local, Git-ignored corpus
+references; ordinary tests use tracked subsets. See the
+[maintenance guide](../../../scripts/fixtures/README.md#restore-complete-local-histories)
+for restoration and checks. A newer snapshot requires a deliberate provenance
+update; neither tests nor maintenance commands modify protected source data.
 
 ## Sampling and provenance
 
@@ -135,3 +125,18 @@ Run the checks from the repository root:
 Do not overwrite/regenerate these fixtures during tests. The collection script
 refuses an existing destination. Replacing fixtures is a separate explicit
 operation, with new provenance and another header audit.
+
+## Tolerance evidence
+
+[`tolerance_evidence.json`](tolerance_evidence.json) preserves the measured
+2026-10-22 check of 22 original segments and three combined/clipped windows
+against 15 complete histories. It records the exact source root, package
+0.22.0, ObsPy release and checkout commit, automaid commit, and measured
+timing/rate differences. Maximum original start difference was 974 microseconds;
+maximum rate difference was approximately 0.000001296 Hz.
+
+This is historical measurement evidence, not a current acceptance report or
+the publisher's full-archive gate. Its method field names the former package
+SAC writer used in that run. Current APIs and tolerances are defined in the
+[association reference](../../../docs/OBSPY_ASSOCIATION.md); reproducing a
+release check requires fresh execution against its recorded inputs.

@@ -50,10 +50,10 @@ no client trim, explicit merge, interpolation, filling or resampling is needed.
 The request times need not themselves lie on a sample grid.
 
 - Strict association rejects the changed start/count.
-- Since 0.21.0, `allow_first_segment=True` succeeds without a timing override.
+- `allow_first_segment=True` succeeds without a timing override.
   The REQ range's approximately 21.8 ms offset fits the automatic half-sample
   allowance of approximately 24.991 ms. Strict start/containment tolerance is
-  separate; it no longer controls source-grid placement. Exact midpoint ties,
+  separate from source-grid placement. Exact midpoint ties,
   excessive endpoint drift and incomplete coverage still raise.
 - The geographic anchor is DET row 237. Clipped source ranges are `[0, 4630)`
   and `[438, 9403)`. Their 4,192-sample overlap is counted once, leaving exactly
@@ -78,8 +78,8 @@ or evidence of which archive layer selected the values. The test preserves
 this evidence without inferring acquisition lineage from quality M.
 
 See [`tests/test_earthscope_response.py`](../../../test_earthscope_response.py),
-[retrieval observations](../../../../docs/OBSPY_RETRIEVAL_OBSERVATIONS.md), and
-[current coverage policy](../../../../docs/OBSPY_MERGED_TRACES.md).
+[open archive questions](../../../../docs/OPEN_QUESTIONS.md#association-scientific-questions), and
+[current coverage policy](../../../../docs/OBSPY_ASSOCIATION.md#clipped-and-combined-windows).
 ObsPy source was inspected read-only at
 `50033e1daf95233cd4f30e95a49c37fd50be2ccd`, separately from installed 1.5.1,
 including the FDSN client's parse/trim boundary. The fixture test reads the

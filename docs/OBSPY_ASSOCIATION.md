@@ -1,7 +1,7 @@
-# Association design and scientific conventions
+# Waveform association
 
 `geocsv.associate` attaches source metadata and receiver coordinates to
-MiniSEED-derived ObsPy traces. The [association tutorial](tutorials/ASSOCIATE.md)
+MiniSEED-derived ObsPy traces. The [association tutorial](../tutorials/ASSOCIATE.md)
 provides introductory executable examples. This reference defines the public API and
 collects the scientific rationale and validation rules; waveform processing
 remains downstream.
@@ -19,15 +19,14 @@ This includes detected and requested acquisitions, not just confirmed
 seismic events, and is independent of producer version. GPS, pressure, and
 thermocline observations are not waveform candidates.
 
-In the user's MERMAID construction, each original contiguous segment has one
+In the MERMAID construction, each original contiguous segment has one
 event row. Multiple traces may independently match that row, including
 identical waveforms requested in different MER files. One trace must resolve
 to exactly one row; ambiguity never permits combining source metadata.
 
 Position is the interpolated receiver position at the **source segment's first sample time**,
 independent of duration or repeat-request date. It is not averaged over the
-waveform. [Original July 13 waveform inspection](OBSPY_RETRIEVAL_OBSERVATIONS.md#original-july-13-waveforms-2026-10-15)
-provides evidence for the repeated-request case.
+waveform.
 
 ## Matching original traces
 
@@ -172,131 +171,123 @@ establish a future nonzero elevation unit convention or suitability for every
 analysis of a submerged receiver. Parsed `Elevation`, including missingness,
 remains unchanged in the source attachment.
 
-## Timing evidence and precision
+## Clipped and combined windows
 
-The inspected automaid writer uses `str(starttime)[:23] + 'Z'`, retaining
-milliseconds from an already corrected waveform start. Association must not
-apply `TimeCorrection` again. The 1 ms default covers the checked histories'
-sub-millisecond waveform/source offsets. The [reader specification](READER_SPEC.md#geocsv-metadata)
-explains preserved lexical resolution and timestamp precision.
+For `allow_first_segment=True`:
 
-The user's current MERMAID clock does not establish millisecond physical
-accuracy; the 2026-10-14 clarification says finer than 0.01 s has no physical
-significance for these instruments. Neither this convention nor the number
-of stored digits defines a matching tolerance. Preserve all received digits.
-MiniSEED encoding resolution likewise does not establish clock accuracy.
+1. Use complete exact SNCL, including known empty Location, as in strict mode.
+   Require zoned source timestamps and positive integer source SampleCount,
+   with finite positive source SampleRate declared in hertz to establish a
+   source interval. Its inclusive last sample is
+   `StartTime + (SampleCount - 1) / SampleRate`, rounded to UTC nanoseconds.
+2. Require exactly one source interval containing the waveform's first sample,
+   allowing the explicit `time_tolerance` at interval boundaries. A preceding
+   interval that ended earlier is not an anchor. Zero or multiple anchors raise.
+3. For a nonstandard match, collect same-SNCL source intervals intersecting the
+   waveform window expanded by half a waveform interval at each edge, including
+   intervals beginning before the waveform. Required
+   counts/rates must be valid. Rates retain the inclusive 0.00001 Hz
+   agreement check around the waveform rate.
+4. Place each source's integer sample range on the waveform grid. Clip it to
+   `[0, npts)`; source samples outside the downloaded window are permitted.
+   Round the source-start displacement to its nearest waveform sample index;
+   the original source count fixes the range length. Retained first and last
+   source samples must each remain within half a waveform interval of their
+   assigned indices. Exact half-sample ties raise rather than using a rounding
+   convention to choose a side. Accumulated drift beyond half an interval raises;
+   do not independently round the last boundary to create additional coverage.
+   Comparison is in sample units before rounding waveform times to nanoseconds;
+   the report retains the existing nanosecond-rounded boundary measurements.
+5. Require the union of those clipped integer ranges to cover every waveform
+   sample without gaps, counting overlaps once. Source SampleCount is not
+   rewritten and need not equal waveform `npts`. Full source metadata coverage
+   is still required; trimming the window does not waive it.
+6. Reject empty or masked waveform data, incomplete coordinates, existing
+   destination containers, and other invalid inputs as before. Waveform
+   `npts == len(data)` remains required. All matches and projections validate
+   before any trace is modified.
 
-Precise rate and sample interval remain meaningful even with coarser absolute
-clock accuracy. For an independently measured first-to-last sample duration,
-rate is `(npts - 1) / duration`; a duration covering `npts` full intervals uses
-`npts / duration`. Recovering rate from ObsPy's rate-derived `endtime` would
-be circular, not independent evidence. Raw-MER/writer/MiniSEED precision and
-other raw-MER/encoding precision questions remain an [open investigation](OPEN_QUESTIONS.md#mermaid-sampling-rate-follow-up).
+If the unique containing anchor also passes the standard match, the label
+remains `single_segment`; coverage validation applies to the fallback.
+Multiple containing anchors raise even when one passes standard matching.
+Errors include affected trace indices, source paths or download URLs, dataset
+and record indices, and one-based physical starting lines. No anchor is chosen
+automatically and no partial attachment is made.
 
-## Longer traces and subsequent processing
+### Separate absolute matching from grid placement
 
-With `allow_first_segment=True`, require exactly one same-SNCL source interval
-containing the waveform start within the timing tolerance. This includes an
-interior start; a nearest-prior row is insufficient. Multiple containing rows
-raise even if one passes strict count matching. Errors list affected traces,
-source records and one-based physical starting lines; no headers are filled.
-A nonstandard match must have complete gap-free source-grid coverage after
-clipping to the downloaded window and counting overlaps once. Retained boundaries
-use unique nearest-sample placement within half a waveform interval, independently
-of `time_tolerance`; exact ties and drift beyond that placement raise. Shorter windows
-and source ranges extending beyond either edge are allowed. The raw source
-count stays unchanged; `association.waveform.sample_count` records the actual window count.
-The `anchor_segment` label retains one anchor, without reconstructing acquisition
-contributions or performing any waveform merge. The
-[merged-trace policy](OBSPY_MERGED_TRACES.md) specifies all coverage checks,
-observed examples, and limits.
+`time_tolerance` uses its 1 millisecond default for strict original-start
+matching and containing-anchor boundaries. It never controls coverage-grid
+placement; even zero does not require coincident grids in the anchor fallback.
+The rule is strictly `abs(grid offset) < 0.5 / waveform_sampling_rate`.
+It is fixed, rate-dependent, and has no separate public knob:
+approximately 12.5 ms at 40 Hz, 25 ms at 20 Hz, and 200 ms at 2.5 Hz.
 
-Association guarantees end at initial attachment. Later trimming, resampling,
-merging, or manual edits do not refresh the row or projections. In particular,
-ObsPy can inherit an earlier row while changing `npts` and `endtime`; a
-retained `single_segment` label is not revalidated. See [Stream merging and
-association](STREAM.md#comparison-with-geocsv-association).
+This explicitly accepts different grid phases and sub-sample timing
+discontinuities. It establishes compatible sample coverage, not exact timing
+agreement, absence of physical gaps, an unmodified acquisition, or reconstruction
+of original overlap values. No waveform sample or timestamp is moved or
+interpolated. Exact SNCL (including Location), unique anchor, source rate
+agreement, source counts and complete union coverage remain required. Strict
+`single_segment` acceptance does not gain a new endpoint check.
 
-Optional `create_sac_header=True` creates fresh `stats.sac` using ObsPy's
-public conversion, then adds only `stla`, `stlo`, `stel` and `stdp` from the
-GeoCSV station location mapping. The flag defaults to False and must be a
-Python bool. When requested, `stats.sac` must be absent, even if empty; all
-requested projections validate before any trace is mutated. Missing REQ depth
-is stored as SAC undefined (-12345). Native waveform Stats and samples are not
-changed by header conversion. Use ObsPy `Trace.write` or `Stream.write` with
-its default `keep_sac_header=True`; False discards the projection. File writing,
-precision, overwriting and later export validation are outside the consumer
-contract. Publisher-only checks retain the former exporter validations. See
-[the SAC tutorial](tutorials/WRITE_SAC.md). For `anchor_segment`, the anchor's receiver position, approximate depth,
-and sea-level reference apply to the whole window under the user's MERMAID
-negligible-drift convention. Missing REQ pressure remains undefined. Arbitrary GeoCSV
-provenance is not serialized by MiniSEED or SAC export.
+The half-interval scale is chosen to mirror ObsPy's MiniSEED reader in
+`obspy/io/mseed/src/obspy-readbuffer.c`: it sets
+`hptimetol = (hptime_t) (0.5 * segmentCurrent->hpdelta)` and accepts record
+joins within that limit. Association uses a strict inequality because an exact
+midpoint has two equally near sample indices. Thus we mirror the reader's
+half-sample scale, not its inclusive endpoint or complete joining algorithm:
+association compares whole source ranges to an already assembled Trace.
+Several record-join errors may accumulate, so a Trace accepted by the reader
+can still fail coverage. The inspected checkout is
+`50033e1daf95233cd4f30e95a49c37fd50be2ccd`; installed ObsPy is separately 1.5.1.
 
-## Timestamp precision and metadata dependencies
+ObsPy Stream merging is a separate operation; its default cleanup threshold
+is 0.01 sample intervals, not the MiniSEED reader's half-sample join scale.
+Choose merge behavior explicitly before association.
 
-Scientific fields need context before projection or interpretation:
+## Geographic meaning and later processing
 
-| Group | Required context |
-| --- | --- |
-| Receiver position | Latitude and longitude, angular units, coordinate convention, and vertical reference. |
-| Waveform identity | Complete SNCL; missing codes are not wildcards. |
-| Timing and coverage | Start, count, rate/interval, and endpoint convention; endtime is derived. |
-| Orientation | Azimuth and dip/inclination, units, and SEED versus SAC convention. No orientation projection is implemented. |
-| Pressure-derived depth | Pressure, units, and the adopted approximation/vertical reference; see the SAC writing guide. |
-| Calibration/response | Scaling, input/output units, and response definition; a report URL is not an ObsPy Response. |
-| Clock correction | Value, seconds units, and whether already applied. Association never applies it again. |
-| Provenance | Source/download identity, dataset metadata, and record index together. |
+Under the MERMAID negligible-drift convention, the containing anchor's
+geographic metadata applies to the whole clipped or combined window. The
+source position still describes the source segment's original first sample;
+it is not interpolated to the clipped start or averaged over the window.
+This convention does not establish suitability for arbitrary moving sensors
+or long windows. Missing pressure is never filled from another row.
 
-These are interpretation requirements, not a general validation framework.
+Associate the final waveform after any clipping or merging. Later changes to
+Stats, samples, or source tables do not refresh attachments or projections.
+ObsPy merging can retain an earlier trace's metadata while changing its count
+and extent; a retained association label is not revalidated. No original
+sample-contribution history is reconstructed.
 
-## Migration and related references
+Optional `create_sac_header=True` adds fresh SAC station headers for either
+association label. The flag must be a Python bool; the default False leaves
+existing SAC headers untouched. The [SAC reference](SAC.md) owns the mapping,
+missing-pressure rules, and storage limits. ObsPy owns writing, and the
+publisher owns final export verification.
 
-Version 0.25.0 removes the public `write_sac` operation. Set
-`associate(..., create_sac_header=True)` on the final unassociated waveform,
-then call ObsPy's `Trace.write` or `Stream.write`. The fresh SAC baseline comes
-from ObsPy; the only additional GeoCSV mappings are station latitude,
-longitude, adopted sea-level elevation and approximate depth. Association-time
-scientific guarantees are unchanged. Export checks now live in the publisher;
-ordinary ObsPy writing does not revalidate GeoCSV association. No download
-protocol, matching tolerance or provenance schema changes are introduced.
+## Timing evidence
 
-Version 0.22.0 changes the absolute start/containment default from 0.0001 s to
-0.001 s and tightens rate agreement from 0.01 Hz to 0.00001 Hz, shared by strict
-matching, anchor coverage and SAC export. Explicit time overrides still work.
-The wider start window can expose additional eligible rows, which still raise
-as ambiguous; it never authorizes choosing the nearest row. The fixed strict
-half-sample coverage placement and association report schema are unchanged.
-Fresh-source checks against 15 complete histories validate 22 original segments
-and three combined/clipped windows; see [audit evidence](../audits/06.md#3-matching-tolerances-need-scientific-acceptance-not-automatic-widening).
+The inspected automaid writer renders corrected waveform starts as
+`str(starttime)[:23] + 'Z'`, retaining milliseconds. Association must not apply
+`TimeCorrection` again. The default start tolerance accommodates the checked
+histories' sub-millisecond serialization differences. The
+[fixture evidence](../data/fixtures/association/README.md#tolerance-evidence)
+records the bounded sample behind that choice; it is not a clock-accuracy
+specification. The MERMAID timing convention gives stored digits finer than
+0.01 s no physical accuracy claim. Preserve those digits anyway.
 
-Version 0.21.0 separates coverage-grid placement from `time_tolerance`. Anchor
-coverage uses a fixed unique nearest-sample rule within half a waveform interval;
-no explicit 25 ms recipe is needed for the documented P0006/P0045 examples.
-Absolute start/containment and Hz thresholds are unchanged. This accepts differing
-grid phases without altering data or promising exact timing agreement; measured
-offsets remain in the nested report. Exact half-sample ties, excessive accumulated
-drift and incomplete coverage still raise. See the [coverage policy](OBSPY_MERGED_TRACES.md).
+Precise sampling intervals remain meaningful with coarser absolute clock
+accuracy. Rate from an independently measured first-to-last duration is
+`(npts - 1) / duration`; a duration spanning `npts` whole intervals uses
+`npts / duration`. Deriving rate from ObsPy's rate-derived endtime is circular.
+Raw-MER and encoding precision remain an
+[open investigation](OPEN_QUESTIONS.md#mermaid-sampling-rate-follow-up).
 
-Version 0.20.0 replaces the string `association` with the nested report above.
-Use `.association.type`: `one_segment` becomes `single_segment` and
-`first_segment` becomes `anchor_segment`. Former top-level
-`starttime_difference_seconds` moves to
-`association.waveform_start_offset_seconds`; `waveform_sample_count` moves to
-`association.waveform.sample_count`. No compatibility aliases are provided.
-`write_sac` requires the new report and validates identity/start/count/rate
-against its waveform snapshot. Reassociate an unassociated final waveform to
-obtain it. The `allow_first_segment` argument and matching tolerances are
-unchanged. Version 0.19.0 introduced containing anchors, clipped source-grid
-coverage, and SAC export for either association type.
-
-Version 0.18.0 renamed `allow_merge` to `allow_first_segment` without changing
-association behavior. Update existing keyword calls. The unused
-`project_sac` and `missing_coordinates` options were removed before public
-association exposure; neither is part of the API.
-
-- [Stats and metadata mapping boundaries](OBSPY_STATS.md).
-- [Historical association audit](../audits/ASSOCIATION.md) and
-  [repository audits](../audits/README.md).
-- [Fixture inventory and provenance](../data/fixtures/association/README.md).
-- [Open scientific questions](OPEN_QUESTIONS.md#association-scientific-questions)
-  and [future workflows](FUTURE.md).
+The [P0045 fixture](../tests/fixtures/association/P0045_20220115/README.md)
+and [preserved P0006 service response](../tests/fixtures/association/P0006_20180713_earthscope/README.md)
+exercise differing source-grid phases and overlapping ranges. Their provenance,
+counts, and measured offsets are maintained with the fixtures. Coverage cannot
+identify which source supplied overlap values or detect gaps filled upstream;
+see [open scientific questions](OPEN_QUESTIONS.md#association-scientific-questions).

@@ -15,8 +15,8 @@ source .venv/bin/activate
 python -m pip install .
 ```
 
-See [installation and notebook setup](../INSTALLATION.md) if needed. Run the
-Python examples in order from the repository root, `docs/`, or `docs/tutorials/`.
+See [installation and notebook setup](../docs/INSTALLATION.md) if needed. Run the
+Python examples in order from the repository root, `docs/`, or `tutorials/`.
 
 ## 1. Read a file
 
@@ -28,9 +28,7 @@ from pathlib import Path
 from mermaid import geocsv
 
 root = Path.cwd()
-if root.name == "tutorials":
-    root = root.parent.parent
-elif root.name == "docs":
+if root.name in {"docs", "tutorials"}:
     root = root.parent
 
 path = root / "data/fixtures/P0006/P0006.geocsv"
@@ -79,6 +77,5 @@ converted[0]["StartTime"].head()
 ```
 
 This changes the displayed timezone while preserving the instant.
-See the [reader specification](../READER_SPEC.md) for format and timestamp
-rules, [extended pandas examples](../development/READ.md) for more selections
-and summaries, or [plotting](PLOTTING.md) for a quick visualization.
+See the [reader specification](../docs/READER_SPEC.md) for format and timestamp
+rules, or [plotting](PLOTTING.md) for a quick visualization.

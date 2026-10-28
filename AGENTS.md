@@ -141,7 +141,7 @@ response removal and counts-to-pressure calibration are outside repository scope
 Preserve association-time waveform sample count
 separately from raw source SampleCount so publisher verification can detect later length changes.
 The unused `project_sac` option was removed on 2026-10-16 before package
-exposure. Keep deferred mappings in `docs/FUTURE.md`; do not
+exposure. Keep deferred mappings in `docs/OPEN_QUESTIONS.md`; do not
 reserve an unimplemented argument in the current associator.
 
 ### Automaid Source Reference
@@ -358,7 +358,7 @@ explicitly requested for the document.
 ## Development and Verification
 
 Every public function or method must have a dedicated, standalone tutorial
-pair under `docs/tutorials/`, named for that operation (for example, `READ.md`
+pair under `tutorials/`, named for that operation (for example, `READ.md`
 and `READ.ipynb`, `FETCH.md` and `FETCH.ipynb`, or `ASSOCIATE.md` and
 `ASSOCIATE.ipynb`). Each tutorial must include its own setup, imports, and
 examples runnable from top to bottom without another tutorial's state.

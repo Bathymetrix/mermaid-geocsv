@@ -51,22 +51,20 @@ associates their metadata, and compares SAC exports with independent fixtures.
 
 | Operation | Purpose | Guide | Notebook |
 | --- | --- | --- | --- |
-| `geocsv.fetch(...)` | Retrieve verified GeoCSV files to disk or memory. | [Fetch](docs/tutorials/FETCH.md) | [FETCH.ipynb](docs/tutorials/FETCH.ipynb) |
-| `geocsv.read(...)` | Parse local paths, bytes, or fetch results into dataset tables. | [Read](docs/tutorials/READ.md) | [READ.ipynb](docs/tutorials/READ.ipynb) |
-| `geocsv.associate(...)` | Attach uniquely matched metadata and coordinates to ObsPy waveforms in place. | [Associate](docs/tutorials/ASSOCIATE.md) | [ASSOCIATE.ipynb](docs/tutorials/ASSOCIATE.ipynb) |
-| SAC headers and ObsPy writing | Use `associate(..., create_sac_header=True)`, then ObsPy `Trace.write` or `Stream.write`. | [Write SAC](docs/tutorials/WRITE_SAC.md) | [WRITE_SAC.ipynb](docs/tutorials/WRITE_SAC.ipynb) |
-| EarthScope workflow | Download P0006 waveforms, associate metadata, and verify SAC exports. | [EarthScope](docs/tutorials/EARTHSCOPE.md) | [EARTHSCOPE.ipynb](docs/tutorials/EARTHSCOPE.ipynb) |
-| Plot and analyze records | Use pandas and Matplotlib downstream. | [Plotting](docs/tutorials/PLOTTING.md) | [PLOTTING.ipynb](docs/tutorials/PLOTTING.ipynb) |
+| `geocsv.fetch(...)` | Retrieve verified GeoCSV files to disk or memory. | [Fetch](tutorials/FETCH.md) | [FETCH.ipynb](tutorials/FETCH.ipynb) |
+| `geocsv.read(...)` | Parse local paths, bytes, or fetch results into dataset tables. | [Read](tutorials/READ.md) | [READ.ipynb](tutorials/READ.ipynb) |
+| `geocsv.associate(...)` | Attach uniquely matched metadata and coordinates to ObsPy waveforms in place. | [Associate](tutorials/ASSOCIATE.md) | [ASSOCIATE.ipynb](tutorials/ASSOCIATE.ipynb) |
+| SAC headers and ObsPy writing | Use `associate(..., create_sac_header=True)`, then ObsPy `Trace.write` or `Stream.write`. | [Write SAC](tutorials/WRITE_SAC.md) | [WRITE_SAC.ipynb](tutorials/WRITE_SAC.ipynb) |
+| EarthScope workflow | Download P0006 waveforms, associate metadata, and verify SAC exports. | [EarthScope](tutorials/EARTHSCOPE.md) | [EARTHSCOPE.ipynb](tutorials/EARTHSCOPE.ipynb) |
+| Plot and analyze records | Use pandas and Matplotlib downstream. | [Plotting](tutorials/PLOTTING.md) | [PLOTTING.ipynb](tutorials/PLOTTING.ipynb) |
 
 Hosted GeoCSV collections remain testing only; `fetch` requires an explicit
-`base_url`. The [fetch tutorial](docs/tutorials/FETCH.md) downloads P0006 and
+`base_url`. The [fetch tutorial](tutorials/FETCH.md) downloads P0006 and
 P0045 from `https://bathymetrix.com/geocsv/testing/`. See the
 [hosting workflow](docs/HOSTING.md) for publication status.
 
 Detailed matching rules, association reports, SAC precision and provenance
 limits, format rules, and fixture references are in the
 [documentation index](docs/README.md).
-Extended examples and development checks are retained in the
-[development notes](docs/development/README.md).
 
 Developed and maintained by [Bathymetrix®](https://bathymetrix.com).

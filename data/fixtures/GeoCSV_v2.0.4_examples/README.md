@@ -1,11 +1,10 @@
-# Reader findings against the GeoCSV examples
+# GeoCSV v2.0.4 specification examples
 
-Reviewed 2026-10-06 with `mermaid-geocsv` 0.7.2 against the five examples on
-pages 5–6 of the repository's [GeoCSV v2.0.4 PDF](../docs/references/GeoCSV_v2.0.4.pdf).
-The [fixtures](../data/fixtures/GeoCSV_v2.0.4_examples/) remove display wrapping,
-use ASCII hyphens, and retain the agreed space before `TAJIKISTAN`. They preserve
-the printed metadata inconsistencies rather than repairing them. This checks
-these examples, not full specification conformance.
+These five fixtures transcribe pages 5–6 of the
+[GeoCSV v2.0.4 PDF](../../../docs/references/GeoCSV_v2.0.4.pdf). Display wrapping
+was removed, hyphens use ASCII, and the space before `TAJIKISTAN` is retained.
+Printed metadata inconsistencies are preserved. These examples test selected
+reader behavior, not complete specification conformance.
 
 | Fixture | Reader outcome |
 | --- | --- |
@@ -30,20 +29,6 @@ R2R also has a second issue hidden by its first error: the unquoted comma in
 columns under this reader's list rules. This observation comes from inspecting
 the declaration, not from a successful R2R read.
 
-## Suggested specification clarifications
-
-- Require every present column-attribute list (`field_*`) to have exactly one
-  entry per header field, in header order. Unknown values require explicit empty
-  entries; the entire declaration may be omitted. Correct the IRIS and R2R
-  examples to illustrate that rule.
-- Specify the delimiter and quoting rules for metadata lists explicitly,
-  including values containing the delimiter. If the R2R latitude description is
-  one value, quote `"latitude_at_device,(layback)"` in the comma-delimited list.
-- Clarify the meaning of `UTC` in `field_unit` when timestamps lack timezone
-  designators, as in UNAVCO. This reader preserves the declaration and leaves
-  those timestamps naive. An explicit ISO 8601 timezone designator would make
-  their intended interpretation unambiguous.
-
-Verification: `.venv/bin/pytest -q tests/test_spec_examples.py` covers all five
-unmodified fixtures: three successful reads and two expected rejections.
-Result: **5 passed**. Reader behavior and package version are unchanged.
+`tests/test_spec_examples.py` verifies three successful reads and two
+expected rejections. Unresolved specification questions are maintained in
+[open questions](../../../docs/OPEN_QUESTIONS.md#questions-for-the-geocsv-specification).

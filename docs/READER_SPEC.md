@@ -24,10 +24,10 @@ records = tables[0]  # P0006 contains one dataset
 ```
 
 For a hands-on introduction using the included P0006 file, see the
-[pandas tutorial](tutorials/READ.md).
-For retrieval into memory or local files, see [Fetching GeoCSV](tutorials/FETCH.md).
-Association is documented in the [association tutorial](tutorials/ASSOCIATE.md);
-planned extensions are outlined in [Future workflows](FUTURE.md).
+[pandas tutorial](../tutorials/READ.md).
+For retrieval into memory or local files, see [Fetching GeoCSV](../tutorials/FETCH.md).
+Association is documented in the [association tutorial](../tutorials/ASSOCIATE.md);
+unresolved scope is recorded in [open questions](OPEN_QUESTIONS.md).
 
 `geocsv.read(source, *, datetime_timezone=None)` accepts a local path, raw
 UTF-8 bytes, one `GeoCSVFetchResult`, or a list/tuple of fetch results. It
@@ -49,10 +49,6 @@ different offsets, its values are preserved as `Timestamp` objects in an
 may issue a warning. If pandas rejects a mixed-timezone array, the reader
 parses its entries individually and retains them in an object column; it does
 not normalize them by default.
-
-In version 0.16.0 the first argument is named `source` rather than `path`, to
-cover local and in-memory inputs. Positional path calls remain unchanged;
-keyword callers should use `source=`.
 
 Pass `datetime_timezone` to convert datetime values to a common timezone:
 
@@ -118,7 +114,7 @@ declaration. `metadata.download` is None for bare paths and bytes, or the
 immutable `GeoCSVDownload` provenance supplied by a fetch result. It retains
 the instrument and release IDs, requested file and manifest URLs, verified byte
 count and SHA-256, test-collection flag, and original manifest bytes. It does
-not retain the GeoCSV payload. See the [fetch reference](development/FETCH.md#provenance).
+not retain the GeoCSV payload. See the [fetch reference](FETCH.md#provenance).
 
 `metadata.datetime_resolution_ns` is a read-only nested mapping from datetime
 column names to source record indices and source-spelling resolutions in
@@ -149,8 +145,8 @@ survive a longer workflow, keep the metadata or retrieval result separately.
 The reader loads UTF-8 GeoCSV datasets in one pass and returns one DataFrame
 per dataset. It requires each `dataset` declaration's value to contain `GeoCSV`
 (case-insensitively); versions are not validated. The specification recommends
-placing `#dataset` first, but the reader permits preceding comments for files
-circulated during development. `field_type` and `field_unit` are optional, and
+placing `#dataset` first, but the reader permits preceding comments for existing
+MERMAID files. `field_type` and `field_unit` are optional, and
 the delimiter defaults to comma. Comments may also appear between data records.
 Header names must be nonempty and unique so source columns and their metadata
 remain unambiguous. This is a restriction of this reader, not a v2.0.4
@@ -190,7 +186,7 @@ metadata values.
 
 Quoted cells such as `"#Label"` and `"#dataset: hello"` are header or data values,
 including in one-column datasets. A line starting with `#` inside a multiline
-quoted cell remains part of that cell. Since 0.3.0, legacy preambles with entire
+quoted cell remains part of that cell. Legacy preambles with entire
 comments wrapped in CSV quotes are unsupported; those comments must be written
 with literal leading `#`. Unquoted double quotes, whitespace immediately
 outside quotation marks, and lines without LF or CRLF endings raise errors,
