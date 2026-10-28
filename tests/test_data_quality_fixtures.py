@@ -1,5 +1,6 @@
-"""Check MERMAID fixture quality flags against the documented stream map."""
+"""Check original and downloaded fixture quality against their provenance."""
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -45,30 +46,46 @@ def test_mermaid_geocsv_event_quality_values_follow_stream_map() -> None:
     assert set(at_20_hz.unique()) == {"Q", "D"}
 
 
-def test_mermaid_mseed_event_quality_matches_filename() -> None:
-    """Every DET/REQ MiniSEED fixture carries its prescribed quality flag."""
+def test_mermaid_mseed_quality_matches_product_provenance() -> None:
+    """Original DET/REQ products carry Q/D; recorded EarthScope responses carry M."""
     obspy = pytest.importorskip("obspy", reason="MiniSEED fixture checks require ObsPy")
     paths = sorted(MERMAID_FIXTURES.rglob("*.mseed"))
     if not paths:
         pytest.skip("no MiniSEED fixtures are currently present under data/fixtures")
 
+    response_directory = MERMAID_FIXTURES / "P0006/waveforms"
+    manifest = json.loads((response_directory / "manifest.json").read_text())
+    response_quality = {
+        response_directory / example["request"]["path"]: example["waveform"]["dataquality"]
+        for example in manifest["examples"]
+    }
+    assert response_quality
+    assert set(response_quality.values()) == {"M"}
+    assert set(response_quality) <= set(paths)
+
     checked = 0
     for path in paths:
-        stream_type = next(
-            (name for name in EVENT_QUALITY if f".MER.{name}." in path.name), None
-        )
-        assert stream_type is not None, (
-            f"MiniSEED fixture {path.relative_to(REPOSITORY)} has no recognized "
-            "'.MER.DET.' or '.MER.REQ.' stream token; classify any new product type"
-        )
+        if path in response_quality:
+            product = "EarthScope response"
+            expected = response_quality[path]
+        else:
+            stream_type = next(
+                (name for name in EVENT_QUALITY if f".MER.{name}." in path.name), None
+            )
+            assert stream_type is not None, (
+                f"MiniSEED fixture {path.relative_to(REPOSITORY)} has no recognized "
+                "'.MER.DET.' or '.MER.REQ.' stream token or recorded EarthScope response; "
+                "classify any new product type"
+            )
+            product = stream_type
+            expected = EVENT_QUALITY[stream_type]
 
         stream = obspy.read(str(path), headonly=True)
         assert len(stream), f"MiniSEED fixture {path.name} contains no traces"
-        expected = EVENT_QUALITY[stream_type]
         for trace in stream:
             actual = trace.stats.get("mseed", {}).get("dataquality")
             assert actual == expected, (
-                f"{path.name} identifies {stream_type} (expected {expected}) but "
+                f"{path.name} identifies {product} (expected {expected}) but "
                 f"trace {trace.id} has dataquality {actual!r}"
             )
         checked += 1
