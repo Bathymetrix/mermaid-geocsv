@@ -64,6 +64,9 @@ def test_real_roundtrip_and_independent_sac_reference(example, subsets, tmp_path
     assert actual.delta == np.float32(trace.stats.delta)
     assert actual.scale == np.float32(trace.stats.calib)
     reopened = actual.to_obspy_trace(round_sampling_interval=False)
+    # Pressure supplies station depth; earthquake-source fields stay undefined.
+    for field in ("evla", "evlo", "evel", "evdp"):
+        assert field not in reopened.stats.sac
     assert reopened.id == trace.id
     assert abs(reopened.stats.starttime.ns - trace.stats.starttime.ns) <= 1000
     assert abs(reopened.stats.starttime.ns - reference.to_obspy_trace(

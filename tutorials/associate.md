@@ -1,8 +1,9 @@
 # Associate GeoCSV metadata with a waveform
 
-`geocsv.associate` attaches the matching GeoCSV event record and receiver
-coordinates to an ObsPy Trace or Stream. These examples use included MiniSEED
-and GeoCSV fixtures and run offline.
+`geocsv.associate` attaches the matching GeoCSV waveform-acquisition record
+and MERMAID receiver (station) coordinates to an ObsPy Trace or Stream.
+The source label `event` refers to an acquisition, not earthquake-source
+metadata. These examples use included MiniSEED and GeoCSV fixtures and run offline.
 
 Companions: [Markdown](associate.md) · [Notebook](associate.ipynb).
 

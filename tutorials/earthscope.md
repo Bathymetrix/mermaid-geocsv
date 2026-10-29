@@ -138,9 +138,10 @@ print(sac_path)
 SAC stores waveform samples and floating headers at float32 precision. The
 station fields are `stla`/`stlo` in degrees north/east, `stel = 0` metres at the
 adopted sea-level reference, and `stdp = WaterPressure / 100` in approximate
-metres positive downward. Pressure is in mbar; this is the MERMAID convention,
-not a physical pressure-to-depth calculation. All three DET examples have
-pressure. Missing REQ pressure would remain undefined (`SACTrace.stdp is None`,
+metres positive downward for the MERMAID receiver (station). Pressure is in
+mbar; 100 mbar corresponds to approximately 1 m of station depth under the
+MERMAID convention. Earthquake-source metadata and `ev*` projections are
+outside package scope. All three DET examples have pressure. Missing REQ pressure would remain undefined (`SACTrace.stdp is None`,
 with the SAC undefined sentinel stored on disk); it must not be borrowed from
 another record.
 

@@ -1,4 +1,4 @@
-"""Match event rows and build fresh ObsPy metadata projections."""
+"""Match waveform-acquisition rows and project MERMAID station metadata."""
 
 from bisect import bisect_left, bisect_right
 from decimal import Decimal, InvalidOperation
@@ -66,7 +66,8 @@ def _sac_header(trace, row, metadata, coordinates):
             raise ValueError(f"{trace.id}: WaterPressure requires declared units mbar")
         if not isfinite(float(pressure)) or pressure < 0:
             raise ValueError(f"{trace.id}: requires finite nonnegative WaterPressure")
-        # Automaid convention: 100 mbar = 1 dbar, treated as approximately 1 m.
+        # MERMAID station depth for SAC stdp: 100 mbar = 1 dbar, approximately 1 m.
+        # This station projection supplies no earthquake-source (ev*) metadata.
         depth = float(pressure) / 100
 
     sac = SACTrace.from_obspy_trace(trace, keep_sac_header=False)

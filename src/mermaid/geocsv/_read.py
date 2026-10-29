@@ -204,7 +204,7 @@ def read(
     See Also
     --------
     fetch : Retrieve verified GeoCSV files to disk or memory.
-    associate : Attach parsed event metadata to ObsPy waveforms.
+    associate : Attach parsed station metadata to ObsPy waveforms.
 
     Notes
     -----

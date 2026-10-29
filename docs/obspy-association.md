@@ -8,6 +8,11 @@ remains downstream.
 
 ## Scope and authority
 
+Association describes MERMAID receiver (station) locations. Optional SAC
+projections supply only `stla`, `stlo`, `stel`, and `stdp`; the pressure-derived
+`stdp` is approximate station depth. Earthquake-source metadata and `ev*`
+projections are outside this package's scope.
+
 Waveform identity, timing, measured sampling rate, loaded sample count,
 calibration, and samples remain authoritative. Association validates them
 against GeoCSV; it never repairs a mismatch by rewriting either source.
@@ -15,8 +20,9 @@ Paired SAC files are independent comparison references, never association
 inputs or sources of missing metadata.
 
 Eligible source rows have `MethodIdentifier` beginning with `Algorithm(event):`.
-This includes detected and requested acquisitions, not just confirmed
-seismic events, and is independent of producer version. GPS, pressure, and
+These are detected and requested waveform acquisitions, independent of producer
+version. The source label `event` identifies an acquisition record and does not
+denote earthquake-source metadata. GPS, pressure, and
 thermocline observations are not waveform candidates.
 
 In the MERMAID construction, each original contiguous segment has one

@@ -16,6 +16,15 @@ changes. If instructions conflict, this file takes precedence.
 
 ## Repository Scope
 
+This repository does not handle earthquake parameters. Do not add earthquake-source
+parameter inference, calculations, projections, or header mappings, including
+earthquake origin, hypocentre, depth, or magnitude. Geographic metadata describe
+MERMAID receiver (station) locations. The approximation 100 mbar per metre
+supplies station depth in SAC `stdp`. Optional SAC projections populate only
+`stla`, `stlo`, `stel`, and `stdp`; never populate earthquake-source `ev*` headers.
+GeoCSV `Algorithm(event)` rows describe waveform acquisitions, not earthquake-source
+metadata.
+
 Repository ethos: **simple rules, clear projections, and no surprise side effects**.
 Before changing association or describing ObsPy's main Stats attributes, consult
 `docs/obspy-stats-reference.md`, which records the relevant supplied source.
@@ -303,7 +312,7 @@ authorization to add sibling packages, shared infrastructure or a metapackage.
 
 The intended public Python API is deliberately small and must be documented.
 `geocsv.associate(waveforms, records, *, time_tolerance=0.001,
-allow_first_segment=False, create_sac_header=False)` attaches uniquely matched event metadata to an ObsPy Trace
+allow_first_segment=False, create_sac_header=False)` attaches uniquely matched station metadata to an ObsPy Trace
 or Stream in place and returns `None`. ObsPy remains an optional dependency,
 loaded only when association is called. Keep the matching implementation
 private and preserve the scientific contract above.

@@ -30,7 +30,7 @@ __all__ = [
 
 def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=False,
               create_sac_header=False):
-    """Attach uniquely matched GeoCSV event metadata to ObsPy waveforms.
+    """Attach uniquely matched GeoCSV station metadata to ObsPy waveforms.
 
     Parameters
     ----------
@@ -56,9 +56,11 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
     create_sac_header : bool, optional
         Default False leaves ``stats.sac`` untouched. True requires it to be absent
         and creates ObsPy's fresh SAC baseline plus ``stla``, ``stlo``, ``stel``,
-        and ``stdp`` using the documented marine position/depth conventions.
-        Missing pressure is allowed only for source DataQuality D, leaving depth
-        undefined. Write with ObsPy's ``Trace.write`` or ``Stream.write``.
+        and ``stdp`` for the MERMAID station location. Station depth is
+        approximately ``WaterPressure / 100`` metres positive downward, with
+        pressure in mbar. Earthquake-source ``ev*`` fields are not populated.
+        Missing pressure is allowed only for source DataQuality D, leaving
+        station depth undefined. Write with ObsPy's ``Trace.write`` or ``Stream.write``.
 
     Returns
     -------

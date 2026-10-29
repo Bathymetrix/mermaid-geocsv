@@ -74,4 +74,6 @@ plt.show()
 
 Use `fig.savefig("p0006_gps.png", dpi=180)` to save the current figure.
 Further analysis is downstream of parsing; choose coordinate systems and any
-pressure-to-depth model explicitly for the scientific question.
+receiver (station) pressure-to-depth model explicitly for the scientific
+question. The optional SAC projection uses the documented approximation
+100 mbar per metre of MERMAID station depth in `stdp`.

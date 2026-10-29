@@ -43,8 +43,11 @@ print(trace.stats.sac)
 
 `create_sac_header=True` requires an absent `stats.sac`. It creates ObsPy's
 standard headers and adds station latitude, longitude, the adopted sea-level
-reference, and approximate pressure-derived depth. The [SAC mapping](../docs/sac.md#geographic-mapping)
-defines units and the missing-REQ-pressure exception. Samples remain raw counts.
+reference, and approximate MERMAID station depth: `stdp = WaterPressure / 100`
+in metres positive downward, with pressure in mbar (100 mbar approximately 1 m).
+These are station-location `st*` projections; earthquake-source `ev*` headers
+are not populated. The [SAC mapping](../docs/sac.md#geographic-mapping) defines
+units and the missing-REQ-pressure exception. Samples remain raw counts.
 
 ## 2. Write and reopen a SAC file
 

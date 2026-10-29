@@ -7,6 +7,11 @@
 Fetch and read MERMAID GeoCSV metadata, associate it with [ObsPy](https://docs.obspy.org/) waveforms,
 and optionally create SAC station location headers for writing with ObsPy.
 
+Geographic metadata describe the MERMAID receiver (station), including its
+approximate depth from water pressure. Optional SAC projections populate only
+`stla`, `stlo`, `stel`, and `stdp`. Earthquake-source metadata and `ev*` header
+projections are outside this package's scope.
+
 The reader returns typed pandas DataFrames while preserving source column
 names, record order, timestamps, units, comments, and provenance. It follows
 [MERMAID reader conventions](docs/reader-spec.md); general GeoCSV conformance

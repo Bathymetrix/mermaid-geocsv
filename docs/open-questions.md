@@ -144,7 +144,9 @@ the proposed Pipatprathanporn & Simon (2022) citation. Identify the incomplete
 “Ivy” reference and verify Nolet et al. (2024). The supplied MERMAID manual
 reference 452.000.852, Version 00, reportedly uses 101 mbar per metre;
 independent verification is pending. Current SAC mapping follows automaid's
-100 mbar per metre approximation.
+100 mbar per metre approximation for MERMAID receiver (station) depth in SAC
+`stdp`. This question concerns the station-depth approximation; earthquake-source
+metadata and `ev*` projections remain outside package scope.
 
 ## Deferred workflows and mappings
 
