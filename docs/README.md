@@ -27,4 +27,4 @@ maintained references.
 
 ## Audit records
 
-- [Development readiness audit, 2026-10-28](audit-2026-10-28.md): I/O and ObsPy findings, test evidence, and open release/hosting verification.
+- [Development readiness audit, 2026-10-28](audit/2026-10-28.md): I/O and ObsPy findings, test evidence, and open release/hosting verification.
