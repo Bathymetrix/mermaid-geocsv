@@ -19,5 +19,6 @@ establish uniqueness across complete source histories.
 
 Independent original MiniSEED/SAC files remain under the original association
 fixture tree. Temporary writer-generated candidates and their exhaustive
-verification are separate local artifacts. Existing hosted testing data remain
-old-format; local tutorial servers provide these new-schema fixtures.
+verification are separate local artifacts. The separately [published tutorial replay prefixes](hosted/README.md) preserve
+actual schema 1.0.0 writer output for offline tests. Fetch and EarthScope
+tutorials download complete public testing histories directly.

@@ -60,7 +60,7 @@ metadata = records.attrs["geocsv"]
 The numeric prefixes give the recommended execution order. Each tutorial is a
 short, standalone walkthrough with matching Markdown and notebook versions;
 no tutorial depends on another tutorial's state. Local examples use included
-fixtures; fetch demonstrates a temporary local testing collection. EarthScope downloads three P0006 detections,
+fixtures; fetch downloads from the public testing collection. EarthScope downloads three P0006 detections,
 associates their metadata, and compares SAC exports with independent fixtures.
 
 | Operation | Purpose | Guide | Notebook |
@@ -75,7 +75,7 @@ associates their metadata, and compares SAC exports with independent fixtures.
 Hosted GeoCSV collections remain testing only. Testing latest serves the
 P0006/P0045 schema 1.0.0 snapshot `2026-10-30T18:08:32.316000Z`, compatible
 with consumer 0.27.0. Historical old-format snapshots remain unsupported by read.
-The [fetch tutorial](tutorials/01_fetch.md) serves separate new-schema fixtures locally.
+The [fetch tutorial](tutorials/01_fetch.md) downloads from the public testing collection.
 Transport still preserves exact bytes, token release IDs and all fractional digits;
 only the two timestamp time-separator colons become hyphens in paths. Local source
 implementation does not establish a software release or compatible hosted data.

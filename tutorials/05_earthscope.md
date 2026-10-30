@@ -18,8 +18,8 @@ python -m pip install '.[obspy]'
 
 See [installation and notebook setup](../docs/installation.md) if needed. Run the
 Python examples in order from the repository root, `docs/`, or `tutorials/`.
-Metadata are served locally; internet access is required only for the EarthScope
-waveform downloads. Tests replay saved responses offline. Paired
+Internet access is required for the hosted GeoCSV metadata and EarthScope
+waveform downloads. Tests replay saved metadata subsets and responses offline. Paired
 reference files are included in the repository; see their
 [provenance manifest](../data/fixtures/P0006/waveforms/manifest.json) and
 [fixture notes](../data/fixtures/P0006/waveforms/README.md).
@@ -28,80 +28,31 @@ The examples use three isolated DET segments with complete pressure metadata:
 
 | Source record index | Source start UTC | Samples | Recorded download minus original start (µs) |
 | ---: | --- | ---: | ---: |
-| 98 | 2018-06-29T17:07:31.205Z | 4,832 | −6 |
-| 169 | 2018-07-12T06:51:58.293Z | 4,448 | 0 |
-| 239 | 2018-07-15T22:48:15.969Z | 5,440 | −1 |
+| 98 | 2018-06-29T17:07:31.205624Z | 4,832 | −6 |
+| 169 | 2018-07-12T06:51:58.293418Z | 4,448 | 0 |
+| 239 | 2018-07-15T22:48:15.969095Z | 5,440 | −1 |
 
-These are zero-based data-record indices in the local schema subset, whose first 300 records preserve the historical indices.
-The fixture manifest maps every retained row to its historical source record.
-The schema fixture preserves historical millisecond epochs in six-digit notation;
-downloaded MiniSEED retains finer timing. Display width does not establish accuracy. All three associate as `single_segment`. The
-[association tutorial](03_associate.md#3-associate-a-clipped-window) demonstrates
-`anchor_segment` and a [combined window](03_associate.md#4-associate-a-combined-window).
+These are zero-based data-record indices in the complete published P0006
+history, pinned below. The migrated producer supplies six-digit source epochs;
+display width does not establish clock accuracy. All three associate as
+`single_segment`. The [association tutorial](03_associate.md#3-associate-a-clipped-window)
+demonstrates `anchor_segment` and a
+[combined window](03_associate.md#4-associate-a-combined-window).
 
-## 1. Fetch the matching GeoCSV snapshot
+## 1. Download the matching GeoCSV snapshot
 
-Pin the metadata snapshot so the record indices and reference comparisons
-remain reproducible. The metadata below are served by a temporary local
-HTTP server using the new-schema fixtures. Public testing latest now serves
-compatible schema 1.0.0 P0006/P0045 metadata; this example retains its local
-fixtures for reproducibility. No publication is performed. `output_dir=None` keeps the metadata in memory. Passing fetch
-results directly to `read` preserves download provenance.
+Download the published schema 1.0.0 snapshot directly. Pinning keeps the record
+indices and source values reproducible even if testing latest changes.
+`output_dir=None` downloads into memory. Passing fetch results directly to
+`read` preserves download provenance.
 
 ```python
-from pathlib import Path
-from tempfile import mkdtemp
-
-import numpy as np
-from obspy import UTCDateTime, read as read_waveforms
-from obspy.clients.fdsn import Client
-from obspy.io.sac import SACTrace
-
 from mermaid import geocsv
 
-root = Path.cwd()
-if root.name in {"docs", "tutorials"}:
-    root = root.parent
-fixtures = root / "data/fixtures/P0006/waveforms"
-
-from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from tempfile import TemporaryDirectory
-from threading import Thread
-import hashlib
-import json
-
-collection_directory = TemporaryDirectory()
-server_root = Path(collection_directory.name)
-release = "2026-10-29T00:00:00.000000Z"
-component = release.replace(":", "-")
-release_directory = server_root / "releases" / component
-release_directory.mkdir(parents=True)
-entries = []
-for instrument in ["P0006", "P0045"]:
-    name = f"{instrument}.geocsv"
-    content = (root / "data/fixtures/schema-1.0.0" / instrument / name).read_bytes()
-    (release_directory / name).write_bytes(content)
-    entries.append({"instrument_id": instrument, "filename": name,
-                    "size_bytes": len(content), "sha256": hashlib.sha256(content).hexdigest(),
-                    "provenance": {"notes": "Local schema fixture; see its provenance manifest"}})
-manifest = {"release_id": release, "testing_only": True, "files": entries}
-(release_directory / "manifest.json").write_text(json.dumps(manifest))
-(server_root / "latest.json").write_text(json.dumps({
-    "release_id": release, "testing_only": True,
-    "manifest": f"releases/{component}/manifest.json"}))
-handler = partial(SimpleHTTPRequestHandler, directory=str(server_root))
-server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
-server_thread = Thread(target=server.serve_forever, daemon=True)
-server_thread.start()
-base_url = f"http://127.0.0.1:{server.server_port}/"
-
-downloads = geocsv.fetch(
-    "P0006",
-    base_url=base_url,
-    release=release,
-    output_dir=None,
-)
+base_url = "https://bathymetrix.com/geocsv/testing/"
+release = "2026-10-30T18:08:32.316000Z"
+downloads = geocsv.fetch("P0006", base_url=base_url, release=release,
+                         output_dir=None)
 tables = geocsv.read(downloads)
 records = tables[0]
 print(downloads[0].provenance.release_id)
@@ -123,6 +74,13 @@ trace has exactly the original segment's sample count and start within 1 ms.
 No clipping, filling, merging, or resampling is needed.
 
 ```python
+from pathlib import Path
+from tempfile import mkdtemp
+
+from obspy import UTCDateTime, read as read_waveforms
+from obspy.clients.fdsn import Client
+from obspy.io.sac import SACTrace
+
 output_dir = Path(mkdtemp(prefix="mermaid-earthscope-"))
 print(f"Downloads and SAC exports: {output_dir}")
 client = Client("https://service.earthscope.org", timeout=30)
@@ -206,6 +164,14 @@ since equivalent SAC files may split time differently between their reference
 time and relative `b` header.
 
 ```python
+import numpy as np
+
+root = Path.cwd()
+if root.name in {"docs", "tutorials"}:
+    root = root.parent
+fixtures = root / "data/fixtures/P0006/waveforms"
+
+
 def compare_with_fixtures(waveform, exported, basename, start_offset_ns):
     original, = read_waveforms(str(fixtures / f"{basename}.mseed"))
     reference = SACTrace.read(str(fixtures / f"{basename}.sac"))
@@ -252,7 +218,7 @@ original acquisition lineage.
 
 Use a fresh MiniSEED trace for every association. This loop repeats the same
 download, association, export, and independent comparisons for July 12 and
-July 15. Association still uses the fetched schema-converted subset.
+July 15. Association uses the complete downloaded P0006 history.
 
 ```python
 additional_examples = [
@@ -298,14 +264,5 @@ Service behavior: [EarthScope dataselect help](https://service.earthscope.org/fd
 and [ObsPy `get_waveforms`](https://docs.obspy.org/packages/autogen/obspy.clients.fdsn.client.Client.get_waveforms.html).
 The client filename/read boundary and nearby tests were inspected in the
 read-only ObsPy checkout at `50033e1daf95233cd4f30e95a49c37fd50be2ccd`.
-Live downloads and comparisons were checked on 2026-10-27 with the repository's
+Live downloads and comparisons were checked on 2026-10-30 with the repository's
 separately installed ObsPy 1.5.1.
-
-Stop the temporary metadata server after the examples:
-
-```python
-server.shutdown()
-server.server_close()
-server_thread.join()
-collection_directory.cleanup()
-```

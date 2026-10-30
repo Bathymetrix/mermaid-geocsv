@@ -6,6 +6,9 @@ import hashlib
 from pathlib import Path
 import re
 from types import SimpleNamespace
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from threading import Thread
 
 import pytest
 
@@ -15,7 +18,42 @@ from mermaid import geocsv
 ROOT = Path(__file__).resolve().parents[1]
 TUTORIALS = ROOT / "tutorials"
 NAMES = sorted(path.stem for path in TUTORIALS.glob("*.md"))
-TEST_RELEASE = "2026-10-29T00:00:00.000000Z"
+TEST_RELEASE = "2026-10-30T18:08:32.316000Z"
+HOSTED_FIXTURES = ROOT / "data/fixtures/schema-1.0.0/hosted"
+
+
+@pytest.fixture
+def tutorial_collection(tmp_path):
+    """Replay published prefixes without requiring public network availability."""
+    server_root = tmp_path / "server"
+    component = TEST_RELEASE.replace(":", "-")
+    directory = server_root / "releases" / component
+    directory.mkdir(parents=True)
+    entries = []
+    for instrument in ("P0006", "P0045"):
+        name = f"{instrument}.geocsv"
+        content = (HOSTED_FIXTURES / name).read_bytes()
+        (directory / name).write_bytes(content)
+        entries.append({
+            "instrument_id": instrument, "filename": name,
+            "size_bytes": len(content), "sha256": hashlib.sha256(content).hexdigest(),
+            "provenance": {"notes": "Offline replay prefix; not the complete hosted file"},
+        })
+    (directory / "manifest.json").write_text(json.dumps({
+        "release_id": TEST_RELEASE, "testing_only": True, "files": entries}))
+    (server_root / "latest.json").write_text(json.dumps({
+        "release_id": TEST_RELEASE, "testing_only": True,
+        "manifest": f"releases/{component}/manifest.json"}))
+    handler = partial(SimpleHTTPRequestHandler, directory=str(server_root))
+    with ThreadingHTTPServer(("127.0.0.1", 0), handler) as server:
+        thread = Thread(target=server.serve_forever,
+                        kwargs={"poll_interval": 0.01}, daemon=True)
+        thread.start()
+        try:
+            yield f"http://127.0.0.1:{server.server_port}/"
+        finally:
+            server.shutdown()
+            thread.join()
 
 
 def test_public_functions_have_tutorial_pairs():
@@ -65,9 +103,11 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         matplotlib.use("Agg")
     if operation in {"fetch", "earthscope"}:
         real_fetch = geocsv.fetch
+        local_base_url = request.getfixturevalue("tutorial_collection")
 
         def fetch_from_local_collection(*args, **kwargs):
-            assert kwargs["base_url"].startswith("http://127.0.0.1:")
+            assert kwargs["base_url"] == "https://bathymetrix.com/geocsv/testing/"
+            kwargs["base_url"] = local_base_url
             if kwargs.get("output_dir") is not None:
                 assert kwargs["output_dir"] == "geocsv-downloads"
                 kwargs["output_dir"] = tmp_path / "downloads"
@@ -80,6 +120,7 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         fixtures = ROOT / "data/fixtures/P0006/waveforms"
         manifest = json.loads((fixtures / "manifest.json").read_text())
         waveform_requests = []
+        source, = geocsv.read(HOSTED_FIXTURES / "P0006.geocsv")
 
         def replay_waveforms(**kwargs):
             example = manifest["examples"][len(waveform_requests)]
@@ -87,7 +128,13 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
             assert set(kwargs) == set(parameters) | {"filename"}
             for key, value in parameters.items():
                 if key in {"starttime", "endtime"}:
-                    assert kwargs[key].isoformat() == value
+                    from obspy import UTCDateTime
+
+                    row = source.loc[example["source_record_index"]]
+                    start = UTCDateTime(row.Time.isoformat())
+                    last = start + (int(row.SampleCount) - 1) / float(row.SampleRate)
+                    expected = start - 1 if key == "starttime" else last + 1
+                    assert kwargs[key].ns == expected.ns
                 else:
                     assert kwargs[key] == value
             Path(kwargs["filename"]).write_bytes(
@@ -173,3 +220,16 @@ def test_earthscope_tutorial_fixture_provenance():
         content = (fixtures / entry["path"]).read_bytes()
         assert len(content) == entry["size_bytes"]
         assert hashlib.sha256(content).hexdigest() == entry["sha256"]
+
+
+def test_hosted_tutorial_prefix_provenance():
+    manifest = json.loads((HOSTED_FIXTURES / "manifest.json").read_text())
+    assert manifest["release_id"] == TEST_RELEASE
+    for item in manifest["files"]:
+        path = HOSTED_FIXTURES / item["path"]
+        content = path.read_bytes()
+        assert len(content) == item["size_bytes"]
+        assert hashlib.sha256(content).hexdigest() == item["sha256"]
+        frame, = geocsv.read(path)
+        assert frame.index.tolist() == item["source_record_indices"] == list(range(300))
+        assert frame.attrs["geocsv"].created == TEST_RELEASE

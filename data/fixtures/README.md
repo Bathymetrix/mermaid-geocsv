@@ -1,5 +1,7 @@
 # Data fixture roles
 
+- [Published tutorial replay inputs](schema-1.0.0/hosted/README.md): unchanged
+  prefixes of the public schema 1.0.0 histories for offline fetch/EarthScope tests.
 - [Schema 1.0.0](schema-1.0.0/README.md): active typed-reader, association,
   download and tutorial inputs, converted from historical source evidence.
   The manifest records source hashes, row mappings and conversion assumptions.

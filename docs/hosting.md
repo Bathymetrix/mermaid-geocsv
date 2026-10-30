@@ -43,9 +43,9 @@ locally. Publisher report schema 4 names `recording_records`; scientific limits
 and manifest/download fields remain unchanged. Historical consumers and reports
 remain evidence rather than active compatibility paths. Testing latest now
 serves schema 1.0.0 P0006/P0045 metadata compatible with consumer 0.27.0.
-Fetch/read tutorial examples retain temporary local schema-fixture servers
-for reproducibility independent of public hosting. The Worker is
-schema-independent; no rewrite or deployment is needed for payload migration.
+The fetch and EarthScope tutorials download published testing metadata directly.
+Ordinary tests replay byte-preserving published prefixes over loopback HTTP.
+The Worker is schema-independent; no rewrite or deployment is needed for payload migration.
 Candidate creation and validation do not authorize upload, activation or release.
 
 ## Current phase: testing only
