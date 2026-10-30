@@ -121,8 +121,9 @@ tests do not require public hosting.
 
 ## Payload compatibility during schema migration
 
-Consumer 0.27.0 reads only MERMAID schema 1.0.0. Existing hosted testing bytes
-remain old-format; successful exact-byte retrieval does not make them parseable.
+Consumer 0.27.0 reads only MERMAID schema 1.0.0. Testing latest serves the
+compatible P0006/P0045 snapshot `2026-10-30T18:08:32.316000Z`. Historical
+old-format snapshots remain readable only as exact bytes through fetch, not read.
 The [fetch tutorial](../tutorials/01_fetch.md) runs against a local fixture server.
 Transport continues to preserve token IDs, exact bytes, literal release IDs and
 all fractional digits. No encoded aliases or automatic fallback are supported.

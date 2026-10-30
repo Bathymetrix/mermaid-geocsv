@@ -72,8 +72,9 @@ associates their metadata, and compares SAC exports with independent fixtures.
 | EarthScope workflow | Download P0006 waveforms, associate metadata, and verify SAC exports. | [05_earthscope.md](tutorials/05_earthscope.md) | [05_earthscope.ipynb](tutorials/05_earthscope.ipynb) |
 | Plot and analyze records | Use pandas and Matplotlib downstream. | [06_plotting.md](tutorials/06_plotting.md) | [06_plotting.ipynb](tutorials/06_plotting.ipynb) |
 
-Hosted GeoCSV collections remain testing only and contain old-format payloads.
-Consumer 0.27.0 requires new schema 1.0.0 data; it cannot parse those hosted files.
+Hosted GeoCSV collections remain testing only. Testing latest serves the
+P0006/P0045 schema 1.0.0 snapshot `2026-10-30T18:08:32.316000Z`, compatible
+with consumer 0.27.0. Historical old-format snapshots remain unsupported by read.
 The [fetch tutorial](tutorials/01_fetch.md) serves separate new-schema fixtures locally.
 Transport still preserves exact bytes, token release IDs and all fractional digits;
 only the two timestamp time-separator colons become hyphens in paths. Local source

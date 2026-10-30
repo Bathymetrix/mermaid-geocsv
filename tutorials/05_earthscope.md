@@ -43,8 +43,9 @@ downloaded MiniSEED retains finer timing. Display width does not establish accur
 
 Pin the metadata snapshot so the record indices and reference comparisons
 remain reproducible. The metadata below are served by a temporary local
-HTTP server using the new-schema fixtures. Existing hosted metadata are old-format
-and cannot be parsed by the new-only reader. No publication is performed. `output_dir=None` keeps the metadata in memory. Passing fetch
+HTTP server using the new-schema fixtures. Public testing latest now serves
+compatible schema 1.0.0 P0006/P0045 metadata; this example retains its local
+fixtures for reproducibility. No publication is performed. `output_dir=None` keeps the metadata in memory. Passing fetch
 results directly to `read` preserves download provenance.
 
 ```python

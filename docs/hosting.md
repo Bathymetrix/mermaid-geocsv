@@ -22,8 +22,9 @@ Current producer source is automaid v4.6.2. The initial schema implementation
 was v4.6.0; subsequent v4.6.1 correction-field rounding and v4.6.2 per-record
 read-back checks are documented in [the clock matrix](../../automaid/docs/clock-timing-matrix.md).
 The canonical corpus was regenerated on 2026-10-30. Earlier acceptance reports
-do not accept these new bytes; fresh local evidence is required. Hosted
-old-format payloads and production inactivity are unchanged.
+do not accept these new bytes; fresh local evidence is required. The
+P0006/P0045 schema 1.0.0 testing snapshot was separately authorized and
+published on 2026-10-30. Production remains inactive.
 
 Fresh regenerated-corpus evidence is recorded in [the 2026-10-30 validation findings](../../mermaid-publisher/docs/geocsv/regenerated-corpus-validation.md):
 43,365/43,365 pairs passed report schema 4 and its acceptance gate. This local
@@ -40,22 +41,22 @@ limits, report schema 4 and the manifest/download protocol are unchanged.
 Automaid v4.6.0, consumer 0.27.0 and publisher 0.4.0 implement schema 1.0.0
 locally. Publisher report schema 4 names `recording_records`; scientific limits
 and manifest/download fields remain unchanged. Historical consumers and reports
-remain evidence rather than active compatibility paths. Existing hosted payloads
-are old-format and incompatible with the new-only reader. Fetch/read tutorial
-examples therefore use temporary local schema-fixture servers. The Worker is
+remain evidence rather than active compatibility paths. Testing latest now
+serves schema 1.0.0 P0006/P0045 metadata compatible with consumer 0.27.0.
+Fetch/read tutorial examples retain temporary local schema-fixture servers
+for reproducibility independent of public hosting. The Worker is
 schema-independent; no rewrite or deployment is needed for payload migration.
 Candidate creation and validation do not authorize upload, activation or release.
 
 ## Current phase: testing only
 
 The recorded hosted testing collection is
-`https://bathymetrix.com/geocsv/testing/`. Its P0006/P0045 snapshot
-`2026-10-21T22:48:33.277Z` was first published on 2026-10-26 and replaced with
-hyphenated paths on 2026-10-28. Testing latest selects that snapshot;
-production latest remains absent in the recorded deployment evidence.
-These are recorded deployment observations, not a fresh live check.
-Current receipts and scientific results belong in the
-[publisher findings](../../mermaid-publisher/docs/geocsv/schema3-findings.md).
+`https://bathymetrix.com/geocsv/testing/`. Testing latest selects P0006/P0045
+snapshot `2026-10-30T18:08:32.316000Z`, published with schema 1.0.0 on
+2026-10-30 after fresh acceptance of all 3,292 original pairs. Public
+fetch/read/associate checks passed and production latest returned 404.
+The prior snapshot remains unchanged. Receipt and verification evidence are in
+[the publisher findings](../../mermaid-publisher/docs/geocsv/schema1-testing-publication.md).
 
 All hosted data remain testing only, including full-corpus tests. Keep
 `testing_only: true`, isolated testing paths and pointers, and public testing

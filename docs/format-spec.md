@@ -2,8 +2,9 @@
 
 Status: locally implemented migration contract, 2026-10-29. Automaid v4.6.0
 and mermaid-geocsv 0.27.0 implement this profile. Local verification is recorded
-separately; existing hosted testing bytes remain old-format. No release or
-deployment is implied.
+separately. The P0006/P0045 schema 1.0.0 testing snapshot was published on
+2026-10-30; see [publication evidence](../../mermaid-publisher/docs/geocsv/schema1-testing-publication.md).
+Production remains inactive; the payload publication required no Worker deployment.
 
 This is a controlled MERMAID GeoCSV profile, not a generic GeoCSV specification.
 Legacy MERMAID formats are unsupported: no aliases, alternate missing markers,
