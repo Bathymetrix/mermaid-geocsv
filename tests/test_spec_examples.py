@@ -15,7 +15,12 @@ def test_complete_specification_example_matches_fixture():
     assert frame.MethodIdentifier.str.split(':').str[:2].astype(str).nunique() == 5
 
 
-@pytest.mark.parametrize('path', sorted((ROOT / 'data/fixtures/GeoCSV_v2.0.4_examples').glob('*.geocsv')) + [ROOT / 'data/fixtures/P0006/P0006.geocsv'])
+REFERENCE_EXAMPLES = ROOT / 'docs/references/geocsv-v2.0.4-examples'
+
+
+@pytest.mark.parametrize('path', [REFERENCE_EXAMPLES / name for name in (
+    'unavco.geocsv', 'iris.geocsv', 'minimal_iris.geocsv', 'event.geocsv', 'r2r.geocsv',
+)] + [ROOT / 'data/fixtures/P0006/P0006.geocsv'])
 def test_historical_and_generic_payloads_are_explicitly_unsupported(path):
     with pytest.raises(geocsv.GeoCSVError, match='schema'):
         geocsv.read(path)

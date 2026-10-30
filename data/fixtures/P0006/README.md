@@ -1,7 +1,12 @@
 # P0006 GeoCSV fixture
 
-This is the single shared, complete P0006 GeoCSV snapshot used by parser,
-fetch, plotting, and EarthScope-response tests and examples. It was copied
+This complete pre-migration snapshot is retained as historical source evidence.
+It is unsupported by the current reader. Active tests and tutorials parse the
+separate [schema 1.0.0 fixture](../schema-1.0.0/P0006/P0006.geocsv);
+its [manifest](../schema-1.0.0/manifest.json) records the mapping and original
+hash. The original bytes and provenance below remain unchanged.
+
+It was copied
 verbatim on 2026-10-21 from the read-only source
 `$MERMAID/processed/452.020-P-06/geo_DET_REQ.csv`; only the filename differs.
 The original header identifies automaid v4.5.14 and creation time
@@ -14,14 +19,12 @@ The original header identifies automaid v4.5.14 and creation time
 All 828 event records have latitude/longitude; all lack elevation, and 32 lack
 water pressure. Complete SNCL/start time is unique among these event records;
 this is snapshot evidence, not a general association uniqueness guarantee.
-Measured sample rates are preserved as emitted by the current GeoCSV writer.
+Measured sample rates are preserved as emitted by the historical writer.
 
-The [P0045 snapshot](../P0045/README.md) supplies the second instrument for
-fetch selection and merged-window examples. Download tests and the fetch
-tutorial construct manifests dynamically and serve these exact repository
-bytes over loopback HTTP. They do not depend on a website checkout, public
-hosting, or equality with an older website test release. These fixtures are
-scientific metadata examples, not a published scientific data release.
+The [P0045 snapshot](../P0045/README.md) supplies historical context for the
+merged-window example. Current download tests and tutorials serve the separate
+schema fixtures over loopback HTTP; they do not parse these historical bytes
+or depend on public hosting. Fixtures are not a scientific data release.
 
 The [waveform fixtures](waveforms/README.md) contain three original
 MiniSEED/SAC pairs and their saved EarthScope responses for the complete

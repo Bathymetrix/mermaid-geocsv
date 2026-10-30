@@ -19,8 +19,11 @@ comments, units and schema/creation provenance. Only empty decoded cells are
 missing; two literal Location spaces denote known blank. Finite signed gauge
 measurements remain unchanged. Recording Elevation must explicitly supply zero
 metres; coordinate elevation and SAC `stel` use that source value.
-Legacy MERMAID and generic GeoCSV formats are unsupported. Scientific analysis
-stays downstream.
+Legacy MERMAID and generic GeoCSV formats are unsupported. General GeoCSV
+[specification examples](docs/references/geocsv-v2.0.4-examples/README.md) are
+preserved as reference material. The [fixture inventory](data/fixtures/README.md)
+distinguishes active schema inputs from frozen historical evidence. Scientific
+analysis stays downstream.
 
 ## Install
 

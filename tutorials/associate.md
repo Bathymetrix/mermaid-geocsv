@@ -56,7 +56,8 @@ association requires fresh `stats.geocsv` and `stats.coordinates` destinations.
 
 These small GeoCSV subsets are demonstration fixtures. Use complete histories
 for research; omitted records could affect uniqueness. See the
-[fixture provenance](../data/fixtures/association/README.md).
+[schema conversion and source mapping](../data/fixtures/schema-1.0.0/README.md)
+and [original waveform provenance](../data/fixtures/association/README.md).
 
 ## 2. Associate a Stream
 

@@ -18,14 +18,18 @@ a later service response need not have identical bytes or segmentation.
 
 The source metadata is the existing tracked full
 [`P0006.geocsv`](../../../../data/fixtures/P0006/P0006.geocsv), refreshed
-verbatim from the current processed automaid v4.5.14 export on 2026-10-21,
-with its source path and hash retained in the manifest. No subset is created.
+verbatim from the then-current processed automaid v4.5.14 export on 2026-10-21,
+with its source path and hash retained in the manifest. These historical bytes
+remain unchanged and are not parsed by the current reader. Current tests use
+the separate [schema subset](../../../../data/fixtures/schema-1.0.0/earthscope/P0006.geocsv),
+whose [manifest](../../../../data/fixtures/schema-1.0.0/manifest.json) records
+source mappings and representation changes. It preserves indices 237 and 238;
+physical line numbers refer to the new file when association reports them.
 Rows 237 and 238 (zero-based
 file-wide records, physical starting lines 247 and 248) describe overlapping
 DET and REQ segments. Row 236 is nearby pressure context; row 239 is the next
-event. Full-history matching, including competing rows, runs in the test.
-The same current snapshot supplies the parser and download examples; no older
-GeoCSV export is required for this response test.
+event. The current test matches within the retained schema subset, including competing
+rows. It does not establish uniqueness across omitted full-history records.
 
 | Original | Start UTC | Last sample UTC | Samples | Quality |
 | --- | --- | --- | ---: | --- |

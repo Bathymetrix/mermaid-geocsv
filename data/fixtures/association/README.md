@@ -1,15 +1,26 @@
-# Rebuilt processed waveform association fixtures
+# Processed waveform association fixtures
+
+The original GeoCSV subsets and optional complete histories below are frozen
+pre-migration evidence, unsupported by the current reader. Active association
+tests use separate [schema 1.0.0 subsets](../schema-1.0.0/README.md) together
+with the unchanged waveform pairs here. Their manifest records the conversion
+and source-index mappings; the original manifest continues to describe only
+original bytes. Scientific values introduced for schema fixtures are identified
+in the schema fixture notes. These subsets do not establish full-history
+uniqueness. Historical counts and checks below describe the recorded snapshot,
+not the regenerated canonical corpus.
 
 Waveform pairs were copied on 2026-10-13 from `$MERMAID/processed/`
 (resolved source root in `manifest.json`). That source is read-only. All 18
-MiniSEED/SAC pairs were verified byte-identical to the current processed copies
+MiniSEED/SAC pairs were verified byte-identical to the then-current processed copies
 on 2026-10-21. Their automaid v4.5.11 waveform headers remain unchanged.
 The 14 tracked `association_subset.geocsv` files and optional complete local
-histories were replaced with the current automaid v4.5.14 GeoCSV snapshot,
+histories were replaced with the then-current automaid v4.5.14 GeoCSV snapshot,
 created `2026-10-21T22:48:33.277Z`. The subsets contain
 137 records in 32,571 bytes in total, instead of the 159,852,063 bytes of full
-histories. No older GeoCSV version is retained. All association tests run from distributed files when ObsPy is
-installed; no ignored history is required.
+histories. These original GeoCSV bytes remain unchanged after migration. All
+association tests run from distributed files when ObsPy is installed; no
+ignored history is required.
 
 MiniSEED fixtures are association inputs. SAC fixtures are independent output
 references only: read them separately with ObsPy, then compare their inherited
@@ -22,7 +33,7 @@ Trace/Stream writer for serialization; see the
 [SAC writing tutorial](../../../tutorials/write-sac.md).
 
 Complete `geo_DET_REQ.csv` histories are verbatim, local, Git-ignored corpus
-references; ordinary tests use tracked subsets. See the
+references; ordinary tests use separate schema 1.0.0 subsets. See the
 [maintenance guide](../../../scripts/fixtures/README.md#restore-complete-local-histories)
 for restoration and checks. A newer snapshot requires a deliberate provenance
 update; neither tests nor maintenance commands modify protected source data.
@@ -59,13 +70,15 @@ history index. Each waveform separately records its expected
 `original_source_record_index` and `subset_record_index`, determined by a
 direct full-history CSV scan without calling the associator.
 
-The reader's `source_record_index` and `metadata.source_path` refer to the
-**subset actually read**, not the original history. Its preserved `#created`
-comment dates the original source export. Use the manifest mapping and full
+For the active schema fixtures, the reader's `source_record_index` and
+`metadata.source_path` refer to the **subset actually read**, not the original
+history. The schema fixture's `#created` identifies the fixture conversion;
+its manifest preserves the original source export identity. Use the manifest mapping and full
 source hash to trace back to that export; never relabel subset indices or
 source paths as complete-history provenance. Subsets do not prove uniqueness
-against omitted rows. `check_full_histories.py` provides that separate check
-for the 18 sampled waveforms.
+against omitted rows. `check_full_histories.py` provides a separate check
+for the 18 sampled waveforms against explicitly supplied new-schema histories,
+after verifying the original frozen extraction bytes.
 
 | Combination | Source MiniSEED files | Paired basenames | Selected pairs |
 | --- | ---: | ---: | ---: |
@@ -104,8 +117,9 @@ original sample count, and the 0.00001 Hz rate check. The largest
 sampled GeoCSV/MiniSEED rate difference is below 0.000002 Hz. Tracked subset
 GeoCSV event rows carry only Q/D values; independent DET/REQ labels are absent
 from GeoCSV, so code-domain validation alone cannot prove stream classification
-for unsampled events. The optional full-history check also confirms unique
+for unsampled events. Historical full-history checks confirmed unique
 matches for all 18 sampled waveforms in the recorded complete histories.
+Current full-history verification requires a separate new-schema source root.
 
 The non-20-Hz DET.WLT2 sample uses `MH.P0030.10.MDH` and Q. RAW requested
 products use location 10 and D. The SAC export tests compare geographic/depth

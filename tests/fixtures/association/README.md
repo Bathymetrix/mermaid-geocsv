@@ -1,4 +1,9 @@
-# Synthetic association fixture
+# Historical synthetic association fixtures
+
+These pre-migration files are retained unchanged as historical test-design
+evidence and are unsupported by the current reader. Active synthetic tests
+use the separate [schema 1.0.0 fixtures](../schema-1.0.0/README.md). The
+descriptions below record the original fixtures and their former test purpose.
 
 Every station, time, coordinate, and sample count in `synthetic.geocsv` was
 invented for testing. No source MERMAID history was cut or searched to choose
@@ -9,7 +14,7 @@ and identity, exercising event-category selection.
 
 Source times deliberately mix three and nine fractional digits. Coordinates
 include complete pairs, either component missing, and both missing. This
-tracked fixture supplies reproducible CI unit coverage alongside the
+fixture formerly supplied CI unit coverage alongside the
 [tracked real-data subsets](../../../data/fixtures/association/README.md).
 Full real histories remain unchanged for separate local corpus checks.
 

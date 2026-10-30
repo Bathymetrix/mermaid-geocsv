@@ -82,9 +82,10 @@ representing the adopted sea-level reference rather than the submerged sensor's
 physical elevation. Other row kinds keep Elevation absent. The reader preserves
 both the explicit zero and absence; it never supplies a default. Association's
 approved elevation projections use the Recording source value instead of
-inventing zero. Remove the existing hard-coded zero for SAC `stel` and coordinate
-elevation; missing required source Elevation raises. This replaces the current
-missing Recording Elevation, not the writer's scientific depth calculation.
+inventing zero. The former hard-coded zero for SAC `stel` and coordinate
+elevation is removed; missing required source Elevation raises. Explicit
+Recording Elevation replaces the former missing field. The writer's scientific
+depth calculation is unchanged.
 
 Repository-wide rule: never substitute defaults for missing, unknown, invalid
 or unavailable source metadata in parsing, association, projections or

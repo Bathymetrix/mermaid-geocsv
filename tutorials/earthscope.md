@@ -18,7 +18,8 @@ python -m pip install '.[obspy]'
 
 See [installation and notebook setup](../docs/installation.md) if needed. Run the
 Python examples in order from the repository root, `docs/`, or `tutorials/`.
-Internet access is required for the metadata and waveform downloads. Paired
+Metadata are served locally; internet access is required only for the EarthScope
+waveform downloads. Tests replay saved responses offline. Paired
 reference files are included in the repository; see their
 [provenance manifest](../data/fixtures/P0006/waveforms/manifest.json) and
 [fixture notes](../data/fixtures/P0006/waveforms/README.md).

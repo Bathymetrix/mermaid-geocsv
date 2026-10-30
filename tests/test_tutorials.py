@@ -2,12 +2,9 @@
 
 import json
 import inspect
-from functools import partial
 import hashlib
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import re
-from threading import Thread
 from types import SimpleNamespace
 
 import pytest
@@ -19,41 +16,6 @@ ROOT = Path(__file__).resolve().parents[1]
 TUTORIALS = ROOT / "tutorials"
 NAMES = sorted(path.stem for path in TUTORIALS.glob("*.md"))
 TEST_RELEASE = "2026-10-29T00:00:00.000000Z"
-
-
-@pytest.fixture
-def tutorial_collection(tmp_path):
-    """Keep hosted tutorial examples runnable without the public service."""
-    server_root = tmp_path / "server"
-    release_directory = server_root / "releases" / TEST_RELEASE.replace(":", "-")
-    release_directory.mkdir(parents=True)
-    entries = []
-    for instrument in ("P0006", "P0045"):
-        source = ROOT / f"data/fixtures/schema-1.0.0/{instrument}/{instrument}.geocsv"
-        content = source.read_bytes()
-        (release_directory / source.name).write_bytes(content)
-        entries.append({
-            "instrument_id": instrument, "filename": source.name,
-            "size_bytes": len(content),
-            "sha256": hashlib.sha256(content).hexdigest(),
-            "provenance": {"notes": "Unmodified tracked fixture"},
-        })
-    manifest = {"release_id": TEST_RELEASE, "testing_only": True, "files": entries}
-    (release_directory / "manifest.json").write_text(json.dumps(manifest))
-    (server_root / "latest.json").write_text(json.dumps({
-        "release_id": TEST_RELEASE, "testing_only": True,
-        "manifest": "releases/2026-10-21T22-48-33.277Z/manifest.json",
-    }))
-    handler = partial(SimpleHTTPRequestHandler, directory=str(server_root))
-    with ThreadingHTTPServer(("127.0.0.1", 0), handler) as server:
-        thread = Thread(target=server.serve_forever,
-                        kwargs={"poll_interval": 0.01}, daemon=True)
-        thread.start()
-        try:
-            yield f"http://127.0.0.1:{server.server_port}/"
-        finally:
-            server.shutdown()
-            thread.join()
 
 
 def test_public_functions_have_tutorial_pairs():

@@ -26,7 +26,7 @@ def collection(tmp_path):
     directory = root / "releases" / "test-001"
     directory.mkdir(parents=True)
     entries = []
-    # Two real instruments plus an invented entry for multiple-dataset parsing.
+    # Two schema-converted instrument subsets plus an invented single-table file.
     # Keep the small synthetic entry second for the partial-batch failure test.
     for instrument, source in [("P0006", REAL_FIXTURES / "P0006/P0006.geocsv"),
                                ("P_TEST", FIXTURES / "schema-1.0.0/typed.geocsv"),

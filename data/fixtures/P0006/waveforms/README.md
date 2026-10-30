@@ -28,10 +28,12 @@ carry quality M and originals carry Q. Their identity, rate, count, and samples
 agree exactly. Download-minus-original start differences are −6 µs, 0 µs, and
 −1 µs for records 98, 169, and 239 respectively. The manifest records them in
 integer nanoseconds, and the tutorial checks them explicitly without changing
-any timing. Their cause is not established. All three associate uniquely as
-`single_segment` using the complete shared [P0006 GeoCSV](../README.md). The manifest retains that
-file's path/hash and the pinned testing snapshot used by the tutorial; it does
-not duplicate the complete history or create a subset.
+any timing. Their cause is not established. Current tests associate all three as `single_segment` using the separate
+[schema subset](../../schema-1.0.0/P0006/P0006.geocsv), which retains these
+record indices. Its [manifest](../../schema-1.0.0/manifest.json) records the
+source mapping. The waveform manifest preserves the historical complete
+[P0006 GeoCSV](../README.md) path/hash and former hosted snapshot as provenance;
+that old-format file is not parsed by the current reader.
 
 SAC files are independent output comparison references, never association
 inputs. Their samples agree with the downloaded counts at SAC float32

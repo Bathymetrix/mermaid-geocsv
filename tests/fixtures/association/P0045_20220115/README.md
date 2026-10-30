@@ -24,12 +24,16 @@ segments span only about 31 minutes 53 seconds. Earlier RAW data has location
 `10` and a different sample rate. Do not bridge gaps, relabel locations, or
 resample simply to obtain a longer example.
 
-The association source is the single shared
+The historical metadata source is the preserved
 [`P0045.geocsv`](../../../../data/fixtures/P0045/P0045.geocsv) fixture,
-refreshed verbatim from the current processed automaid v4.5.14 export on
+copied verbatim from the then-current processed automaid v4.5.14 export on
 2026-10-21. Rows 101433 and 101434 are
 zero-based **data-record indices in that full file**, not subset indices.
-Its source timestamp, rate, count, and position values are never edited.
+Its original bytes remain unchanged and are not parsed by the current reader.
+Current tests and the tutorial use the separate [schema subset](../../../../data/fixtures/schema-1.0.0/P0045/P0045.geocsv),
+where those rows map to indices 13 and 14. The [schema manifest](../../../../data/fixtures/schema-1.0.0/manifest.json)
+records representation changes and explicit fixture elevation. The subset does
+not establish uniqueness across the complete historical file.
 
 The [association tutorial](../../../../tutorials/associate.md) merges the
 loaded originals with ObsPy `method=1`, `interpolation_samples=0`, and
@@ -43,7 +47,7 @@ a statement that the original grids were identical.
 Strict association rejects the changed count.
 `allow_first_segment=True` succeeds without a time-tolerance override:
 source ranges `[0, 9696)` and `[9683, 45683)` uniquely fit within half a
-waveform interval, approximately 24.991 ms. It attaches row 101433 with type
+waveform interval, approximately 24.991 ms. It attaches schema-subset row 13 (historical row 101433) with type
 `anchor_segment` without changing the source row or merged samples. Strict start
 matching, containing-anchor uniqueness, counts, rates and full coverage still
 apply. No clock accuracy or acquisition reconstruction is inferred.

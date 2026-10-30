@@ -1,7 +1,10 @@
 # Plot GeoCSV measurements
 
 Read the included P0006 data and make two plots with pandas and Matplotlib.
-These examples run offline and perform analysis after parsing.
+These examples run offline and perform analysis after parsing. The
+[schema-converted subset](../data/fixtures/schema-1.0.0/README.md) retains
+selected historical records, including 12 GPS fixes for 2019; these plots do
+not represent a complete instrument history.
 
 Companions: [Markdown](plotting.md) · [Notebook](plotting.ipynb).
 

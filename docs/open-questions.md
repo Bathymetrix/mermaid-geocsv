@@ -10,7 +10,7 @@ does not settle every MERMAID convention or interoperability question.
 
 Schema recognition, fixed field-list grammar, dataset-wide comments, empty-cell
 missingness, two-space known blank Location and six-digit UTC notation are
-settled by [schema 1.0.0](format-spec.md). Historical generic GeoCSV examples
+settled by [schema 1.0.0](format-spec.md). [Generic GeoCSV specification examples](references/geocsv-v2.0.4-examples/README.md)
 remain source evidence, without an active reader compatibility requirement.
 Finite signed pressure-sensor measurements preserve gauge error; Recording
 pressure and crossing proxies remain nonnegative. No source values are filled.
