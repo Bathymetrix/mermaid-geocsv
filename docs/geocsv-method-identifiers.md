@@ -5,7 +5,9 @@
 Paired design note: [automaid](../../automaid/docs/geocsv-method-identifiers.md). Keep both notes synchronized. Execution plan: [four-repository migration](../../automaid/docs/geocsv-migration-plan.md).
 
 Status: schema 1.0.0 implemented locally on 2026-10-29 by automaid v4.6.0
-and mermaid-geocsv 0.27.0; software release and compatible hosted data remain separate. Legacy MERMAID GeoCSV versions are unsupported: no legacy
+and mermaid-geocsv 0.27.0. Current producer source is v4.6.2; v4.6.1 added
+MiniSEED correction rounding and v4.6.2 added per-record read-back validation.
+Software release and compatible hosted data remain separate. Legacy MERMAID GeoCSV versions are unsupported: no legacy
 reader/writer path, aliases or automatic fallback. The reader supports this
 controlled MERMAID profile, not arbitrary GeoCSV dialects or schemas.
 
@@ -174,8 +176,17 @@ to even. Non-finite values and rounded ticks outside the signed 32-bit range
 raise before any file bytes change. In the normal write path, timestamps are
 already corrected and the applied bit prevents reapplication. The stored field
 is correction history; its quantization does not round waveform timestamps or
-the GeoCSV value. Existing processed waveforms and migration candidates remain
-unchanged; their original correction fields retain the earlier serialization.
+the GeoCSV value. The follow-up did not rewrite existing processed waveforms or migration
+candidates; their original correction fields retained the earlier serialization.
+The canonical tree was subsequently regenerated with v4.6.2 on 2026-10-30;
+historical candidates remain unchanged.
+
+Automaid v4.6.2 independently reads back every record after writing and requires
+the applied bit and expected rounded tick count, including zero. A mismatch
+raises with record and byte-offset context; writes are not rolled back. This
+adds verification without changing the clock model, waveform timestamps or
+GeoCSV values. The big-endian and uniform-record limitations remain; see the
+[clock matrix](../../automaid/docs/clock-timing-matrix.md).
 
 The separate record-offset regression was fixed in automaid commit `c16bf70`
 by restoring advancement to the next record. Verification of the current helper

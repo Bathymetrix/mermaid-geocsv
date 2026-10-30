@@ -273,10 +273,11 @@ publisher owns final export verification.
 
 ## Timing evidence
 
-The inspected automaid writer renders corrected waveform starts as
-`str(starttime)[:23] + 'Z'`, retaining milliseconds. Association must not apply
-`TimeCorrectionApplied` again. The default start tolerance accommodates the checked
-histories' sub-millisecond serialization differences. The
+The schema 1.0.0 automaid writer serializes already corrected waveform starts
+as UTC with six fractional digits, rounding exact microsecond ties to even.
+Historical pre-migration output retained milliseconds. Association must not apply
+`TimeCorrectionApplied` again. The unchanged default start tolerance retains its
+historical fixture basis; the new spelling does not justify tightening it. The
 [fixture evidence](../data/fixtures/association/README.md#tolerance-evidence)
 records the bounded sample behind that choice; it is not a clock-accuracy
 specification. The MERMAID timing convention gives stored digits finer than

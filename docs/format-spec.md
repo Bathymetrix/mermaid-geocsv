@@ -247,7 +247,10 @@ clock-offset observation. Recording TimeCorrectionApplied is required. GPS,
 pressure and crossing times do not acquire the recording clock correction.
 The [clock matrix](../../automaid/docs/clock-timing-matrix.md) records source
 and MiniSEED evidence. MiniSEED fixed-header quantization is outside this
-serialization change and remains unchanged.
+serialization change. The separate automaid v4.6.1 follow-up rounds correction
+fields to decimal ties-to-even 0.0001-second ticks; v4.6.2 checks the stored
+correction and applied bit in every record. Neither changes waveform timestamps
+or the clock model; see the clock matrix for verification and limitations.
 
 ## Pressure, elevation and crossings
 
