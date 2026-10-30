@@ -6,7 +6,7 @@ These examples run offline and perform analysis after parsing. The
 selected historical records, including 12 GPS fixes for 2019; these plots do
 not represent a complete instrument history.
 
-Companions: [Markdown](plotting.md) · [Notebook](plotting.ipynb).
+Companions: [Markdown](06_plotting.md) · [Notebook](06_plotting.ipynb).
 
 ## Setup
 

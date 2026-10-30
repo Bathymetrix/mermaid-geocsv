@@ -57,23 +57,24 @@ metadata = records.attrs["geocsv"]
 
 ## API and tutorials
 
-Each tutorial is a short, standalone walkthrough with matching Markdown and
-notebook versions. Local examples use included fixtures; fetch demonstrates
-a temporary local testing collection. EarthScope downloads three P0006 detections,
+The numeric prefixes give the recommended execution order. Each tutorial is a
+short, standalone walkthrough with matching Markdown and notebook versions;
+no tutorial depends on another tutorial's state. Local examples use included
+fixtures; fetch demonstrates a temporary local testing collection. EarthScope downloads three P0006 detections,
 associates their metadata, and compares SAC exports with independent fixtures.
 
 | Operation | Purpose | Guide | Notebook |
 | --- | --- | --- | --- |
-| `geocsv.fetch(...)` | Retrieve verified GeoCSV files to disk or memory. | [fetch.md](tutorials/fetch.md) | [fetch.ipynb](tutorials/fetch.ipynb) |
-| `geocsv.read(...)` | Parse local paths, bytes, or fetch results into dataset tables. | [read.md](tutorials/read.md) | [read.ipynb](tutorials/read.ipynb) |
-| `geocsv.associate(...)` | Attach uniquely matched metadata and coordinates to ObsPy waveforms in place. | [associate.md](tutorials/associate.md) | [associate.ipynb](tutorials/associate.ipynb) |
-| SAC headers and ObsPy writing | Use `associate(..., create_sac_header=True)`, then ObsPy `Trace.write` or `Stream.write`. | [write-sac.md](tutorials/write-sac.md) | [write-sac.ipynb](tutorials/write-sac.ipynb) |
-| EarthScope workflow | Download P0006 waveforms, associate metadata, and verify SAC exports. | [earthscope.md](tutorials/earthscope.md) | [earthscope.ipynb](tutorials/earthscope.ipynb) |
-| Plot and analyze records | Use pandas and Matplotlib downstream. | [plotting.md](tutorials/plotting.md) | [plotting.ipynb](tutorials/plotting.ipynb) |
+| `geocsv.fetch(...)` | Retrieve verified GeoCSV files to disk or memory. | [01_fetch.md](tutorials/01_fetch.md) | [01_fetch.ipynb](tutorials/01_fetch.ipynb) |
+| `geocsv.read(...)` | Parse local paths, bytes, or fetch results into dataset tables. | [02_read.md](tutorials/02_read.md) | [02_read.ipynb](tutorials/02_read.ipynb) |
+| `geocsv.associate(...)` | Attach uniquely matched metadata and coordinates to ObsPy waveforms in place. | [03_associate.md](tutorials/03_associate.md) | [03_associate.ipynb](tutorials/03_associate.ipynb) |
+| SAC headers and ObsPy writing | Use `associate(..., create_sac_header=True)`, then ObsPy `Trace.write` or `Stream.write`. | [04_write-sac.md](tutorials/04_write-sac.md) | [04_write-sac.ipynb](tutorials/04_write-sac.ipynb) |
+| EarthScope workflow | Download P0006 waveforms, associate metadata, and verify SAC exports. | [05_earthscope.md](tutorials/05_earthscope.md) | [05_earthscope.ipynb](tutorials/05_earthscope.ipynb) |
+| Plot and analyze records | Use pandas and Matplotlib downstream. | [06_plotting.md](tutorials/06_plotting.md) | [06_plotting.ipynb](tutorials/06_plotting.ipynb) |
 
 Hosted GeoCSV collections remain testing only and contain old-format payloads.
 Consumer 0.27.0 requires new schema 1.0.0 data; it cannot parse those hosted files.
-The [fetch tutorial](tutorials/fetch.md) serves separate new-schema fixtures locally.
+The [fetch tutorial](tutorials/01_fetch.md) serves separate new-schema fixtures locally.
 Transport still preserves exact bytes, token release IDs and all fractional digits;
 only the two timestamp time-separator colons become hyphens in paths. Local source
 implementation does not establish a software release or compatible hosted data.

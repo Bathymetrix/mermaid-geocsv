@@ -4,7 +4,7 @@
 and MERMAID receiver (station) coordinates to an ObsPy Trace or Stream.
 The source subject `Recording` identifies an original contiguous waveform segment. These examples use included MiniSEED and GeoCSV fixtures and run offline.
 
-Companions: [Markdown](associate.md) · [Notebook](associate.ipynb).
+Companions: [Markdown](03_associate.md) · [Notebook](03_associate.ipynb).
 
 ## Setup
 
@@ -113,5 +113,5 @@ The final window must have a unique containing anchor and complete source-grid
 coverage. Overlapping ranges count once. Association performs no merge itself.
 
 For optional `create_sac_header=True` and writing with ObsPy, see the
-[SAC tutorial](write-sac.md). Detailed tolerances, report fields, and projection
+[SAC tutorial](04_write-sac.md). Detailed tolerances, report fields, and projection
 rules are in the [association reference](../docs/obspy-association.md).

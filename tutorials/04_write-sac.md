@@ -3,7 +3,7 @@
 Create station location headers with `geocsv.associate`, then write the
 waveform with ObsPy.
 
-Companions: [Markdown](write-sac.md) · [Notebook](write-sac.ipynb).
+Companions: [Markdown](04_write-sac.md) · [Notebook](04_write-sac.ipynb).
 
 ## Setup
 
@@ -83,6 +83,6 @@ with TemporaryDirectory() as directory:
 ```
 
 Associate the final waveform after clipping or merging. Later edits do not
-refresh the headers. See the [association tutorial](associate.md) and the
+refresh the headers. See the [association tutorial](03_associate.md) and the
 [SAC reference](../docs/sac.md) for missing-value rules,
 precision, independent SAC comparisons, and export checks.

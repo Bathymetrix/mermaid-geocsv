@@ -28,7 +28,7 @@ or depend on public hosting. Fixtures are not a scientific data release.
 
 The [waveform fixtures](waveforms/README.md) contain three original
 MiniSEED/SAC pairs and their saved EarthScope responses for the complete
-[EarthScope tutorial](../../../tutorials/earthscope.md). Their separate
+[EarthScope tutorial](../../../tutorials/05_earthscope.md). Their separate
 manifest records request parameters, source paths, and hashes.
 
 The separately tracked P0006 association subset is a verbatim selection from

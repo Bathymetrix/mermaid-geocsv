@@ -7,7 +7,7 @@ Generic GeoCSV and legacy MERMAID files are unsupported. This example uses a
 not newly generated producer output. Its provenance records representation
 changes and the mapping to historical source records.
 
-Companions: [Markdown](read.md) · [Notebook](read.ipynb).
+Companions: [Markdown](02_read.md) · [Notebook](02_read.ipynb).
 
 ## Setup
 
@@ -71,7 +71,7 @@ print(metadata.source_path)
 Keep `metadata` separately if needed later; arbitrary pandas transformations
 and exports may lose `attrs`.
 
-`read` also accepts UTF-8 bytes and results from [fetch](fetch.md). The optional
+`read` also accepts UTF-8 bytes and results from [fetch](01_fetch.md). The optional
 `datetime_timezone` argument converts zoned timestamps to a requested timezone:
 
 ```python
@@ -102,4 +102,4 @@ shortcut is not a general GeoCSV parser for arbitrary multiline content.
 Empty cells remain empty strings in this inspection, rather than the typed
 reader's missing values.
 See the [reader specification](../docs/reader-spec.md) for format and timestamp
-rules, or [plotting](plotting.md) for a quick visualization.
+rules, or [plotting](06_plotting.md) for a quick visualization.

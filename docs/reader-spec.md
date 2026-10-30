@@ -82,5 +82,5 @@ missing/duplicate declarations, wrong columns, malformed CSV and invalid row
 values raise. `GeoCSVFetchError` identifies changed saved downloads. OS errors
 retain their normal meaning. Parsing preserves bytes on disk.
 
-See [read tutorial](../tutorials/read.md), [fetch](fetch.md), [association](obspy-association.md),
+See [read tutorial](../tutorials/02_read.md), [fetch](fetch.md), [association](obspy-association.md),
 and the complete [format specification](format-spec.md).

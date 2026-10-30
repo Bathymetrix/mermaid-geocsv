@@ -5,7 +5,7 @@ with ObsPy, associate each waveform, and save and compare its SAC export with
 independent MiniSEED/SAC fixtures. Start with one detection, then repeat the
 workflow for two more.
 
-Companions: [Markdown](earthscope.md) · [Notebook](earthscope.ipynb).
+Companions: [Markdown](05_earthscope.md) · [Notebook](05_earthscope.ipynb).
 
 ## Setup
 
@@ -36,8 +36,8 @@ These are zero-based data-record indices in the local schema subset, whose first
 The fixture manifest maps every retained row to its historical source record.
 The schema fixture preserves historical millisecond epochs in six-digit notation;
 downloaded MiniSEED retains finer timing. Display width does not establish accuracy. All three associate as `single_segment`. The
-[association tutorial](associate.md#3-associate-a-clipped-window) demonstrates
-`anchor_segment` and a [combined window](associate.md#4-associate-a-combined-window).
+[association tutorial](03_associate.md#3-associate-a-clipped-window) demonstrates
+`anchor_segment` and a [combined window](03_associate.md#4-associate-a-combined-window).
 
 ## 1. Fetch the matching GeoCSV snapshot
 

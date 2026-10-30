@@ -35,7 +35,7 @@ where those rows map to indices 13 and 14. The [schema manifest](../../../../dat
 records representation changes and explicit fixture elevation. The subset does
 not establish uniqueness across the complete historical file.
 
-The [association tutorial](../../../../tutorials/associate.md) merges the
+The [association tutorial](../../../../tutorials/03_associate.md) merges the
 loaded originals with ObsPy `method=1`, `interpolation_samples=0`, and
 `misalignment_threshold=0`. The later trace supplies overlap values. Its start
 falls about 24.8 ms off the first trace's grid and is placed at integer sample

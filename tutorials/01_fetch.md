@@ -6,7 +6,7 @@ These examples use a temporary local testing collection. Existing public
 hosted payloads use the old format and are incompatible with the new-only reader.
 No download example here publishes data or changes a pointer outside its temporary server.
 
-Companions: [Markdown](fetch.md) · [Notebook](fetch.ipynb).
+Companions: [Markdown](01_fetch.md) · [Notebook](01_fetch.ipynb).
 
 ## Setup
 

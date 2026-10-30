@@ -23,7 +23,9 @@ def test_public_functions_have_tutorial_pairs():
         name.replace("_", "-") for name in geocsv.__all__
         if inspect.isfunction(getattr(geocsv, name))
     }
-    assert public_functions <= set(NAMES)
+    assert public_functions <= {name.split("_", 1)[1] for name in NAMES}
+    assert NAMES == ["01_fetch", "02_read", "03_associate", "04_write-sac",
+                     "05_earthscope", "06_plotting"]
     assert set(NAMES) == {path.stem for path in TUTORIALS.glob("*.ipynb")}
 
 
@@ -55,12 +57,13 @@ def test_markdown_notebook_parity(name):
 @pytest.mark.parametrize("name", NAMES)
 @pytest.mark.parametrize("working_directory", [ROOT, ROOT / "docs", TUTORIALS])
 def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, request):
-    if name in {"associate", "write-sac", "earthscope"}:
+    operation = name.split("_", 1)[1]
+    if operation in {"associate", "write-sac", "earthscope"}:
         pytest.importorskip("obspy")
-    if name == "plotting":
+    if operation == "plotting":
         matplotlib = pytest.importorskip("matplotlib")
         matplotlib.use("Agg")
-    if name in {"fetch", "earthscope"}:
+    if operation in {"fetch", "earthscope"}:
         real_fetch = geocsv.fetch
 
         def fetch_from_local_collection(*args, **kwargs):
@@ -71,7 +74,7 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
             return real_fetch(*args, **kwargs)
 
         monkeypatch.setattr(geocsv, "fetch", fetch_from_local_collection)
-    if name == "earthscope":
+    if operation == "earthscope":
         import tempfile
 
         fixtures = ROOT / "data/fixtures/P0006/waveforms"
@@ -111,11 +114,11 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
     for number, example in enumerate(examples, start=1):
         exec(compile(example, f"{name}.md:block-{number}", "exec"),
              namespace)
-    if name == "plotting":
+    if operation == "plotting":
         assert not namespace["pressure"].empty
         assert not namespace["gps"].empty
         namespace["plt"].close("all")
-    if name == "associate":
+    if operation == "associate":
         assert namespace["trace"].stats.geocsv.association.type == "single_segment"
         assert len(namespace["stream"]) == 3
         assert all(item.stats.geocsv.association.type == "single_segment"
@@ -130,7 +133,7 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         assert combined.stats.geocsv.association.type == "anchor_segment"
         assert combined.stats.geocsv.source_record_index == 13
         assert len(combined.stats.geocsv.association.coverage_segments) == 2
-    if name == "write-sac":
+    if operation == "write-sac":
         import numpy as np
 
         assert "sac" in namespace["trace"].stats
@@ -142,7 +145,7 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         assert namespace["written_names"] == [
             "segment01.sac", "segment02.sac", "segment03.sac"]
         assert all("sac" in trace.stats for trace in namespace["stream"])
-    if name == "fetch":
+    if operation == "fetch":
         assert namespace["downloads"][0].provenance.testing_only is True
         assert namespace["records"]["Station"].eq("P0006").all()
         saved = namespace["saved"]
@@ -150,7 +153,7 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         assert all(item.path.is_file() for item in saved)
         assert namespace["pinned"][0].provenance.release_id == TEST_RELEASE
         assert namespace["pinned"][0].content == namespace["downloads"][0].content
-    if name == "earthscope":
+    if operation == "earthscope":
         assert waveform_requests == [98, 169, 239]
         assert namespace["trace"].stats.geocsv.association.type == "single_segment"
         assert namespace["waveform"].stats.geocsv.source_record_index == 239

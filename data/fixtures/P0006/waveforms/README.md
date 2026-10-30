@@ -37,7 +37,7 @@ that old-format file is not parsed by the current reader.
 
 SAC files are independent output comparison references, never association
 inputs. Their samples agree with the downloaded counts at SAC float32
-precision. The [EarthScope tutorial](../../../../tutorials/earthscope.md)
+precision. The [EarthScope tutorial](../../../../tutorials/05_earthscope.md)
 compares identity, absolute start, count, interval, samples, and stla/stlo/stel/stdp
 after export. It documents units, precision, and the limited header coverage.
 Tests replay these raw responses offline; later live downloads need not have

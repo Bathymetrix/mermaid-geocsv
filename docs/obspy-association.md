@@ -1,7 +1,7 @@
 # Waveform association
 
 `geocsv.associate` attaches source metadata and receiver coordinates to
-MiniSEED-derived ObsPy traces. The [association tutorial](../tutorials/associate.md)
+MiniSEED-derived ObsPy traces. The [association tutorial](../tutorials/03_associate.md)
 provides introductory executable examples. This reference defines the public API and
 collects the scientific rationale and validation rules; waveform processing
 remains downstream.

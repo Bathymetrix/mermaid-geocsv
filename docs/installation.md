@@ -99,7 +99,7 @@ python -m pip install . jupyterlab ipykernel numpy matplotlib
 Launch the tutorial from the repository root:
 
 ```bash
-python -m jupyterlab tutorials/read.ipynb
+python -m jupyterlab tutorials/02_read.ipynb
 ```
 
 JupyterLab opens in your browser. Select **Python 3 (ipykernel)** if prompted,
@@ -111,7 +111,7 @@ On subsequent visits, activate the environment and launch the notebook:
 
 ```bash
 source .venv/bin/activate
-python -m jupyterlab tutorials/read.ipynb
+python -m jupyterlab tutorials/02_read.ipynb
 ```
 
 ## Optional ObsPy support
@@ -128,18 +128,18 @@ This adds ObsPy 1.5.1 or newer. Reader import and use remain independent of
 ObsPy. To run the association notebook, also install the notebook tools above:
 
 ```bash
-python -m jupyterlab tutorials/associate.ipynb
+python -m jupyterlab tutorials/03_associate.ipynb
 ```
 
-The [SAC writing tutorial](../tutorials/write-sac.md) and
-[notebook](../tutorials/write-sac.ipynb) demonstrate header creation and ObsPy export.
+The [SAC writing tutorial](../tutorials/04_write-sac.md) and
+[notebook](../tutorials/04_write-sac.ipynb) demonstrate header creation and ObsPy export.
 Comparison rules for independent automaid SAC references are defined in the
 [SAC reference](sac.md).
 
 Each tutorial is standalone and has a synchronized Markdown companion.
-Start with the [read tutorial](../tutorials/read.md), then explore
-[fetching](../tutorials/fetch.md), [plotting](../tutorials/plotting.md), or the
-[association tutorial](../tutorials/associate.md), and the
+Follow the numbered tutorials in the [README](../README.md#api-and-tutorials),
+starting with [fetching](../tutorials/01_fetch.md) and
+[reading](../tutorials/02_read.md). Each can also run independently. See the
 [reader specification](reader-spec.md) for API and format details.
 
 ## Development tests

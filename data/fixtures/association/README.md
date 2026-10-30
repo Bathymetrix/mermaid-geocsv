@@ -30,7 +30,7 @@ fill or match association metadata. SAC-input association is outside scope
 until further instruction. Optional `create_sac_header=True` creates fresh
 SAC station location headers during association for either label. Use ObsPy's
 Trace/Stream writer for serialization; see the
-[SAC writing tutorial](../../../tutorials/write-sac.md).
+[SAC writing tutorial](../../../tutorials/04_write-sac.md).
 
 Complete `geo_DET_REQ.csv` histories are verbatim, local, Git-ignored corpus
 references; ordinary tests use separate schema 1.0.0 subsets. See the

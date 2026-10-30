@@ -1,6 +1,6 @@
 # Fetching GeoCSV collections
 
-The [fetch tutorial](../tutorials/fetch.md) demonstrates memory retrieval,
+The [fetch tutorial](../tutorials/01_fetch.md) demonstrates memory retrieval,
 disk downloads, and release pinning. This reference defines client behavior;
 the publisher owns the [publication/download contract](../../mermaid-publisher/docs/geocsv/contract.md).
 Hosted collections are currently testing only; see [hosting](hosting.md).
@@ -123,6 +123,6 @@ tests do not require public hosting.
 
 Consumer 0.27.0 reads only MERMAID schema 1.0.0. Existing hosted testing bytes
 remain old-format; successful exact-byte retrieval does not make them parseable.
-The [fetch tutorial](../tutorials/fetch.md) runs against a local fixture server.
+The [fetch tutorial](../tutorials/01_fetch.md) runs against a local fixture server.
 Transport continues to preserve token IDs, exact bytes, literal release IDs and
 all fractional digits. No encoded aliases or automatic fallback are supported.

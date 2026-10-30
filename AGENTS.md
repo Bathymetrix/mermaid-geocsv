@@ -433,15 +433,16 @@ explicitly requested for the document.
 ## Development and Verification
 
 Every public function or method must have a dedicated, standalone tutorial
-pair under `tutorials/`, named for that operation (for example, `read.md`
-and `read.ipynb`, `fetch.md` and `fetch.ipynb`, or `associate.md` and
-`associate.ipynb`). Each tutorial must include its own setup, imports, and
+pair under `tutorials/`, prefixed with two digits and an underscore in the
+recommended execution order, then named for that operation (for example, `02_read.md`
+and `02_read.ipynb`, `01_fetch.md` and `01_fetch.ipynb`, or `03_associate.md` and
+`03_associate.ipynb`). Each tutorial must include its own setup, imports, and
 examples runnable from top to bottom without another tutorial's state.
 Start each tutorial with the simplest working example, then build toward
 increasing input and option complexity. Explain additional options when they
 are first introduced.
 Downstream analysis examples may have additional standalone pairs, such as
-`plotting.md` and `plotting.ipynb`.
+`06_plotting.md` and `06_plotting.ipynb`.
 
 Link both companions from each tutorial and list every pair in the README.
 Any change to explanations, examples, scientific assumptions, or setup

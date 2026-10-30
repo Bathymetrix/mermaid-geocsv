@@ -1,7 +1,7 @@
 # SAC station headers and ObsPy writing
 
 Use `associate(..., create_sac_header=True)` on the final MiniSEED-derived
-waveform, then ObsPy `Trace.write` or `Stream.write`. The [SAC tutorial](../tutorials/write-sac.md)
+waveform, then ObsPy `Trace.write` or `Stream.write`. The [SAC tutorial](../tutorials/04_write-sac.md)
 provides runnable examples. Matching, fresh destinations, and the in-memory
 report are defined in the [association reference](obspy-association.md).
 
