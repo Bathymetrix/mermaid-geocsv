@@ -251,7 +251,7 @@ original acquisition lineage.
 
 Use a fresh MiniSEED trace for every association. This loop repeats the same
 download, association, export, and independent comparisons for July 12 and
-July 15. Association still uses the complete fetched history.
+July 15. Association still uses the fetched schema-converted subset.
 
 ```python
 additional_examples = [

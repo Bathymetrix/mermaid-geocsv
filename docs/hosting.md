@@ -31,6 +31,12 @@ testing-only result does not authorize publication or accept different bytes.
 
 ## Local schema migration
 
+Publisher 0.4.1 additionally checks the exact schema 1.0.0 first line and
+six-digit UTC `#created` declaration during creation and candidate inspection,
+including recordless sources. Duplicate schema declarations and comments after
+the column header raise. Full parsing remains in this consumer; scientific
+limits, report schema 4 and the manifest/download protocol are unchanged.
+
 Automaid v4.6.0, consumer 0.27.0 and publisher 0.4.0 implement schema 1.0.0
 locally. Publisher report schema 4 names `recording_records`; scientific limits
 and manifest/download fields remain unchanged. Historical consumers and reports
