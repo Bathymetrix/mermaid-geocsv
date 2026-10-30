@@ -14,7 +14,35 @@ Read and follow the shared MERMAID AGENTS before changing this repository. If
 they cannot be located or read, stop and notify the user before making
 changes. If instructions conflict, this file takes precedence.
 
+The format and projection rules below and `docs/format-spec.md` define the
+selected migration target.
+They do not claim that the current implementation or its reference pages have
+already migrated. Complete the normative schema review before code changes;
+update implementation references and tests with the corresponding behavior.
+
 ## Repository Scope
+
+### No source-value defaults
+
+Never substitute a default value for missing, unknown, invalid, or unavailable
+source metadata anywhere in this repository. This applies to parsing,
+association, coordinate and SAC projections, and provenance. Optional values
+remain missing or absent as specified by the schema; missing required values
+raise. Never silently repair invalid values, fill from another row or trace,
+or invent zero, an empty identity, a timestamp, or another assumed value.
+
+Preserve explicit source values, including zero and literal two-space Location.
+CSV decoding, declared typing and documented projections from complete source
+values are permitted; they do not authorize inference or default filling.
+The migration's zero Recording Elevation must come from the writer's explicit
+numeric cell `0`, with type `float` and unit `meters`. Never append a unit to
+the numeric cell. Remove legacy hard-coded elevation defaults rather than treating
+an adopted convention as permission to supply an absent value. Ordinary
+function/configuration defaults are separate from this source-data rule.
+
+Finite signed Pressure-Absolute sensor readings preserve reported gauge error.
+Recording pressure and crossing proxies remain nonnegative. Never clamp,
+replace, offset-correct or discard a reported gauge value during this migration.
 
 This repository does not handle earthquake parameters. Do not add earthquake-source
 parameter inference, calculations, projections, or header mappings, including
@@ -22,8 +50,9 @@ earthquake origin, hypocentre, depth, or magnitude. Geographic metadata describe
 MERMAID receiver (station) locations. The approximation 100 mbar per metre
 supplies station depth in SAC `stdp`. Optional SAC projections populate only
 `stla`, `stlo`, `stel`, and `stdp`; never populate earthquake-source `ev*` headers.
-GeoCSV `Algorithm(event)` rows describe waveform acquisitions, not earthquake-source
-metadata.
+GeoCSV `Derivation:Recording:<source>` rows describe original waveform segments,
+not earthquake-source metadata. `Algorithm(event)` is a historical spelling,
+not a supported identifier in the replacement schema.
 
 Repository ethos: **simple rules, clear projections, and no surprise side effects**.
 Before changing association or describing ObsPy's main Stats attributes, consult
@@ -63,6 +92,9 @@ nearby candidates and measurement context, and record the mapping from subset
 indices to original source-record indices. Subsets do not establish uniqueness
 across an entire source history. Keep complete local histories unchanged for
 separate corpus checks; ordinary tests must not depend on their availability.
+Original byte-preserving subsets remain source evidence, not an active legacy
+reader requirement. Create separate new-schema fixtures with documented source
+mapping and provenance; do not overwrite protected originals or archived bytes.
 
 `$MERMAID/waveforms/mseed/` and `$MERMAID/waveforms/sac/` are additional
 authorized read-only references for the waveforms described by these GeoCSV
@@ -72,18 +104,22 @@ them for context without modifying either the entries or their targets.
 ### Association Cardinality and Location Meaning
 
 Complete SNCL and time are always required. In the user's MERMAID construction,
-each original contiguous waveform segment has one algorithm:event record.
+each original contiguous waveform segment has one Recording record.
 Multiple input traces may associate with the same GeoCSV row, including
 identical traces requested again in different MER files. Never consume or
 reserve a matched row exclusively for one trace. Conversely, one trace must
 not receive multiple source-row associations; multiple eligible rows are an
 error, not permission to combine their metadata.
 
-Known empty Location is valid and matches only waveform location `""`.
-Network, Station, and Channel must be nonempty; no identity field may be missing.
-The reader preserves empty cells specifically in string-valued `Location`;
-`nan` and nonempty declared missing markers still mean unknown. Other columns
-retain their existing missingness. Source preflight rejects invalid event
+Known blank Location is exactly two literal ASCII spaces in the source and
+matches only waveform location `""`. Preserve those spaces in the DataFrame
+and raw source attachment; identity comparison never rewrites the source or
+waveform. An empty decoded Location cell is unknown, not a known blank code.
+Network, Station, and Channel must be nonempty; complete association identity
+cannot be missing. Only empty decoded CSV cells are missing. Nonempty strings
+such as `nan` and `NaT` are literal; invalid nonempty numeric/datetime values
+raise. Do not retain declared alternate missing markers. Whitespace-only cells
+are invalid except the two-space Location code. Source preflight rejects invalid Recording
 identities and duplicate complete SNCL/UTC-time/count/rate matching keys before
 trace matching. Different counts may disambiguate the same SNCL/time. Resolve
 every trace match before building projections; validate all projections before
@@ -183,8 +219,10 @@ The publisher calls public `read`, `associate` and `fetch` APIs, uses optional
 SAC header creation and ObsPy writing, and owns export verification.
 This package owns scientific API behavior and package defect fixes. Do not add
 publication validators or report schemas here, or duplicate matching/projection
-logic in the publisher. Keep the fixed 0.24.0 historical consumer baseline and download
-fixtures; new hyphenated-path publication/download requires consumer >= 0.26.0.
+logic in the publisher. Preserve archived baseline/download evidence as history,
+without requiring active compatibility with consumer 0.24.0 or older MERMAID
+schemas. The new profile requires the migrated consumer. Consumer >= 0.26.0
+is the historical floor for hyphenated paths, not proof of new-schema support.
 The 2026-10-28 path review explicitly replaces the initial testing collection;
 old testing URLs may be retired. Publisher edits do not implicitly redefine
 fetch behavior. The sampled
@@ -233,8 +271,8 @@ attachment/container from another trace or iteration, and never copy an
 existing attachment wholesale as the starting state.
 
 Populate association metadata only from that trace's uniquely matched source
-record, its dataset provenance, and explicitly documented projection rules
-(such as the adopted sea-level reference). Never use an earlier match or
+record, its dataset provenance, and explicitly documented projections of
+complete source values. Never use an earlier match or
 pre-existing trace metadata to fill missing source values. Requested destination
 containers (`stats.geocsv` and `stats.coordinates`) must be absent, even if
 empty or apparently equivalent; otherwise raise. Requested `stats.sac`
@@ -258,7 +296,8 @@ preservation of source metadata.
 It does not own:
 
 - authoring or rewriting GeoCSV files;
-- geospatial analysis, coordinate transformation, or unit conversion;
+- geospatial analysis, coordinate transformation, or conversions beyond the
+  explicitly approved association projections;
 - inferred scientific metadata;
 - downstream catalog, timeline, or waveform interpretation.
 
@@ -266,11 +305,27 @@ Parse the file format as emitted. Do not silently infer, normalize, discard,
 or reinterpret scientific metadata unless the documented GeoCSV format
 explicitly requires it.
 
-The writer implementation, representative GeoCSV files, and legacy MATLAB
-parser are behavioral references. Do not reproduce their structure or
-incidental limitations without an explicit reason.
+The writer implementation and representative MERMAID GeoCSV files are behavioral
+references. Historical files and the MATLAB parser are scientific references,
+not compatibility targets. Do not reproduce their incidental limitations.
 
 ## Naming and Public Interface
+
+The paired design notes `docs/geocsv-method-identifiers.md` and
+`../automaid/docs/geocsv-method-identifiers.md` record format decisions
+and producer timing behavior. Update both when relevant automaid
+behavior or the agreed producer/consumer design changes; preserve the
+distinction between proposals and implemented behavior.
+`../automaid/docs/geocsv-migration-plan.md` records the coordinated migration
+and its automaid code allowlist. Latest explicit migration decisions override
+conflicting legacy format rules; preserve the scientific and ownership rules.
+The replacement supports only the controlled MERMAID GeoCSV schema, not a
+generic GeoCSV reader or legacy MERMAID formats. Complete and review the
+normative specification before functional migration changes.
+The migration preserves literal two-space source Location values and removes
+hard-coded zero elevation projections. Recording rows explicitly supply zero
+Elevation in the producer; association uses that source value for SAC `stel`
+and coordinate elevation. Missing required elevation raises; never fill it.
 
 Documentation and tutorial filenames use lowercase kebab-case. Retain
 the conventional `README.md`, `LICENSE`, and `AGENTS.md` names.
@@ -317,7 +372,8 @@ or Stream in place and returns `None`. ObsPy remains an optional dependency,
 loaded only when association is called. Keep the matching implementation
 private and preserve the scientific contract above.
 `geocsv.read(...)` returns a list of typed pandas `DataFrame` objects, one per
-dataset, including for a single-dataset file. Preserve GeoCSV-specific
+supported MERMAID dataset, including for a single-dataset file. This return
+shape does not promise arbitrary GeoCSV schema support. Preserve GeoCSV-specific
 metadata under the single key `frame.attrs["geocsv"]` on each table as one
 immutable, documented metadata value, including the resolved absolute path
 opened by the reader as source provenance. This deliberately uses pandas'
@@ -327,8 +383,12 @@ frames, but not after arbitrary pandas transformations or file exports.
 Keep original GeoCSV header spellings as the DataFrame column labels. Preserve
 file-wide data-record order with a zero-based `RangeIndex` named
 `source_record_index`, excluding headers and comments, and keep
-timestamps as a `StartTime` column rather than an index because source
-timestamps need not be unique. Preserve their source timezone when present.
+timestamps as a `Time` column rather than an index because source timestamps
+need not be unique. Require the schema's UTC `Z` timestamp spelling with six
+fractional digits; never infer a timezone for invalid or incomplete input.
+The digit count defines display format, not clock accuracy or measurement
+precision. Preserve the required `# MERMAID GeoCSV schema: 1.0.0` declaration
+in metadata and provenance; missing or unsupported schemas raise.
 
 Do not expose parser internals, implementation modules, or convenience
 wrappers as stable interfaces merely because tests use them. Do not create

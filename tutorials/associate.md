@@ -2,8 +2,7 @@
 
 `geocsv.associate` attaches the matching GeoCSV waveform-acquisition record
 and MERMAID receiver (station) coordinates to an ObsPy Trace or Stream.
-The source label `event` refers to an acquisition, not earthquake-source
-metadata. These examples use included MiniSEED and GeoCSV fixtures and run offline.
+The source subject `Recording` identifies an original contiguous waveform segment. These examples use included MiniSEED and GeoCSV fixtures and run offline.
 
 Companions: [Markdown](associate.md) · [Notebook](associate.ipynb).
 
@@ -35,7 +34,7 @@ waveform_path = (
     example_dir / "0009_20210528-04h30m10s"
     / "20210528T053250.0030_60B08BB3.MER.DET.WLT2.mseed"
 )
-tables = geocsv.read(example_dir / "association_subset.geocsv")
+tables = geocsv.read(root / "data/fixtures/schema-1.0.0/association/452.020-P-0030/association_subset.geocsv")
 trace = read_waveforms(str(waveform_path))[0]
 geocsv.associate(trace, tables)
 ```
@@ -103,7 +102,7 @@ the sample placement and source provenance.
 combined_dir = root / "tests/fixtures/association/P0045_20220115"
 combined = read_waveforms(str(combined_dir / "*.mseed"))
 combined.merge(method=1, interpolation_samples=0, misalignment_threshold=0)
-combined_tables = geocsv.read(root / "data/fixtures/P0045/P0045.geocsv")
+combined_tables = geocsv.read(root / "data/fixtures/schema-1.0.0/P0045/P0045.geocsv")
 geocsv.associate(combined, combined_tables, allow_first_segment=True)
 print(combined[0].stats.geocsv.association.type)  # anchor_segment
 print(combined[0].stats.geocsv.association.coverage_segments)

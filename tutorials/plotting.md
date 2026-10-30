@@ -28,7 +28,7 @@ root = Path.cwd()
 if root.name in {"docs", "tutorials"}:
     root = root.parent
 
-records = geocsv.read(root / "data/fixtures/P0006/P0006.geocsv")[0]
+records = geocsv.read(root / "data/fixtures/schema-1.0.0/P0006/P0006.geocsv")[0]
 ```
 
 ## 2. Plot pressure measurements
@@ -38,13 +38,13 @@ in mbar, without converting them to depth:
 
 ```python
 pressure = records.loc[
-    records["MethodIdentifier"].str.startswith("Measurement:Pressure")
-    & records["StartTime"].ge("2018-06-27")
-    & records["StartTime"].lt("2018-07-11")
-].dropna(subset=["WaterPressure"]).sort_values("StartTime")
+    records["MethodIdentifier"].str.startswith("Measurement:Pressure-Absolute")
+    & records["Time"].ge("2018-06-27")
+    & records["Time"].lt("2018-07-11")
+].dropna(subset=["WaterPressure"]).sort_values("Time")
 
 fig, ax = plt.subplots(figsize=(9, 3))
-ax.plot(pressure["StartTime"], pressure["WaterPressure"])
+ax.plot(pressure["Time"], pressure["WaterPressure"])
 ax.set(xlabel="Time (UTC)", ylabel="WaterPressure (mbar)",
        title="P0006 pressure measurements")
 fig.autofmt_xdate()
@@ -58,13 +58,13 @@ GPS records describe surface fixes. This plot selects the fixes from 2019:
 
 ```python
 gps = records.loc[
-    records["MethodIdentifier"].str.startswith("Measurement:GPS")
-    & records["StartTime"].ge("2019-01-01")
-    & records["StartTime"].lt("2020-01-01")
-].dropna(subset=["Latitude"]).sort_values("StartTime")
+    records["MethodIdentifier"].str.startswith("Measurement:Position")
+    & records["Time"].ge("2019-01-01")
+    & records["Time"].lt("2020-01-01")
+].dropna(subset=["Latitude"]).sort_values("Time")
 
 fig, ax = plt.subplots(figsize=(9, 3))
-ax.scatter(gps["StartTime"], gps["Latitude"], s=10)
+ax.scatter(gps["Time"], gps["Latitude"], s=10)
 ax.set(xlabel="Time (UTC)", ylabel="Latitude (degrees north)",
        title="P0006 GPS fixes in 2019")
 fig.autofmt_xdate()

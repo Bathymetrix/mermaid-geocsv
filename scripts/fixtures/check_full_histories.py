@@ -1,9 +1,11 @@
 """Check tracked subset provenance and sampled matches against full histories.
 
 Run from the repository root after restore_geocsv_histories.py. This optional
-source-corpus check reads local copies only and writes nothing.
+source-corpus check verifies frozen original bytes without parsing them, then
+reads separate new-schema histories from the required source_root. It writes nothing.
 """
 
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -13,7 +15,7 @@ from obspy import read
 from mermaid import geocsv
 
 
-def check():
+def check(source_root):
     fixtures = Path(__file__).resolve().parents[2] / "data/fixtures/association"
     manifest = json.loads((fixtures / "manifest.json").read_text())
     checked = 0
@@ -33,10 +35,10 @@ def check():
         if (target.read_bytes() != expected
                 or hashlib.sha256(expected).hexdigest() != subset["sha256"]):
             raise ValueError(f"subset is not the recorded verbatim extraction: {target}")
-        records = geocsv.read(path)
+        records = geocsv.read(Path(source_root) / item["path"])
         for frame in records:
             events = frame.loc[frame["MethodIdentifier"].str.startswith(
-                "Algorithm(event):", na=False)]
+                "Derivation:Recording:", na=False)]
             if (events["DataQuality"].isna().any()
                     or not set(events["DataQuality"]) <= {"Q", "D"}):
                 raise ValueError(f"unexpected full-history event quality: {path}")
@@ -45,9 +47,9 @@ def check():
                 continue
             trace, = read(str(fixtures / example["mseed"]))
             geocsv.associate(trace, records, time_tolerance=0.001)
-            if (trace.stats.geocsv.dataset_index != 0
-                    or trace.stats.geocsv.source_record_index
-                    != example["original_source_record_index"]):
+            # The migrated writer's finer timestamp ordering does not promise
+            # historical source indices. The public strict match owns selection.
+            if trace.stats.geocsv.association.type != "single_segment":
                 raise ValueError(f"unexpected full-history match: {example['mseed']}")
             checked += 1
     print(f"Verified {len(manifest['geocsv'])} verbatim subsets and "
@@ -55,4 +57,6 @@ def check():
 
 
 if __name__ == "__main__":
-    check()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("source_root", type=Path, help="isolated newly generated schema-1.0.0 histories")
+    check(parser.parse_args().source_root)

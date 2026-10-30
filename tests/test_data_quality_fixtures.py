@@ -18,7 +18,7 @@ def test_mermaid_geocsv_event_quality_values_follow_stream_map() -> None:
     """Check event quality values and their independence from sample rate."""
     paths = sorted(
         path
-        for station_directory in MERMAID_FIXTURES.glob("P*")
+        for station_directory in (MERMAID_FIXTURES / "schema-1.0.0").glob("P*")
         for path in station_directory.rglob("*.geocsv")
     )
     assert paths, "expected the canonical MERMAID GeoCSV fixture"
@@ -29,7 +29,7 @@ def test_mermaid_geocsv_event_quality_values_follow_stream_map() -> None:
             if "MethodIdentifier" not in frame or "DataQuality" not in frame:
                 continue
             is_event = frame["MethodIdentifier"].astype("string").str.startswith(
-                "Algorithm(event):", na=False
+                "Derivation:Recording:", na=False
             )
             event_rows.append(frame.loc[is_event, ["DataQuality", "SampleRate"]])
 

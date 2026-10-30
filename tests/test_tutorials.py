@@ -18,7 +18,7 @@ from mermaid import geocsv
 ROOT = Path(__file__).resolve().parents[1]
 TUTORIALS = ROOT / "tutorials"
 NAMES = sorted(path.stem for path in TUTORIALS.glob("*.md"))
-TEST_RELEASE = "2026-10-21T22:48:33.277Z"
+TEST_RELEASE = "2026-10-29T00:00:00.000000Z"
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def tutorial_collection(tmp_path):
     release_directory.mkdir(parents=True)
     entries = []
     for instrument in ("P0006", "P0045"):
-        source = ROOT / f"data/fixtures/{instrument}/{instrument}.geocsv"
+        source = ROOT / f"data/fixtures/schema-1.0.0/{instrument}/{instrument}.geocsv"
         content = source.read_bytes()
         (release_directory / source.name).write_bytes(content)
         entries.append({
@@ -99,12 +99,10 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         matplotlib = pytest.importorskip("matplotlib")
         matplotlib.use("Agg")
     if name in {"fetch", "earthscope"}:
-        collection_url = request.getfixturevalue("tutorial_collection")
         real_fetch = geocsv.fetch
 
         def fetch_from_local_collection(*args, **kwargs):
-            assert kwargs["base_url"] == "https://bathymetrix.com/geocsv/testing/"
-            kwargs["base_url"] = collection_url
+            assert kwargs["base_url"].startswith("http://127.0.0.1:")
             if kwargs.get("output_dir") is not None:
                 assert kwargs["output_dir"] == "geocsv-downloads"
                 kwargs["output_dir"] = tmp_path / "downloads"
@@ -137,7 +135,13 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
             return SimpleNamespace(get_waveforms=replay_waveforms)
 
         monkeypatch.setattr("obspy.clients.fdsn.Client", replay_client)
-        monkeypatch.setattr(tempfile, "mkdtemp", partial(tempfile.mkdtemp, dir=tmp_path))
+        real_mkdtemp = tempfile.mkdtemp
+
+        def local_mkdtemp(suffix=None, prefix=None, dir=None):
+            return real_mkdtemp(suffix=suffix, prefix=prefix,
+                                dir=tmp_path if dir is None else dir)
+
+        monkeypatch.setattr(tempfile, "mkdtemp", local_mkdtemp)
     markdown = (TUTORIALS / f"{name}.md").read_text()
     examples = re.findall(r"(?m)^```python\n(.*?)^```", markdown, flags=re.S)
     monkeypatch.chdir(working_directory)
@@ -162,7 +166,7 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         combined, = namespace["combined"]
         assert combined.stats.npts == 45683
         assert combined.stats.geocsv.association.type == "anchor_segment"
-        assert combined.stats.geocsv.source_record_index == 101433
+        assert combined.stats.geocsv.source_record_index == 13
         assert len(combined.stats.geocsv.association.coverage_segments) == 2
     if name == "write-sac":
         import numpy as np

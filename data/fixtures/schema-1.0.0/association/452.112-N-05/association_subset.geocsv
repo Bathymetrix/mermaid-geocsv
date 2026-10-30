@@ -1,0 +1,18 @@
+# MERMAID GeoCSV schema: 1.0.0
+#dataset: GeoCSV
+#created: 2026-10-29T00:00:00.000000Z
+#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org
+#attribution: Historical evidence projected into schema fixture; tools automaid v4.6.0 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])
+#lineterminator: '\n'
+#delimiter: ','
+#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
+#field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
+MethodIdentifier,Time,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,ClockOffset,TimeCorrectionApplied
+Measurement:Position:u-blox_NEO-M8N,2019-01-03T02:24:24.000000Z,MH,N0005,,,,-18.556750,-114.877917,,,MERMAID_452.112,,,-1545444694.186707,
+Measurement:Pressure-Absolute:KELLER_Series_6,2019-01-04T00:49:06.000000Z,MH,N0005,,,,,,,-10,MERMAID_452.112,,,,
+Interpolation:Crossing-Descent:automaid-v4.5.14,2019-01-04T02:46:24.926000Z,MH,N0005,,,,-21.018561,-109.936017,,5000,MERMAID_452.112,,,,
+Derivation:Recording:automaid-v4.5.14,2020-01-27T05:12:53.720000Z,MH,N0005,00,BDH,D,-21.442652,-110.807610,0,,MERMAID_452.112,20.007206,7904,,-0.272629
+Derivation:Recording:automaid-v4.5.14,2020-01-28T19:17:42.558000Z,MH,N0005,00,BDH,D,-21.433631,-110.797520,0,,MERMAID_452.112,20.007206,6304,,-0.430912
+Derivation:Recording:automaid-v4.5.14,2020-01-28T22:02:23.537000Z,MH,N0005,00,BDH,D,-21.432981,-110.796793,0,,MERMAID_452.112,20.007206,6240,,-0.442320
+Derivation:Recording:automaid-v4.5.14,2020-01-29T14:00:32.484000Z,MH,N0005,00,BDH,D,-21.429198,-110.792561,0,,MERMAID_452.112,20.007206,7904,,-0.508697
+Measurement:Pressure-Absolute:KELLER_Series_6,2020-02-01T16:29:37.000000Z,MH,N0005,,,,,,,150840,MERMAID_452.112,,,,

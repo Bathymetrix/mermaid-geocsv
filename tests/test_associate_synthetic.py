@@ -11,8 +11,8 @@ obspy = pytest.importorskip('obspy')
 from mermaid.geocsv import associate
 from mermaid import geocsv
 
-FIXTURE = Path(__file__).parent / 'fixtures/association/synthetic.geocsv'
-TIMES = {'SYN01': '2025-01-01T00:00:00.123456789Z',
+FIXTURE = Path(__file__).parent / 'fixtures/schema-1.0.0/synthetic.geocsv'
+TIMES = {'SYN01': '2025-01-01T00:00:00.123456000Z',
          'SYN02': '2025-01-01T00:00:01.120Z',
          'SYN03': '2025-01-01T00:00:02Z',
          'SYN04': '2025-01-01T00:00:03Z',
@@ -29,7 +29,13 @@ def trace(station='SYN01'):
 
 @pytest.fixture
 def records():
-    return geocsv.read(FIXTURE)
+    frames = geocsv.read(FIXTURE)
+    # Deliberate in-memory test scenarios, derived from valid synthetic input.
+    frame = frames[0]
+    frame['Station'] = ['SYN01', 'SYN01', 'SYN02', 'SYN03', 'SYN04', 'SYN05', 'SYN06', 'SYN01', 'SYN02']
+    frame.loc[[3, 5], 'Latitude'] = pd.NA
+    frame.loc[[4, 5], 'Longitude'] = pd.NA
+    return frames
 
 
 def test_complete_projection_and_source_snapshot(records):
@@ -39,7 +45,7 @@ def test_complete_projection_and_source_snapshot(records):
     assert associate(tr, records) is None
     assert dict(tr.stats.coordinates) == {'latitude': 10., 'longitude': 20., 'elevation': 0.}
     assert tr.stats.geocsv.source_record_index == 1  # GPS row must not match.
-    assert tr.stats.geocsv.StartTime.value == tr.stats.starttime.ns
+    assert tr.stats.geocsv.Time.value == tr.stats.starttime.ns
     assert all(tr.stats[key] == value for key, value in before.items())
     records[0].loc[1, 'Latitude'] = 80
     assert tr.stats.geocsv.Latitude == 10
@@ -110,20 +116,21 @@ def test_sncl_mismatch_is_not_repaired_from_geocsv(records):
     assert tr.stats == before
 
 
-@pytest.mark.parametrize('location', ['', '""'])
+@pytest.mark.parametrize('location', ['  ', '"  "'])
 @pytest.mark.parametrize('allow_first_segment', [False, True])
 def test_known_empty_location_associates_exactly(tmp_path, location, allow_first_segment):
     source = tmp_path / 'empty_location.geocsv'
     source.write_text(FIXTURE.read_text().replace(',00,BDH,', f',{location},BDH,'))
     records = geocsv.read(source)
-    assert records[0].loc[1, 'Location'] == ''
+    records[0] = records[0].loc[[0, 1, 7]].copy()
+    assert records[0].loc[1, 'Location'] == '  '
     tr = trace()
     tr.stats.location = ''
     if allow_first_segment:
         tr.data = np.arange(10, dtype=np.float32)
     before = tr.copy()
     associate(tr, records, allow_first_segment=allow_first_segment)
-    assert tr.stats.geocsv.Location == ''
+    assert tr.stats.geocsv.Location == '  '
     assert tr.stats.geocsv.source_record_index == 1
     assert tr.stats.geocsv.association.type == ('anchor_segment' if allow_first_segment else 'single_segment')
     assert all(tr.stats[key] == value for key, value in before.stats.items())
@@ -174,7 +181,7 @@ def test_absent_source_location_column_is_not_an_empty_code(records):
 
 
 def test_duplicate_empty_location_rows_fail_source_preflight(records):
-    records[0]['Location'] = ''
+    records[0]['Location'] = '  '
     duplicate = records[0].loc[[1]].copy()
     duplicate.loc[1, 'DataQuality'] = 'D'  # Quality cannot rescue duplicate keys.
     tr = trace('SYN02')  # The ambiguous source row is unrelated to this trace.
@@ -201,7 +208,7 @@ def test_same_identity_and_time_with_different_counts_can_be_unique(records):
 def test_all_matches_preflight_before_coordinate_projection(records):
     records[0].loc[1, 'Latitude'] = pd.NA
     records[0].loc[9] = records[0].loc[2]
-    records[0].loc[9, 'StartTime'] += pd.Timedelta(nanoseconds=1)
+    records[0].loc[9, 'Time'] += pd.Timedelta(nanoseconds=1)
     stream = obspy.Stream([trace(), trace('SYN02')])
     before = [tr.copy() for tr in stream]
     with pytest.raises(ValueError, match=r'ambiguous \(2 matches\)'):
@@ -239,7 +246,7 @@ def test_missing_quality_remains_source_missingness(records):
 
 def test_known_empty_location_on_independently_read_miniseed(tmp_path):
     source = tmp_path / 'empty_location.geocsv'
-    source.write_text(FIXTURE.read_text().replace(',00,BDH,', ',,BDH,'))
+    source.write_text(FIXTURE.read_text().replace(',00,BDH,', ',"  ",BDH,'))
     records = geocsv.read(source)
     original = trace()
     original.stats.location = ''
@@ -251,7 +258,7 @@ def test_known_empty_location_on_independently_read_miniseed(tmp_path):
 
     associate(tr, records)
 
-    assert tr.stats.geocsv.Location == ''
+    assert tr.stats.geocsv.Location == '  '
     assert tr.stats.geocsv.source_record_index == 1
     assert all(tr.stats[key] == value for key, value in before.stats.items())
     np.testing.assert_array_equal(tr.data, before.data)
@@ -269,7 +276,7 @@ def test_ambiguous_and_absent_matches(records):
 
 def test_incomplete_unrelated_event_does_not_block_unique_match(records):
     incomplete = records[0].loc[1].copy()
-    incomplete['StartTime'] = pd.NaT
+    incomplete['Time'] = pd.NaT
     records[0].loc[7] = incomplete
 
     tr = trace()
@@ -279,7 +286,7 @@ def test_incomplete_unrelated_event_does_not_block_unique_match(records):
 
 def test_incomplete_event_is_reported_when_no_match_exists(records):
     incomplete = records[0].loc[1].copy()
-    incomplete['StartTime'] = pd.NaT
+    incomplete['Time'] = pd.NaT
     records[0].loc[7] = incomplete
 
     tr = trace()
@@ -327,7 +334,7 @@ def test_default_time_tolerance_is_fixed_and_inclusive(records, station, offset_
     tr.stats.starttime = obspy.UTCDateTime(ns=source_ns + offset_ns)
     if abs(offset_ns) <= 1_000_000:
         associate(tr, records)
-        assert tr.stats.geocsv.StartTime.value == source_ns
+        assert tr.stats.geocsv.Time.value == source_ns
         assert tr.stats.starttime.ns == source_ns + offset_ns
     else:
         with pytest.raises(ValueError, match='no match'):
@@ -351,7 +358,7 @@ def test_writer_rounding_boundary_preserves_both_input_times(records):
     tr.stats.starttime = obspy.UTCDateTime(ns=original_ns)
     associate(tr, records)
     assert tr.stats.starttime.ns == original_ns
-    assert tr.stats.geocsv.StartTime.value == pd.Timestamp(TIMES['SYN06']).value
+    assert tr.stats.geocsv.Time.value == pd.Timestamp(TIMES['SYN06']).value
 
 
 @pytest.mark.parametrize('tolerance', [None, -1, float('inf'), float('nan'), 'invalid'])
@@ -361,10 +368,10 @@ def test_bad_tolerance_fails(records, tolerance):
 
 
 def test_source_resolution_and_nanosecond_reader_metadata(records):
-    resolution = records[0].attrs['geocsv'].datetime_resolution_ns['StartTime']
-    assert resolution[1] == 1
-    assert resolution[2] == 1_000_000  # .120 retains its three source digits.
-    assert records[0].loc[1, 'StartTime'].value == 1735689600123456789
+    resolution = records[0].attrs['geocsv'].datetime_resolution_ns['Time']
+    assert resolution[1] == 1000
+    assert resolution[2] == 1000  # Every source timestamp has six digits.
+    assert records[0].loc[1, 'Time'].value == 1735689600123456000
     with pytest.raises(TypeError):
         resolution[1] = 1000
 
@@ -390,8 +397,17 @@ def test_rate_tolerance_uses_inclusive_representable_endpoints(records, directio
     assert records[0].loc[1, 'SampleRate'] == source_rate
 
 
+def indexed_records():
+    frame, = geocsv.read(FIXTURE.with_name('indexed.geocsv'))
+    frame.loc[0, 'Time'] += pd.Timedelta(nanoseconds=1)
+    frame.loc[3, 'Time'] += pd.Timedelta(nanoseconds=999)
+    frame.loc[5, 'Station'] = 'SYN02'
+    frame.loc[6, 'Time'] = pd.NaT
+    return [frame]
+
+
 def test_index_selects_expected_row_among_unsorted_competitors():
-    records = geocsv.read(FIXTURE.with_name('indexed.geocsv'))
+    records = indexed_records()
     tr = trace()
     tr.stats.starttime = obspy.UTCDateTime(ns=1735689600000100000)
 
@@ -411,7 +427,7 @@ def test_index_selects_expected_row_among_unsorted_competitors():
 
 
 def test_index_does_not_prefer_exact_time_over_another_eligible_row():
-    records = geocsv.read(FIXTURE.with_name('indexed.geocsv'))
+    records = indexed_records()
     records[0].loc[4, 'SampleCount'] = 4
     tr = trace()
     tr.stats.starttime = obspy.UTCDateTime(ns=1735689600000100000)
@@ -522,7 +538,7 @@ def test_containment_accepts_nearest_sample_start_with_exact_time_tolerance(reco
 def test_containing_anchor_ambiguity_lists_all_affected_traces_and_source_lines():
     # Exact source-start/count agreement must not select one of two containing
     # anchors when the caller explicitly requests the containing-segment policy.
-    content = FIXTURE.read_bytes().replace(b'.323456789Z', b'.223456789Z')
+    content = FIXTURE.read_bytes().replace(b'.323456Z', b'.223456Z')
     records = geocsv.read(content)
     tr = trace()
     tr.stats.starttime += 0.1
@@ -535,8 +551,8 @@ def test_containing_anchor_ambiguity_lists_all_affected_traces_and_source_lines(
     assert 'trace 0 MH.SYN01.00.BDH' in message
     assert 'trace 1 MH.SYN01.00.BDH' in message
     assert "'source': '<memory>'" in message
-    assert "'record': 1, 'line': 7" in message
-    assert "'record': 7, 'line': 13" in message
+    assert "'record': 1, 'line': 12" in message
+    assert "'record': 7, 'line': 18" in message
     assert 'fill headers manually' in message
     for item, original in zip(stream, before):
         assert item.stats == original.stats
@@ -544,7 +560,7 @@ def test_containing_anchor_ambiguity_lists_all_affected_traces_and_source_lines(
 
 
 def test_overlapping_source_ranges_count_each_sample_once(records):
-    records[0].loc[7, 'StartTime'] = pd.Timestamp('2025-01-01T00:00:00.223456789Z')
+    records[0].loc[7, 'Time'] = pd.Timestamp('2025-01-01T00:00:00.223456789Z')
     first = trace()
     second = first.copy()
     second.stats.starttime += 0.1
@@ -566,7 +582,7 @@ def test_overlapping_source_ranges_count_each_sample_once(records):
 def test_merged_coverage_rejects_ambiguous_grid_alignment(records):
     tr = trace()
     tr.data = np.arange(10, dtype=np.float32)
-    records[0].loc[7, 'StartTime'] += pd.Timedelta(milliseconds=25)
+    records[0].loc[7, 'Time'] += pd.Timedelta(milliseconds=25)
     with pytest.raises(ValueError, match='exactly halfway.*ambiguous'):
         associate(tr, records, allow_first_segment=True, time_tolerance=0)
     assert 'geocsv' not in tr.stats
@@ -574,7 +590,7 @@ def test_merged_coverage_rejects_ambiguous_grid_alignment(records):
 
 def test_exact_merged_alignment_uses_integer_nanosecond_sample_times(records):
     records[0].loc[[1, 7], 'SampleRate'] = 3.0
-    records[0].loc[7, 'StartTime'] = (pd.Timestamp(TIMES['SYN01'])
+    records[0].loc[7, 'Time'] = (pd.Timestamp(TIMES['SYN01'])
                                     + pd.Timedelta(nanoseconds=1_333_333_333))
     tr = trace()
     tr.stats.sampling_rate = 3.0
@@ -604,12 +620,12 @@ def test_merge_requires_exact_grid_coverage(records, problem):
     if problem == 'one_extra':
         tr.data = np.arange(11, dtype=np.float32)
     elif problem == 'gap':
-        records[0].loc[7, 'StartTime'] += pd.Timedelta(milliseconds=50)
+        records[0].loc[7, 'Time'] += pd.Timedelta(milliseconds=50)
         tr.data = np.arange(11, dtype=np.float32)
     elif problem == 'off_grid':
-        records[0].loc[7, 'StartTime'] += pd.Timedelta(milliseconds=25)
+        records[0].loc[7, 'Time'] += pd.Timedelta(milliseconds=25)
     elif problem == 'overlap_sum':
-        records[0].loc[7, 'StartTime'] -= pd.Timedelta(milliseconds=100)
+        records[0].loc[7, 'Time'] -= pd.Timedelta(milliseconds=100)
         # The sum is 4 + 6 = 10, but the union contains only 8 samples.
     elif problem == 'incomplete':
         records[0].loc[7, 'SampleCount'] = pd.NA
@@ -620,7 +636,7 @@ def test_merge_requires_exact_grid_coverage(records, problem):
         tr.stats.sampling_rate = 1.
         records[0].loc[1, 'SampleRate'] = 1.
         records[0].loc[7, 'SampleRate'] = 0.999991
-        records[0].loc[7, 'StartTime'] = pd.Timestamp(TIMES['SYN01']) + pd.Timedelta(seconds=4)
+        records[0].loc[7, 'Time'] = pd.Timestamp(TIMES['SYN01']) + pd.Timedelta(seconds=4)
         records[0].loc[7, 'SampleCount'] = 60000
         tr.data = np.arange(60004, dtype=np.float32)
     before = tr.copy()
@@ -632,7 +648,7 @@ def test_merge_requires_exact_grid_coverage(records, problem):
 
 @pytest.mark.parametrize('offset_ns', [-100_000, 100_000])
 def test_merged_segment_alignment_accepts_timing_boundary(records, offset_ns):
-    records[0].loc[7, 'StartTime'] += pd.Timedelta(nanoseconds=offset_ns)
+    records[0].loc[7, 'Time'] += pd.Timedelta(nanoseconds=offset_ns)
     tr = trace()
     tr.data = np.arange(10, dtype=np.float32)
     associate(tr, records, allow_first_segment=True)
@@ -704,17 +720,10 @@ def test_association_columns_are_reserved(records, column):
 
 
 @pytest.mark.parametrize('column', ['readonly', '_types', 'keys', '__dict__'])
-def test_attribdict_columns_fail_before_batch_mutation(tmp_path, column):
-    # A valid GeoCSV extension must not change the attachment's container behavior.
-    lines = FIXTURE.read_text().splitlines()
-    lines[2] += ',string'
-    lines[3] += ',unitless'
-    lines[4] += f',{column}'
-    for index in range(5, len(lines)):
-        lines[index] += ',association'
-    source = tmp_path / 'container_collision.geocsv'
-    source.write_text('\n'.join(lines) + '\n')
-    records = geocsv.read(source)
+def test_attribdict_columns_fail_before_batch_mutation(records, column):
+    # In-memory extension columns must not alter the attachment container.
+    records[0][column] = 'association'
+    source = FIXTURE
     original_frame = records[0].copy(deep=True)
     stream = obspy.Stream([trace(), trace('SYN02')])
     original_traces = [tr.copy() for tr in stream]
@@ -760,7 +769,7 @@ def test_batch_starttime_differences_are_signed_and_independent(records, allow_f
 
     for tr, offset_ns, original in zip(st, offsets_ns, before):
         assert tr.stats.geocsv.association.waveform_start_offset_seconds == offset_ns / 1_000_000_000
-        assert tr.stats.geocsv.StartTime == source_time
+        assert tr.stats.geocsv.Time == source_time
         assert tr.stats.geocsv.source_record_index == 1
         assert tr.stats.geocsv.association.type == ('anchor_segment' if allow_first_segment else 'single_segment')
         assert all(tr.stats[key] == value for key, value in original.items())
@@ -784,13 +793,13 @@ def test_single_segment_report_is_complete_and_independent(records):
     segment, = report.coverage_segments
     assert dict(segment) == {
         **dict(report.waveform), 'dataset_index': 0, 'source_record_index': 1,
-        'source_line_number': 7, 'waveform_sample_start': 0, 'waveform_sample_stop': 4}
+        'source_line_number': 12, 'waveform_sample_start': 0, 'waveform_sample_stop': 4}
     assert dict(report.max_sample_grid_offset) == {
         'seconds': 0., 'dataset_index': 0, 'source_record_index': 1,
-        'source_line_number': 7, 'waveform_sample_index': 0}
+        'source_line_number': 12, 'waveform_sample_index': 0}
     assert dict(report.max_sample_rate_difference) == {
         'hz': 0., 'dataset_index': 0, 'source_record_index': 1,
-        'source_line_number': 7}
+        'source_line_number': 12}
     other = second.stats.geocsv.association
     assert report is not other
     for key in ('waveform', 'max_sample_grid_offset', 'max_sample_rate_difference'):
@@ -808,7 +817,7 @@ def test_single_segment_report_is_complete_and_independent(records):
 
 def test_anchor_report_retains_original_segments_and_clipped_ranges(records):
     # Start inside the first source segment; clip the second at the output end.
-    records[0].loc[7, 'StartTime'] += pd.Timedelta(nanoseconds=50_000)
+    records[0].loc[7, 'Time'] += pd.Timedelta(nanoseconds=50_000)
     records[0].loc[7, 'SampleRate'] = 20.000001
     tr = trace()
     tr.stats.starttime += 0.05
@@ -818,8 +827,8 @@ def test_anchor_report_retains_original_segments_and_clipped_ranges(records):
     assert report.type == 'anchor_segment'
     assert report.waveform_start_offset_seconds == 0.05
     first, second = report.coverage_segments
-    assert (first.source_record_index, first.source_line_number) == (1, 7)
-    assert (second.source_record_index, second.source_line_number) == (7, 13)
+    assert (first.source_record_index, first.source_line_number) == (1, 12)
+    assert (second.source_record_index, second.source_line_number) == (7, 18)
     assert (first.waveform_sample_start, first.waveform_sample_stop) == (0, 3)
     assert (second.waveform_sample_start, second.waveform_sample_stop) == (3, 6)
     assert first.sample_count == 4 and second.sample_count == 6
@@ -828,10 +837,10 @@ def test_anchor_report_retains_original_segments_and_clipped_ranges(records):
     assert second.endtime.ns > tr.stats.endtime.ns
     assert dict(report.max_sample_grid_offset) == {
         'seconds': 0.00005, 'dataset_index': 0, 'source_record_index': 7,
-        'source_line_number': 13, 'waveform_sample_index': 3}
+        'source_line_number': 18, 'waveform_sample_index': 3}
     assert report.max_sample_rate_difference.hz == abs(20.000001 - 20.)
     assert report.max_sample_rate_difference.source_record_index == 7
-    assert report.max_sample_rate_difference.source_line_number == 13
+    assert report.max_sample_rate_difference.source_line_number == 18
 
 
 @pytest.mark.parametrize('rate', [20., 40.])
@@ -842,7 +851,7 @@ def test_half_sample_placement_boundary(records, rate, boundary_offset_ns):
     tr.data = np.arange(10, dtype=np.float32)
     records[0].loc[[1, 7], 'SampleRate'] = rate
     interval_ns = int(1_000_000_000 / rate)
-    records[0].loc[7, 'StartTime'] = (
+    records[0].loc[7, 'Time'] = (
         pd.Timestamp(TIMES['SYN01'])
         + pd.Timedelta(nanoseconds=4 * interval_ns + interval_ns // 2 + boundary_offset_ns))
     original = tr.copy()
@@ -862,7 +871,7 @@ def test_half_sample_placement_boundary(records, rate, boundary_offset_ns):
 def test_coverage_includes_source_start_just_beyond_waveform_end(records):
     tr = trace()
     tr.data = np.arange(5, dtype=np.float32)
-    records[0].loc[7, 'StartTime'] += pd.Timedelta(milliseconds=20)
+    records[0].loc[7, 'Time'] += pd.Timedelta(milliseconds=20)
     associate(tr, records, allow_first_segment=True, time_tolerance=0)
     segment = tr.stats.geocsv.association.coverage_segments[1]
     assert segment.starttime > tr.stats.endtime

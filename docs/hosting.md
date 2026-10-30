@@ -18,6 +18,17 @@ Publisher changes do not implicitly redefine the supported consumer baseline
 or fetch contract. Published reports remain bound to their original bytes
 and software evidence.
 
+## Local schema migration
+
+Automaid v4.6.0, consumer 0.27.0 and publisher 0.4.0 implement schema 1.0.0
+locally. Publisher report schema 4 names `recording_records`; scientific limits
+and manifest/download fields remain unchanged. Historical consumers and reports
+remain evidence rather than active compatibility paths. Existing hosted payloads
+are old-format and incompatible with the new-only reader. Fetch/read tutorial
+examples therefore use temporary local schema-fixture servers. The Worker is
+schema-independent; no rewrite or deployment is needed for payload migration.
+Candidate creation and validation do not authorize upload, activation or release.
+
 ## Current phase: testing only
 
 The recorded hosted testing collection is
@@ -47,7 +58,7 @@ Fractional precision and all other timestamps are unchanged.
 
 The P0006/P0045 testing collection was replaced on 2026-10-28. New downloads
 require consumer 0.26.0 or newer; the fixed 0.24.0 baseline and original fixtures
-remain historical scientific and download checks, not compatibility promises
+remain historical scientific and download evidence, not active compatibility promises
 for this new path protocol.
 The Worker and testing replacement were deployed and verified on 2026-10-28.
 All 3,292 original pairs passed fresh acceptance; live exact-byte downloads,

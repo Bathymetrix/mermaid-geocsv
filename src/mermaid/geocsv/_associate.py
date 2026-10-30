@@ -24,11 +24,11 @@ def _source_name(metadata):
     return metadata.download.url if metadata.download is not None else "<memory>"
 
 
-def _invalid_identity_fields(codes):
+def _invalid_identity_fields(codes, *, source=False):
     """Return invalid SNCL field names; only Location may be a known empty string."""
     return [field for field, code in zip(IDENTITY, codes)
             if not isinstance(code, str)
-            or (not code.strip() and not (field == "Location" and code == ""))]
+            or (not code.strip() and not (field == "Location" and code == ("  " if source else "")))]
 
 
 def _coordinates(trace, row, metadata):
@@ -48,7 +48,13 @@ def _coordinates(trace, row, metadata):
         if not isfinite(float(value)) or not lower <= value <= upper:
             raise ValueError(f"{trace.id}: invalid {field} {value!r}")
         projected[key] = float(value)
-    projected["elevation"] = 0.0  # Sea-level convention; no geoid model.
+    elevation = row.get("Elevation")
+    if metadata.field_units.get("Elevation") != "meters":
+        raise ValueError(f"{trace.id}: Elevation requires declared units meters")
+    if elevation is None or pd.isna(elevation) or not isfinite(float(elevation)) or elevation != 0:
+        raise ValueError(f"{trace.id}: requires explicit zero Recording Elevation")
+    # Only the explicit zero sea-level reference is supported. No geoid model.
+    projected["elevation"] = float(elevation)
     return AttribDict(projected)
 
 
@@ -73,7 +79,7 @@ def _sac_header(trace, row, metadata, coordinates):
     sac = SACTrace.from_obspy_trace(trace, keep_sac_header=False)
     headers = sac.to_obspy_trace(round_sampling_interval=False).stats.sac
     headers.update({"stla": coordinates.latitude, "stlo": coordinates.longitude,
-                    "stel": 0.0, "stdp": depth})
+                    "stel": float(row["Elevation"]), "stdp": depth})
     return headers
 
 
@@ -119,10 +125,10 @@ def _association_details(trace, anchor, association_type, ranges):
     max_rate = None
     # Stable ordering also determines the reported source/sample in a tie.
     ranges = sorted(ranges, key=lambda item: (
-        pd.Timestamp(item[0][2]["StartTime"]).value, item[0][0], item[0][1]))
+        pd.Timestamp(item[0][2]["Time"]).value, item[0][0], item[0][1]))
     for match, first_sample, clipped_first, clipped_stop in ranges:
         dataset_index, record_index, row, metadata = match
-        start_ns = pd.Timestamp(row["StartTime"]).value
+        start_ns = pd.Timestamp(row["Time"]).value
         source_rate = Decimal(str(row["SampleRate"]))
         reference = {"dataset_index": dataset_index,
                      "source_record_index": int(record_index),
@@ -159,7 +165,7 @@ def _association_details(trace, anchor, association_type, ranges):
         },
         "coverage_segments": tuple(segments),
         "waveform_start_offset_seconds": (
-            trace.stats.starttime.ns - pd.Timestamp(anchor[2]["StartTime"]).value
+            trace.stats.starttime.ns - pd.Timestamp(anchor[2]["Time"]).value
         ) / 1_000_000_000,
         "max_sample_grid_offset": {"seconds": max_grid[0] / 1_000_000_000,
                                    **max_grid[1]},
@@ -185,7 +191,7 @@ def _validate_coverage(trace, overlapping):
                 <= float(source_rate)
                 <= trace.stats.sampling_rate + SAMPLE_RATE_TOLERANCE_HZ):
             raise ValueError(f"{context}: incompatible SampleRate={source_rate}")
-        offset_ns = pd.Timestamp(row["StartTime"]).value - trace.stats.starttime.ns
+        offset_ns = pd.Timestamp(row["Time"]).value - trace.stats.starttime.ns
         first_sample = round(Decimal(offset_ns) * rate / 1_000_000_000)
         stop_sample = first_sample + int(count)
         clipped_first = max(0, first_sample)
@@ -255,20 +261,20 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
                                  "association requires absent destination containers")
     datasets = []
     seen_events = {}
-    required = set(IDENTITY) | {"MethodIdentifier", "StartTime", "SampleRate",
+    required = set(IDENTITY) | {"MethodIdentifier", "Time", "SampleRate",
                                 "SampleCount"}
     for dataset_index, frame in enumerate(records):
         if "MethodIdentifier" not in frame:
             continue
         events = frame.loc[frame["MethodIdentifier"].str.startswith(
-            "Algorithm(event):", na=False)]
+            "Derivation:Recording:", na=False)]
         if events.empty:
             continue
         missing = required - set(events.columns)
         if missing:
             raise ValueError(f"event dataset {dataset_index} lacks columns {sorted(missing)}")
         metadata = frame.attrs.get("geocsv")
-        if not isinstance(metadata, GeoCSVMetadata):
+        if not isinstance(metadata, GeoCSVMetadata) or metadata.schema_version != "1.0.0":
             raise ValueError(f"dataset {dataset_index} lacks geocsv.read provenance")
         if metadata.field_units.get("SampleRate") != "hertz":
             raise ValueError(f"dataset {dataset_index}: SampleRate requires declared units hertz")
@@ -285,19 +291,22 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
                 "so source columns must not shadow its attributes or methods")
         event_index = {}
         for sncl, group in events.groupby(list(IDENTITY), sort=False, dropna=False):
-            invalid = _invalid_identity_fields(sncl)
+            invalid = _invalid_identity_fields(sncl, source=True)
             if invalid:
                 raise ValueError(
                     f"{_source_name(metadata)}, dataset {dataset_index}, records "
                     f"{list(group.index)}: invalid event identity fields {invalid}; "
                     "Network, Station, Channel require nonempty strings; Location "
-                    "may be an empty string but must not be missing")
+                    "requires a nonempty code or two literal spaces")
+            # Compare the defined source blank code without rewriting either identity.
+            sncl = tuple("" if field == "Location" and code == "  " else code
+                         for field, code in zip(IDENTITY, sncl))
             timed_rows, incomplete_rows = [], []
             for record_index, row in group.iterrows():
-                time = row["StartTime"]
+                time = row["Time"]
                 if pd.isna(time) or pd.Timestamp(time).tzinfo is None:
                     incomplete_rows.append((record_index,
-                                            "missing or timezone-naive StartTime; row is ineligible"))
+                                            "missing or timezone-naive Time; row is ineligible"))
                     continue
                 time_ns = pd.Timestamp(time).value
                 count, source_rate = row['SampleCount'], row['SampleRate']
@@ -317,7 +326,7 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
                             <= end_ns + tolerance_ns]
                         raise ValueError(
                             f"ambiguous duplicate GeoCSV event rows for SNCL {sncl}, "
-                            f"UTC StartTime={pd.Timestamp(time).tz_convert('UTC').isoformat()}, "
+                            f"UTC Time={pd.Timestamp(time).tz_convert('UTC').isoformat()}, "
                             f"SampleCount={count}, SampleRate={source_rate}: "
                             f"(source, dataset, record) {seen_events[key]} and {source}; "
                             f"affected traces: {affected}; source line numbers are one-based "
@@ -397,14 +406,14 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
             anchors = []
             for match in overlapping:
                 dataset_index, record_index, row, metadata = match
-                source_ns = pd.Timestamp(row["StartTime"]).value
+                source_ns = pd.Timestamp(row["Time"]).value
                 end_ns = _source_last_sample_ns(source_ns, row)
                 if (end_ns is not None and source_ns - tolerance_ns
                         <= trace_time_ns <= end_ns + tolerance_ns):
                     anchors.append(match)
             if len(anchors) > 1:
                 contexts = [dict(_record_context(item[0], item[1], item[3]),
-                                 StartTime=str(item[2]["StartTime"]),
+                                 Time=str(item[2]["Time"]),
                                  SampleCount=item[2]["SampleCount"],
                                  SampleRate=item[2]["SampleRate"])
                             for item in anchors]

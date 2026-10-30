@@ -31,17 +31,19 @@ The examples use three isolated DET segments with complete pressure metadata:
 | 169 | 2018-07-12T06:51:58.293Z | 4,448 | 0 |
 | 239 | 2018-07-15T22:48:15.969Z | 5,440 | −1 |
 
-These are zero-based data-record indices in the pinned complete GeoCSV file.
-Its timestamps have millisecond precision; downloaded MiniSEED retains finer
-timing. All three associate as `single_segment`. The
+These are zero-based data-record indices in the local schema subset, whose first 300 records preserve the historical indices.
+The fixture manifest maps every retained row to its historical source record.
+The schema fixture preserves historical millisecond epochs in six-digit notation;
+downloaded MiniSEED retains finer timing. Display width does not establish accuracy. All three associate as `single_segment`. The
 [association tutorial](associate.md#3-associate-a-clipped-window) demonstrates
 `anchor_segment` and a [combined window](associate.md#4-associate-a-combined-window).
 
 ## 1. Fetch the matching GeoCSV snapshot
 
 Pin the metadata snapshot so the record indices and reference comparisons
-remain reproducible. This hosted collection is **testing only**; its snapshots
-may be retired. `output_dir=None` keeps the metadata in memory. Passing fetch
+remain reproducible. The metadata below are served by a temporary local
+HTTP server using the new-schema fixtures. Existing hosted metadata are old-format
+and cannot be parsed by the new-only reader. No publication is performed. `output_dir=None` keeps the metadata in memory. Passing fetch
 results directly to `read` preserves download provenance.
 
 ```python
@@ -60,16 +62,48 @@ if root.name in {"docs", "tutorials"}:
     root = root.parent
 fixtures = root / "data/fixtures/P0006/waveforms"
 
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from tempfile import TemporaryDirectory
+from threading import Thread
+import hashlib
+import json
+
+collection_directory = TemporaryDirectory()
+server_root = Path(collection_directory.name)
+release = "2026-10-29T00:00:00.000000Z"
+component = release.replace(":", "-")
+release_directory = server_root / "releases" / component
+release_directory.mkdir(parents=True)
+entries = []
+for instrument in ["P0006", "P0045"]:
+    name = f"{instrument}.geocsv"
+    content = (root / "data/fixtures/schema-1.0.0" / instrument / name).read_bytes()
+    (release_directory / name).write_bytes(content)
+    entries.append({"instrument_id": instrument, "filename": name,
+                    "size_bytes": len(content), "sha256": hashlib.sha256(content).hexdigest(),
+                    "provenance": {"notes": "Local schema fixture; see its provenance manifest"}})
+manifest = {"release_id": release, "testing_only": True, "files": entries}
+(release_directory / "manifest.json").write_text(json.dumps(manifest))
+(server_root / "latest.json").write_text(json.dumps({
+    "release_id": release, "testing_only": True,
+    "manifest": f"releases/{component}/manifest.json"}))
+handler = partial(SimpleHTTPRequestHandler, directory=str(server_root))
+server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+server_thread = Thread(target=server.serve_forever, daemon=True)
+server_thread.start()
+base_url = f"http://127.0.0.1:{server.server_port}/"
+
 downloads = geocsv.fetch(
     "P0006",
-    base_url="https://bathymetrix.com/geocsv/testing/",
-    release="2026-10-21T22:48:33.277Z",
+    base_url=base_url,
+    release=release,
     output_dir=None,
 )
 tables = geocsv.read(downloads)
 records = tables[0]
 print(downloads[0].provenance.release_id)
-print(records.loc[[98, 169, 239], ["StartTime", "SampleCount"]])
+print(records.loc[[98, 169, 239], ["Time", "SampleCount"]])
 ```
 
 ## 2. Download and associate the first detection
@@ -77,7 +111,7 @@ print(records.loc[[98, 169, 239], ["StartTime", "SampleCount"]])
 Use EarthScope's HTTPS service directly. The one-second margin around the
 source segment requests its complete first and last samples despite the
 GeoCSV timestamp/rate precision. It is a retrieval margin, not an association
-tolerance. `StartTime` is already corrected; do not apply `TimeCorrection`
+tolerance. `Time` is already corrected; do not apply `TimeCorrectionApplied`
 again. Leave quality selection unspecified.
 
 `filename` saves the raw service response before ObsPy's client parsing and
@@ -92,7 +126,7 @@ print(f"Downloads and SAC exports: {output_dir}")
 client = Client("https://service.earthscope.org", timeout=30)
 
 row = records.loc[98]
-start = UTCDateTime(row["StartTime"].isoformat())
+start = UTCDateTime(row["Time"].isoformat())
 last_sample = start + (int(row["SampleCount"]) - 1) / float(row["SampleRate"])
 raw_path = output_dir / "P0006_record_98.mseed"
 client.get_waveforms(
@@ -225,7 +259,7 @@ additional_examples = [
 ]
 for record_index, basename, start_offset_ns in additional_examples:
     row = records.loc[record_index]
-    start = UTCDateTime(row["StartTime"].isoformat())
+    start = UTCDateTime(row["Time"].isoformat())
     last_sample = start + (int(row["SampleCount"]) - 1) / float(row["SampleRate"])
     raw_path = output_dir / f"P0006_record_{record_index}.mseed"
     client.get_waveforms(
@@ -264,3 +298,12 @@ The client filename/read boundary and nearby tests were inspected in the
 read-only ObsPy checkout at `50033e1daf95233cd4f30e95a49c37fd50be2ccd`.
 Live downloads and comparisons were checked on 2026-10-27 with the repository's
 separately installed ObsPy 1.5.1.
+
+Stop the temporary metadata server after the examples:
+
+```python
+server.shutdown()
+server.server_close()
+server_thread.join()
+collection_directory.cleanup()
+```

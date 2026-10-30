@@ -17,6 +17,12 @@ maintained references.
 - [Open questions](open-questions.md): unresolved format/scientific questions and deferred workflows/mappings.
 - [Hosting](hosting.md): ownership, testing-only status, and links to canonical publisher/site contracts.
 
+## Format design notes
+
+- [MERMAID GeoCSV schema 1.0.0](format-spec.md): selected migration contract, exact fields/header, complete synthetic example and acceptance cases; not yet implemented.
+- [GeoCSV migration decisions](geocsv-method-identifiers.md): agreed names, timestamps, missing values and scientific constraints; maintained with automaid.
+- [Four-repository migration plan](../../automaid/docs/geocsv-migration-plan.md): coordinated implementation, verification, instruction precedence and automaid code boundaries.
+
 ## Fixtures and sources
 
 - [GeoCSV v2.0.4](references/GeoCSV_v2.0.4.pdf) and [preserved examples](../data/fixtures/GeoCSV_v2.0.4_examples/README.md).

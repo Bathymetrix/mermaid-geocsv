@@ -36,7 +36,7 @@ waveform_path = (
     / "20210528T053250.0030_60B08BB3.MER.DET.WLT2.mseed"
 )
 trace = read_waveforms(str(waveform_path))[0]
-tables = geocsv.read(example_dir / "association_subset.geocsv")
+tables = geocsv.read(root / "data/fixtures/schema-1.0.0/association/452.020-P-0030/association_subset.geocsv")
 geocsv.associate(trace, tables, create_sac_header=True)
 print(trace.stats.sac)
 ```

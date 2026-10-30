@@ -1,0 +1,18 @@
+# MERMAID GeoCSV schema: 1.0.0
+#dataset: GeoCSV
+#created: 2026-10-29T00:00:00.000000Z
+#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org
+#attribution: Historical evidence projected into schema fixture; tools automaid v4.6.0 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])
+#lineterminator: '\n'
+#delimiter: ','
+#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
+#field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
+MethodIdentifier,Time,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,ClockOffset,TimeCorrectionApplied
+Measurement:Position:u-blox_NEO-M8N,2019-08-24T17:51:40.000000Z,MH,P0048,,,,-25.583800,-177.631967,,,MERMAID_452.020,,,0.000030,
+Measurement:Pressure-Absolute:KELLER_Series_6,2019-08-24T18:05:57.000000Z,MH,P0048,,,,,,,50,MERMAID_452.020,,,,
+Interpolation:Crossing-Descent:automaid-v4.5.14,2019-08-24T18:37:57.714000Z,MH,P0048,,,,-25.574656,-177.629004,,5000,MERMAID_452.020,,,,
+Derivation:Recording:automaid-v4.5.14,2021-07-28T05:37:01.034000Z,MH,P0048,00,BDH,Q,-27.274873,175.651797,0,97400,MERMAID_452.020,20.007361,4544,,-0.079556
+Derivation:Recording:automaid-v4.5.14,2021-07-28T06:25:49.254000Z,MH,P0048,00,BDH,Q,-27.274791,175.651523,0,97500,MERMAID_452.020,20.007361,4640,,-0.081833
+Derivation:Recording:automaid-v4.5.14,2021-07-28T08:16:26.055000Z,MH,P0048,00,BDH,Q,-27.274604,175.650900,0,98800,MERMAID_452.020,20.007361,4448,,-0.086993
+Derivation:Recording:automaid-v4.5.14,2021-07-28T14:38:41.094000Z,MH,P0048,00,BDH,Q,-27.273958,175.648749,0,97700,MERMAID_452.020,20.007361,4480,,-0.104823
+Derivation:Recording:automaid-v4.5.14,2021-07-28T18:48:56.930000Z,MH,P0048,00,BDH,Q,-27.273536,175.647341,0,98400,MERMAID_452.020,20.007361,4480,,-0.116497

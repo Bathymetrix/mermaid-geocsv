@@ -1,0 +1,18 @@
+# MERMAID GeoCSV schema: 1.0.0
+#dataset: GeoCSV
+#created: 2026-10-29T00:00:00.000000Z
+#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org
+#attribution: Historical evidence projected into schema fixture; tools automaid v4.6.0 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])
+#lineterminator: '\n'
+#delimiter: ','
+#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
+#field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
+MethodIdentifier,Time,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,ClockOffset,TimeCorrectionApplied
+Measurement:Position:u-blox_NEO-M8N,2018-08-10T11:15:10.000000Z,MH,P0011,,,,-13.987650,-159.575467,,,MERMAID_452.020,,,-0.000000,
+Measurement:Pressure-Absolute:KELLER_Series_6,2018-08-10T11:28:02.000000Z,MH,P0011,,,,,,,670,MERMAID_452.020,,,,
+Interpolation:Crossing-Descent:automaid-v4.5.14,2018-08-10T11:35:10.219000Z,MH,P0011,,,,-13.984336,-159.577893,,5000,MERMAID_452.020,,,,
+Measurement:Pressure-Absolute:KELLER_Series_6,2018-09-27T15:46:55.000000Z,MH,P0011,,,,,,,152520,MERMAID_452.020,,,,
+Derivation:Recording:automaid-v4.5.14,2018-09-28T10:11:37.681000Z,MH,P0011,00,BDH,D,-13.993083,-159.285869,0,,MERMAID_452.020,20.007161,9696,,-0.296905
+Derivation:Recording:automaid-v4.5.14,2018-09-28T10:32:46.675000Z,MH,P0011,00,MDH,D,-13.993156,-159.285750,0,,MERMAID_452.020,5.001790,6080,,-0.298426
+Derivation:Recording:automaid-v4.5.14,2018-09-30T10:54:36.731000Z,MH,P0011,00,BDH,Q,-14.003203,-159.269493,0,151200,MERMAID_452.020,20.007161,5024,,-0.507118
+Measurement:Pressure-Absolute:KELLER_Series_6,2018-09-30T11:00:55.000000Z,MH,P0011,,,,,,,151200,MERMAID_452.020,,,,

@@ -19,11 +19,10 @@ against GeoCSV; it never repairs a mismatch by rewriting either source.
 Paired SAC files are independent comparison references, never association
 inputs or sources of missing metadata.
 
-Eligible source rows have `MethodIdentifier` beginning with `Algorithm(event):`.
+Eligible source rows have `MethodIdentifier` beginning with `Derivation:Recording:`.
 These are detected and requested waveform acquisitions, independent of producer
-version. The source label `event` identifies an acquisition record and does not
-denote earthquake-source metadata. GPS, pressure, and
-thermocline observations are not waveform candidates.
+version. The subject `Recording` identifies an original contiguous waveform segment.
+Position, pressure and crossing rows are not waveform candidates.
 
 In the MERMAID construction, each original contiguous segment has one
 event row. Multiple traces may independently match that row, including
@@ -44,8 +43,9 @@ source indices and immutable GeoCSV metadata.
 A standard match requires:
 
 1. Exact, complete Network, Station, Channel, and Location. Only Location may
-   be the known empty string `""`, matching only waveform location `""`.
-   Missing or whitespace-only codes are invalid; codes are not trimmed,
+   be the known blank code of exactly two ASCII spaces, matching only waveform
+   location `""`. Both source spaces remain in the table and raw attachment.
+   Empty decoded source Location and other whitespace-only codes are invalid; codes are not trimmed,
    relabeled, or treated as wildcards. This validates presence, not the
    complete SEED character set or code lengths.
 2. Timezone-aware source starts within the inclusive absolute
@@ -124,8 +124,8 @@ Each `coverage_segments` entry contains:
 
 | Fields | Meaning |
 | --- | --- |
-| `network`, `station`, `location`, `channel` | Complete source identity, including a known empty location. |
-| `starttime`, `endtime` | Full original source segment bounds as UTCDateTime values. End is the last sample, computed as `StartTime + (SampleCount - 1) / SampleRate`, rounded to integer nanoseconds. |
+| `network`, `station`, `location`, `channel` | Complete source identity, including the literal two-space known blank Location. |
+| `starttime`, `endtime` | Full original source segment bounds as UTCDateTime values. End is the last sample, computed as `Time + (SampleCount - 1) / SampleRate`, rounded to integer nanoseconds. |
 | `sampling_rate_hz`, `sample_count` | Original source rate/count, not a clipped count. |
 | `dataset_index` | Zero-based position of the dataset in the supplied DataFrame list. |
 | `source_record_index` | Zero-based file-wide data-record index, excluding headers and comments; it does not restart for each dataset. |
@@ -165,17 +165,15 @@ responsibility; the package provides no sidecar writer or round-trip guarantee.
 
 ### Adopted sea-level reference
 
-`stats.coordinates.elevation = 0.0` is an explicit marine MERMAID convention
-consistent with automaid. It refers to sea level, not the submerged sensor's
-physical elevation, and is not inferred from missing GeoCSV `Elevation`.
-No geoid, ellipsoid, tidal correction, or other vertical-datum model is
-assumed. Lake-level handling is deferred.
+`stats.coordinates.elevation` and SAC `stel` use the explicit matched Recording
+`Elevation`, declared `float` with unit `meters` and required to be zero. Missing,
+invalid or nonzero source elevation raises before mutation. No zero default is
+supplied. The source denotes the adopted sea-level reference, not the submerged
+sensor's physical elevation. No geoid, ellipsoid or tidal correction is inferred.
 
-Zero has the same numeric value in metres and kilometres; ObsPy array
-processing expects kilometres while SAC `stel` uses metres. This does not
-establish a future nonzero elevation unit convention or suitability for every
-analysis of a submerged receiver. Parsed `Elevation`, including missingness,
-remains unchanged in the source attachment.
+Zero has the same numeric value in metres and kilometres; ObsPy array processing
+expects kilometres while SAC `stel` uses metres. This profile defines no nonzero
+coordinate-elevation conversion. Raw source Elevation remains attached unchanged.
 
 ## Clipped and combined windows
 
@@ -185,7 +183,7 @@ For `allow_first_segment=True`:
    Require zoned source timestamps and positive integer source SampleCount,
    with finite positive source SampleRate declared in hertz to establish a
    source interval. Its inclusive last sample is
-   `StartTime + (SampleCount - 1) / SampleRate`, rounded to UTC nanoseconds.
+   `Time + (SampleCount - 1) / SampleRate`, rounded to UTC nanoseconds.
 2. Require exactly one source interval containing the waveform's first sample,
    allowing the explicit `time_tolerance` at interval boundaries. A preceding
    interval that ended earlier is not an anchor. Zero or multiple anchors raise.
@@ -277,7 +275,7 @@ publisher owns final export verification.
 
 The inspected automaid writer renders corrected waveform starts as
 `str(starttime)[:23] + 'Z'`, retaining milliseconds. Association must not apply
-`TimeCorrection` again. The default start tolerance accommodates the checked
+`TimeCorrectionApplied` again. The default start tolerance accommodates the checked
 histories' sub-millisecond serialization differences. The
 [fixture evidence](../data/fixtures/association/README.md#tolerance-evidence)
 records the bounded sample behind that choice; it is not a clock-accuracy

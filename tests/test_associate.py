@@ -26,7 +26,7 @@ CONFIGURATION = {
 @pytest.fixture(scope="module")
 def subsets():
     # These real-data subsets are tracked and required, including on CI.
-    return {item["path"]: geocsv.read(FIXTURES / item["subset"]["path"])
+    return {item["path"]: geocsv.read(FIXTURES.parent / "schema-1.0.0/association" / item["subset"]["path"])
             for item in MANIFEST["geocsv"]}
 
 
@@ -48,7 +48,7 @@ def test_default_accepts_real_writer_offset_beyond_100_microseconds(subsets):
     trace = load_trace()
     records = subsets[EXAMPLES[0]['geocsv']]
     record_index = EXAMPLES[0]['subset_record_index']
-    assert trace.stats.starttime.ns - records[0].loc[record_index, 'StartTime'].value == 349_000
+    assert trace.stats.starttime.ns - records[0].loc[record_index, 'Time'].value == 349_000
     before = trace.copy()
     with pytest.raises(ValueError, match='no match'):
         associate(trace, records, time_tolerance=0.0001)
@@ -80,7 +80,7 @@ def test_tracked_subset_hashes_and_record_maps(subsets):
         assert original_indices == sorted(set(original_indices))
         assert 0 <= min(original_indices) <= max(original_indices) < subset["source_record_count"]
         assert frame.index.equals(pd.RangeIndex(len(original_indices), name="source_record_index"))
-        assert frame.attrs["geocsv"].source_path == path.resolve()
+        assert frame.attrs["geocsv"].source_path == (FIXTURES.parent / "schema-1.0.0/association" / subset["path"]).resolve()
         assert frame["SampleCount"].dtype == pd.Int64Dtype()
         assert frame["Location"].dtype == pd.StringDtype()
         for example in EXAMPLES:
@@ -132,7 +132,7 @@ def test_sampled_association(example, subsets):
 def test_subset_event_quality_domain(subsets):
     for records in subsets.values():
         for frame in records:
-            events = frame.loc[frame["MethodIdentifier"].str.startswith("Algorithm(event):")]
+            events = frame.loc[frame["MethodIdentifier"].str.startswith("Derivation:Recording:")]
             assert events["DataQuality"].notna().all()
             assert set(events["DataQuality"]) <= {"Q", "D"}
 
@@ -194,12 +194,12 @@ def test_rate_check_and_waveform_authority(subsets):
 
 def test_equivalent_timezone_and_source_resolution(subsets):
     trace, frame = one_event(subsets)
-    time = frame.iloc[0]["StartTime"].tz_convert("Pacific/Honolulu")
-    frame.loc[:, "StartTime"] = time
+    time = frame.iloc[0]["Time"].tz_convert("Pacific/Honolulu")
+    frame.loc[:, "Time"] = time
     associate(trace, [frame], time_tolerance=0.001)
-    assert trace.stats.geocsv.StartTime == time
+    assert trace.stats.geocsv.Time == time
     trace = load_trace()
-    frame.loc[:, "StartTime"] = time + pd.Timedelta(milliseconds=2)
+    frame.loc[:, "Time"] = time + pd.Timedelta(milliseconds=2)
     with pytest.raises(ValueError, match="no match"):
         associate(trace, [frame], time_tolerance=0.001)
 
@@ -262,7 +262,7 @@ def test_real_report_keeps_measured_start_and_rate_differences(subsets):
     assert segment.source_record_index == EXAMPLES[0]['subset_record_index']
     source = subsets[EXAMPLES[0]['geocsv']][0]
     assert segment.source_line_number == source.attrs['geocsv'].record_line_numbers[segment.source_record_index]
-    assert segment.starttime.ns == source.loc[segment.source_record_index, 'StartTime'].value
+    assert segment.starttime.ns == source.loc[segment.source_record_index, 'Time'].value
     assert (segment.waveform_sample_start, segment.waveform_sample_stop) == (0, tr.stats.npts)
     assert report.max_sample_rate_difference.hz == abs(segment.sampling_rate_hz - tr.stats.sampling_rate)
     assert report.max_sample_grid_offset.seconds == pytest.approx(0.000412318, abs=1e-9)

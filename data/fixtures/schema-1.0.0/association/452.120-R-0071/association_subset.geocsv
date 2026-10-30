@@ -1,0 +1,19 @@
+# MERMAID GeoCSV schema: 1.0.0
+#dataset: GeoCSV
+#created: 2026-10-29T00:00:00.000000Z
+#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org
+#attribution: Historical evidence projected into schema fixture; tools automaid v4.6.0 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])
+#lineterminator: '\n'
+#delimiter: ','
+#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
+#field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
+MethodIdentifier,Time,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,ClockOffset,TimeCorrectionApplied
+Measurement:Position:u-blox_NEO-M8N,2021-05-04T09:36:36.000000Z,MH,R0071,,,,11.761367,115.255600,,,MERMAID_452.120,,,-0.000000,
+Measurement:Pressure-Absolute:KELLER_Series_6,2021-05-04T09:51:33.000000Z,MH,R0071,,,,,,,-11,MERMAID_452.120,,,,
+Interpolation:Crossing-Descent:automaid-v4.5.14,2021-05-04T10:09:52.157000Z,MH,R0071,,,,11.763050,115.254912,,5000,MERMAID_452.120,,,,
+Derivation:Recording:automaid-v4.5.14,2022-09-07T18:12:40.174000Z,MH,R0071,00,BDH,Q,13.062702,113.969915,0,151500,MERMAID_452.120,20.007020,4832,,-0.150431
+Measurement:Pressure-Absolute:KELLER_Series_6,2022-09-08T16:55:46.000000Z,MH,R0071,,,,,,,149599,MERMAID_452.120,,,,
+Measurement:Pressure-Absolute:KELLER_Series_6,2022-09-08T23:40:59.000000Z,MH,R0071,,,,,,,150029,MERMAID_452.120,,,,
+Derivation:Recording:automaid-v4.5.14,2022-09-09T17:22:43.532000Z,MH,R0071,00,BDH,Q,13.088745,113.971118,0,150600,MERMAID_452.120,20.007025,4768,,-0.074326
+Derivation:Recording:automaid-v4.5.14,2022-09-09T23:36:12.524000Z,MH,R0071,00,BDH,Q,13.092496,113.971053,0,150500,MERMAID_452.120,20.007025,5120,,-0.085520
+Derivation:Recording:automaid-v4.5.14,2022-09-10T04:40:24.079000Z,MH,R0071,00,BDH,Q,13.095551,113.971001,0,151000,MERMAID_452.120,20.007025,4576,,-0.094637

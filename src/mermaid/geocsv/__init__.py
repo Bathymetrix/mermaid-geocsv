@@ -12,7 +12,7 @@ from ._read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.26.0"
+__version__ = "0.27.0"
 
 __all__ = [
     "__version__",
@@ -42,7 +42,7 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
         Tables returned by ``read``, retaining source indices and immutable
         ``frame.attrs["geocsv"]`` metadata. May span datasets and files. Matching
         requires complete SNCL, timezone-aware starts, sample counts, and rates
-        in ``hertz``. Only Location may be empty. Coordinates require latitude
+        in ``hertz``. Known blank source Location is exactly two literal spaces. Coordinates require latitude
         and longitude in ``degrees_north`` and ``degrees_east``.
     time_tolerance : float, optional
         Inclusive absolute start/containment tolerance in seconds. Default 0.001
@@ -67,8 +67,8 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
     None
         Each trace receives fresh ``stats.geocsv`` and ``stats.coordinates``
         containers, plus ``stats.sac`` when requested. Samples and native waveform
-        headers are preserved. Coordinate elevation uses a sea-level reference
-        of 0.0.
+        headers are preserved. Coordinate elevation and SAC stel use the explicit source Recording
+        Elevation, required to be zero metres in schema 1.0.0.
 
     Raises
     ------

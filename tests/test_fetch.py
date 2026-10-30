@@ -17,7 +17,7 @@ from mermaid import geocsv
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
-REAL_FIXTURES = Path(__file__).parents[1] / "data/fixtures"
+REAL_FIXTURES = Path(__file__).parents[1] / "data/fixtures/schema-1.0.0"
 
 
 @pytest.fixture
@@ -29,13 +29,10 @@ def collection(tmp_path):
     # Two real instruments plus an invented entry for multiple-dataset parsing.
     # Keep the small synthetic entry second for the partial-batch failure test.
     for instrument, source in [("P0006", REAL_FIXTURES / "P0006/P0006.geocsv"),
-                               ("P_TEST", FIXTURES / "typed.geocsv"),
+                               ("P_TEST", FIXTURES / "schema-1.0.0/typed.geocsv"),
                                ("P0045", REAL_FIXTURES / "P0045/P0045.geocsv")]:
         destination = directory / f"{instrument}.geocsv"
         shutil.copyfile(source, destination)
-        if instrument == "P_TEST":
-            with destination.open("ab") as stream:
-                stream.write((FIXTURES / "multiline.geocsv").read_bytes())
         content = destination.read_bytes()
         entries.append({
             "instrument_id": instrument, "filename": destination.name,
@@ -171,41 +168,39 @@ def test_memory_all_real_fixture_and_metadata(collection, monkeypatch):
     assert list(collection.client.iterdir()) == []
     assert all(result.path is None and isinstance(result.content, bytes) for result in results)
     first = results[0]
-    assert len(first.content) == 3_001_072
-    assert first.provenance.sha256 == "93e8807306731191545845d58bb410480ed219b6e8129d381b22fcdcf9379080"
+    assert first.content == (REAL_FIXTURES / "P0006/P0006.geocsv").read_bytes()
+    assert first.provenance.sha256 == hashlib.sha256(first.content).hexdigest()
     assert first.provenance.manifest == collection.manifest_path.read_bytes()
     assert first.provenance.testing_only is True
     assert first.provenance.release_id == "test-001"
     assert json.loads(first.provenance.manifest)["files"][0]["provenance"]["manual_edits"] is False
     frames = geocsv.read(results)
-    assert len(frames) == 4
-    assert len(results[2].content) == 18_031_322
-    assert frames[3]["Station"].eq("P0045").all()
-    assert frames[3].index.equals(pd.RangeIndex(len(frames[3]), name="source_record_index"))
-    assert frames[3]["SampleCount"].dtype == pd.Int64Dtype()
-    assert frames[3].attrs["geocsv"].download is results[2].provenance
+    assert len(frames) == 3
+    assert results[2].content == (REAL_FIXTURES / "P0045/P0045.geocsv").read_bytes()
+    assert frames[2]["Station"].eq("P0045").all()
+    assert frames[2].index.equals(pd.RangeIndex(len(frames[2]), name="source_record_index"))
+    assert frames[2]["SampleCount"].dtype == pd.Int64Dtype()
+    assert frames[2].attrs["geocsv"].download is results[2].provenance
     frame = frames[0]
-    assert len(frame) == 20_345
-    assert frame.index.equals(pd.RangeIndex(20_345, name="source_record_index"))
+    assert len(frame) == 312
+    assert frame.index.equals(pd.RangeIndex(312, name="source_record_index"))
     assert frame["SampleCount"].dtype == pd.Int64Dtype()
     assert frame["Latitude"].dtype == pd.Float64Dtype()
     assert frame["Station"].dtype == pd.StringDtype()
-    assert frame["StartTime"].iloc[0].tzinfo is not None
+    assert frame["Time"].iloc[0].tzinfo is not None
     metadata = frame.attrs["geocsv"]
     assert metadata.source_path is None
     assert metadata.download is first.provenance
     assert metadata.download.url == collection.url + "releases/test-001/P0006.geocsv"
     assert metadata.field_units["Latitude"] == "degrees_north"
-    assert metadata.datetime_resolution_ns["StartTime"][0] == 1_000_000
+    assert metadata.datetime_resolution_ns["Time"][0] == 1000
     assert deepcopy(metadata) is metadata
     with pytest.raises(FrozenInstanceError):
         metadata.download.release_id = "changed"
     expected, = geocsv.read(REAL_FIXTURES / "P0006/P0006.geocsv")
     pd.testing.assert_frame_equal(frame, expected)
     assert frames[1].index.tolist() == [0, 1]
-    assert frames[2].index.tolist() == [2, 3]
     assert frames[1].attrs["geocsv"].download is results[1].provenance
-    assert frames[2].attrs["geocsv"].download is results[1].provenance
     assert collection.requests.count("/latest.json") == 1
     assert collection.requests.count("/releases/test-001/manifest.json") == 1
 
@@ -318,7 +313,7 @@ def test_memory_result_associates_without_losing_download_provenance(collection)
     obspy = pytest.importorskip("obspy")
     import numpy as np
 
-    content = (FIXTURES / "association/synthetic.geocsv").read_bytes()
+    content = (FIXTURES / "schema-1.0.0/synthetic.geocsv").read_bytes()
     (collection.directory / "P0006.geocsv").write_bytes(content)
     collection.manifest["files"][0].update(size_bytes=len(content),
                                            sha256=hashlib.sha256(content).hexdigest())
@@ -377,22 +372,22 @@ def test_invalid_arguments_do_not_request(collection, kwargs):
 
 
 def test_byte_input_uses_same_parser_and_no_invented_provenance():
-    content = (FIXTURES / "typed.geocsv").read_bytes()
+    content = (FIXTURES / "schema-1.0.0/typed.geocsv").read_bytes()
     frame, = geocsv.read(content, datetime_timezone="UTC")
     assert frame.attrs["geocsv"].source_path is None
     assert frame.attrs["geocsv"].download is None
-    assert str(frame["StartTime"].dtype).endswith(", UTC]")
+    assert str(frame["Time"].dtype).endswith(", UTC]")
     with pytest.raises(geocsv.GeoCSVError, match="<memory>:.*invalid UTF-8"):
-        geocsv.read(b"#dataset: GeoCSV\nHeader\n\xff\n")
+        geocsv.read(b"# MERMAID GeoCSV schema: 1.0.0\n#opaque: \xff\n")
     with pytest.raises(geocsv.GeoCSVError, match="LF or CRLF"):
-        geocsv.read(b"#dataset: GeoCSV\nHeader\nvalue")
+        geocsv.read((FIXTURES / "schema-1.0.0/typed.geocsv").read_bytes()[:-1])
     with pytest.raises(TypeError, match="GeoCSVFetchResult"):
-        geocsv.read([FIXTURES / "typed.geocsv"])
+        geocsv.read([FIXTURES / "schema-1.0.0/typed.geocsv"])
 
 
 def test_fetched_parser_error_identifies_url(collection):
     path = collection.directory / "P0006.geocsv"
-    content = b"#dataset: GeoCSV\nHeader\nunterminated"
+    content = (FIXTURES / "schema-1.0.0/typed.geocsv").read_bytes()[:-1]
     path.write_bytes(content)
     collection.manifest["files"][0].update(size_bytes=len(content),
                                            sha256=hashlib.sha256(content).hexdigest())

@@ -1,0 +1,18 @@
+# MERMAID GeoCSV schema: 1.0.0
+#dataset: GeoCSV
+#created: 2026-10-29T00:00:00.123456Z
+#description: Synthetic schema example; not an observed instrument history
+#attribution: Illustrative automaid-v4.5.14 source labels; not migrated writer output
+#lineterminator: '\n'
+#delimiter: ','
+#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
+#field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
+MethodIdentifier,Time,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,ClockOffset,TimeCorrectionApplied
+Measurement:Position:u-blox_NEO-M8N,2026-01-01T12:00:00.000000Z,MH,PTEST,,,,-20.123456,-150.654321,,,MERMAID_452.020,,,2.000000,
+Measurement:Pressure-Absolute:KELLER_Series_6,2026-01-01T12:00:01.000000Z,MH,PTEST,,,,,,,1013,MERMAID_452.020,,,,
+Interpolation:Crossing-Descent:automaid-v4.5.14,2026-01-01T12:10:00.000000Z,MH,PTEST,,,,-20.123500,-150.654400,,5000,MERMAID_452.020,,,,
+Derivation:Recording:automaid-v4.5.14,2026-01-01T12:20:00.250000Z,MH,PTEST,"  ",BDH,Q,-20.123600,-150.654500,0,123400,MERMAID_452.020,20.000000,2000,,-0.750000
+Interpolation:Crossing-Ascent:automaid-v4.5.14,2026-01-01T13:00:00.000000Z,MH,PTEST,,,,-20.124000,-150.655000,,5000,MERMAID_452.020,,,,
+Measurement:Position:u-blox_NEO-M8N,2026-01-01T13:10:00.000000Z,MH,PTEST,,,,-20.124100,-150.655100,,,MERMAID_452.020,,,,
+Measurement:Position:u-blox_NEO-M8N,2026-01-01T14:00:00.000000Z,MH,PTEST,,,,-20.124200,-150.655200,,,MERMAID_452.020,,,-1.000000,
+Derivation:Recording:automaid-v4.5.14,2026-01-01T14:20:01.500000Z,MH,PTEST,01,BDH,D,-20.124300,-150.655300,0,,MERMAID_452.020,20.000000,2400,,1.500000

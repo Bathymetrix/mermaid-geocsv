@@ -1,0 +1,19 @@
+# MERMAID GeoCSV schema: 1.0.0
+#dataset: GeoCSV
+#created: 2026-10-29T00:00:00.000000Z
+#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org
+#attribution: Historical evidence projected into schema fixture; tools automaid v4.6.0 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])
+#lineterminator: '\n'
+#delimiter: ','
+#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
+#field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
+MethodIdentifier,Time,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,ClockOffset,TimeCorrectionApplied
+Measurement:Position:u-blox_NEO-M8N,2018-09-05T11:08:01.000000Z,MH,P0017,,,,-10.016967,-135.012900,,,MERMAID_452.020,,,-0.000000,
+Measurement:Pressure-Absolute:KELLER_Series_6,2018-09-05T11:28:41.000000Z,MH,P0017,,,,,,,590,MERMAID_452.020,,,,
+Interpolation:Crossing-Descent:automaid-v4.5.14,2018-09-05T11:36:14.290000Z,MH,P0017,,,,-10.018517,-135.014079,,5000,MERMAID_452.020,,,,
+Measurement:Pressure-Absolute:KELLER_Series_6,2021-05-01T16:58:26.000000Z,MH,P0017,,,,,,,101860,MERMAID_452.020,,,,
+Measurement:Pressure-Absolute:KELLER_Series_6,2021-05-01T17:03:39.000000Z,MH,P0017,,,,,,,102010,MERMAID_452.020,,,,
+Derivation:Recording:automaid-v4.5.14,2021-05-07T05:10:26.356000Z,MH,P0017,10,BDH,D,-12.902919,-137.748559,0,,MERMAID_452.020,40.014611,12004,,-0.633328
+Measurement:Pressure-Absolute:KELLER_Series_6,2021-05-09T18:59:06.000000Z,MH,P0017,,,,,,,101060,MERMAID_452.020,,,,
+Measurement:Pressure-Absolute:KELLER_Series_6,2021-05-09T19:11:05.000000Z,MH,P0017,,,,,,,96660,MERMAID_452.020,,,,
+Derivation:Recording:automaid-v4.5.14,2021-08-14T12:08:12.155000Z,MH,P0017,10,BDH,D,-11.948586,-142.086145,0,,MERMAID_452.020,40.014612,6002,,-0.782537

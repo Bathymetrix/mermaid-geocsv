@@ -39,7 +39,7 @@ def main():
     example = manifest["examples"][0]
     history = next(item for item in manifest["geocsv"]
                    if item["path"] == example["geocsv"])
-    tables = geocsv.read(fixtures / history["subset"]["path"])
+    tables = geocsv.read(fixtures.parent / "schema-1.0.0/association" / history["subset"]["path"])
     frame, = tables
     assert frame.index.name == "source_record_index"
     assert str(frame["SampleCount"].dtype) == "Int64"
@@ -61,7 +61,7 @@ def main():
         assert exported.stats.sac.delta == np.float32(waveform.stats.delta)
         assert exported.stats.sac.stla == np.float32(source.Latitude)
         assert exported.stats.sac.stlo == np.float32(source.Longitude)
-        assert exported.stats.sac.stel == 0
+        assert exported.stats.sac.stel == np.float32(source.Elevation)
         assert exported.stats.sac.stdp == np.float32(source.WaterPressure / 100)
         np.testing.assert_array_equal(exported.data, waveform.data.astype(np.float32))
 

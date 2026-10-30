@@ -1,0 +1,17 @@
+# MERMAID GeoCSV schema: 1.0.0
+#dataset: GeoCSV
+#created: 2026-10-29T00:00:00.123456Z
+#description: Synthetic schema example; not an observed instrument history
+#attribution: Illustrative automaid-v4.5.14 source labels; not migrated writer output
+#lineterminator: '\n'
+#delimiter: ','
+#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
+#field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
+MethodIdentifier,Time,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,ClockOffset,TimeCorrectionApplied
+Derivation:Recording:automaid-v0,2025-01-01T00:00:00.000200Z,MH,SYN01,00,BDH,Q,50,60,0,10000,MERMAID_synthetic,20,4,,0
+Derivation:Recording:automaid-v0,2025-01-01T00:00:00.000000Z,MH,SYN01,00,BDH,Q,10,20,0,10000,MERMAID_synthetic,20,4,,0
+Measurement:Position:synthetic,2025-01-01T00:00:00.000100Z,MH,SYN01,,,,30,40,,,MERMAID_synthetic,,,,
+Derivation:Recording:automaid-v0,2024-12-31T23:59:59.999999Z,MH,SYN01,00,BDH,Q,51,61,0,10000,MERMAID_synthetic,20,4,,0
+Derivation:Recording:automaid-v0,2025-01-01T00:00:00.000100Z,MH,SYN01,00,BDH,Q,52,62,0,10000,MERMAID_synthetic,20,8,,0
+Derivation:Recording:automaid-v0,2025-01-01T00:00:00.000100Z,MH,SYN01,00,BDH,Q,53,63,0,10000,MERMAID_synthetic,20,4,,0
+Derivation:Recording:automaid-v0,2025-01-02T00:00:00.000000Z,MH,SYN01,00,BDH,Q,54,64,0,10000,MERMAID_synthetic,20,4,,0

@@ -1,84 +1,119 @@
 # Fetch GeoCSV files
 
-Download GeoCSV metadata from the [Bathymetrix test collection](https://bathymetrix.com/geocsv/).
-`geocsv.fetch` checks each file's size and checksum and returns a list of results.
-Use `geocsv.read` to turn those results into pandas tables.
+`geocsv.fetch` verifies exact bytes against a snapshot manifest and returns a
+list of results. `geocsv.read` parses schema 1.0.0 results into pandas tables.
+These examples use a temporary local testing collection. Existing public
+hosted payloads use the old format and are incompatible with the new-only reader.
+No download example here publishes data or changes a pointer outside its temporary server.
 
 Companions: [Markdown](fetch.md) · [Notebook](fetch.ipynb).
 
 ## Setup
 
-From the cloned repository, activate your environment and install the package:
+Install the local package from the cloned repository:
 
 ```bash
-source .venv/bin/activate
-python -m pip install .
+.venv/bin/python -m pip install .
 ```
 
-See [installation and notebook setup](../docs/installation.md) if needed. Run the
-Python examples below in order. They require an internet connection.
-The replacement testing collection requires mermaid-geocsv 0.26.0 or newer.
-
-## 1. Fetch one float into memory
-
-`base_url` selects the collection. `output_dir=None` keeps the download in
-memory without creating files.
+The examples require mermaid-geocsv 0.27.0 or newer and run offline from the
+repository root, `docs/`, or `tutorials/`. First create a local HTTP collection
+from the documented [schema fixtures](../data/fixtures/schema-1.0.0/README.md):
 
 ```python
+from pathlib import Path
 from mermaid import geocsv
 
-base_url = "https://bathymetrix.com/geocsv/testing/"
+root = Path.cwd()
+if root.name in {"docs", "tutorials"}:
+    root = root.parent
+
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from tempfile import TemporaryDirectory
+from threading import Thread
+import hashlib
+import json
+
+collection_directory = TemporaryDirectory()
+server_root = Path(collection_directory.name)
+release = "2026-10-29T00:00:00.000000Z"
+component = release.replace(":", "-")
+release_directory = server_root / "releases" / component
+release_directory.mkdir(parents=True)
+entries = []
+for instrument in ["P0006", "P0045"]:
+    name = f"{instrument}.geocsv"
+    content = (root / "data/fixtures/schema-1.0.0" / instrument / name).read_bytes()
+    (release_directory / name).write_bytes(content)
+    entries.append({"instrument_id": instrument, "filename": name,
+                    "size_bytes": len(content), "sha256": hashlib.sha256(content).hexdigest(),
+                    "provenance": {"notes": "Local schema fixture; see its provenance manifest"}})
+manifest = {"release_id": release, "testing_only": True, "files": entries}
+(release_directory / "manifest.json").write_text(json.dumps(manifest))
+(server_root / "latest.json").write_text(json.dumps({
+    "release_id": release, "testing_only": True,
+    "manifest": f"releases/{component}/manifest.json"}))
+handler = partial(SimpleHTTPRequestHandler, directory=str(server_root))
+server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+server_thread = Thread(target=server.serve_forever, daemon=True)
+server_thread.start()
+base_url = f"http://127.0.0.1:{server.server_port}/"
+```
+
+## 1. Fetch one instrument into memory
+
+`base_url` selects the collection. `output_dir=None` retains bytes in memory:
+
+```python
 downloads = geocsv.fetch("P0006", base_url=base_url, output_dir=None)
 records = geocsv.read(downloads)[0]
 records.head()
-```
-
-The documented collection is **testing only**; its recorded inventory contains
-P0006 and P0045.
-These initial test snapshots may be retired. To see which snapshot supplied
-the file:
-
-```python
 print(downloads[0].provenance.release_id)
 print(downloads[0].provenance.testing_only)  # True
 ```
 
-## 2. Save the whole test set to disk
+The literal release identity is retained, together with the manifest, size,
+checksum and retrieval URL. Parsed metadata also retains schema and creation identity.
 
-Omit the float selection to download every file in the selected snapshot.
-`output_dir` chooses where to save them:
+## 2. Save every instrument and reuse identical local files
+
+Omit instrument selection to fetch the complete snapshot. `output_dir` chooses
+the parent directory. Repeating the call verifies and reuses identical bytes:
 
 ```python
 saved = geocsv.fetch(base_url=base_url, output_dir="geocsv-downloads")
+reused = geocsv.fetch(base_url=base_url, output_dir="geocsv-downloads")
+assert [item.path for item in saved] == [item.path for item in reused]
 for item in saved:
     print(item.provenance.instrument_id, item.path)
 ```
 
-Files and their manifest are saved in a snapshot directory beneath
-`geocsv-downloads/`. With 0.26.0 or newer, a creation timestamp such as
-`2026-10-21T22:48:33.277Z` produces directory `2026-10-21T22-48-33.277Z`.
-Only the directory representation changes; metadata retains the original timestamp.
-Repeating the call verifies and reuses identical files;
-conflicting files raise an error. Pass `saved` directly to `geocsv.read` to
-retain download provenance. For a selection, use `fetch(["P0006", "P0045"], ...)`.
+The directory uses `2026-10-29T00-00-00.000000Z`; only the two timestamp
+time-separator colons change. Provenance keeps the original colons and every
+fractional digit. Conflicting local bytes raise. `fetch(["P0006", "P0045"], ...)`
+selects several instruments explicitly. Pass saved results directly to `read`
+to preserve download provenance.
 
-## 3. Fetch a specific snapshot
+## 3. Pin an immutable snapshot
 
-The default selects the latest snapshot. Supply `release` to repeat a download
-from a particular snapshot while it remains hosted:
+An explicit literal `release` bypasses latest and never falls back:
 
 ```python
-pinned = geocsv.fetch(
-    "P0006",
-    base_url=base_url,
-    release="2026-10-21T22:48:33.277Z",
-    output_dir=None,
-)
+pinned = geocsv.fetch("P0006", base_url=base_url, release=release, output_dir=None)
+assert pinned[0].content == downloads[0].content
 print(pinned[0].provenance.release_id)
 ```
 
-Pass the timestamp literally; `fetch` derives the hyphenated path component.
-The earlier encoded-path testing URLs were retired on 2026-10-28; no automatic
-fallback is provided.
-For result fields, memory use, error behavior, and protocol details, see the
-[fetch reference](../docs/fetch.md#the-fetch-interface).
+Stop the temporary server when finished:
+
+```python
+server.shutdown()
+server.server_close()
+server_thread.join()
+collection_directory.cleanup()
+```
+
+For result fields and transport rules, see the [fetch reference](../docs/fetch.md).
+Schema compatibility is a separate reader requirement; fetch can retrieve
+historical exact bytes without making them parseable by the new reader.

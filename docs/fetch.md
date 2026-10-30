@@ -118,3 +118,11 @@ the whole batch succeeds. Parsing failures belong to `read` and raise
 `tests/test_fetch.py` covers selection, pinning, reuse, integrity, failure
 behavior, and provenance using tracked fixtures over loopback HTTP. Ordinary
 tests do not require public hosting.
+
+## Payload compatibility during schema migration
+
+Consumer 0.27.0 reads only MERMAID schema 1.0.0. Existing hosted testing bytes
+remain old-format; successful exact-byte retrieval does not make them parseable.
+The [fetch tutorial](../tutorials/fetch.md) runs against a local fixture server.
+Transport continues to preserve token IDs, exact bytes, literal release IDs and
+all fractional digits. No encoded aliases or automatic fallback are supported.

@@ -1,0 +1,24 @@
+# MERMAID GeoCSV schema: 1.0.0
+#dataset: GeoCSV
+#created: 2026-10-29T00:00:00.000000Z
+#description: Metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones, www.EarthScopeOceans.org
+#attribution: Historical evidence projected into schema fixture; tools automaid v4.6.0 (https://github.com/earthscopeoceans/automaid [doi: 10.5281/zenodo.5057096])
+#lineterminator: '\n'
+#delimiter: ','
+#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
+#field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
+MethodIdentifier,Time,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,ClockOffset,TimeCorrectionApplied
+Measurement:Position:u-blox_NEO-M8N,2018-06-27T19:16:42.000000Z,MH,P0006,,,,-14.453383,-179.485033,,,MERMAID_452.020,,,-0.000000,
+Measurement:Pressure-Absolute:KELLER_Series_6,2018-06-27T19:28:03.000000Z,MH,P0006,,,,,,,730,MERMAID_452.020,,,,
+Interpolation:Crossing-Descent:automaid-v4.5.14,2018-06-27T19:35:41.808000Z,MH,P0006,,,,-14.454386,-179.485446,,5000,MERMAID_452.020,,,,
+Derivation:Recording:automaid-v4.5.14,2022-09-11T09:07:19.584000Z,MH,P0006,00,BDH,Q,-12.613396,179.824456,0,74100,MERMAID_452.020,20.007035,4000,,-0.226243
+Derivation:Recording:automaid-v4.5.14,2022-09-17T13:51:11.900000Z,MH,P0006,20,BDH,D,-12.690632,179.765456,0,,MERMAID_452.020,10.003517,2400,,-0.852375
+Derivation:Recording:automaid-v4.5.14,2022-09-18T06:54:07.789000Z,MH,P0006,20,BDH,D,-12.699486,179.758693,0,,MERMAID_452.020,10.003517,2400,,-0.924147
+Derivation:Recording:automaid-v4.5.14,2022-09-19T18:16:25.574000Z,MH,P0006,20,BDH,D,-12.717854,179.744661,0,,MERMAID_452.020,10.003517,2400,,-1.073055
+Measurement:Pressure-Absolute:KELLER_Series_6,2022-09-19T20:14:55.000000Z,MH,P0006,,,,,,,75550,MERMAID_452.020,,,,
+Measurement:Pressure-Absolute:KELLER_Series_6,2022-09-19T20:32:59.000000Z,MH,P0006,,,,,,,67820,MERMAID_452.020,,,,
+Measurement:Pressure-Absolute:KELLER_Series_6,2022-11-13T08:53:21.000000Z,MH,P0006,,,,,,,74840,MERMAID_452.020,,,,
+Derivation:Recording:automaid-v4.5.14,2022-11-14T05:05:26.614000Z,MH,P0006,00,BDH,Q,-13.294374,178.717047,0,75300,MERMAID_452.020,20.007030,4864,,-0.210679
+Derivation:Recording:automaid-v4.5.14,2022-11-18T13:47:58.112000Z,MH,P0006,20,BDH,D,-13.311969,178.693528,0,,MERMAID_452.020,10.003515,2400,,-0.729321
+Derivation:Recording:automaid-v4.5.14,2022-11-22T02:06:04.018000Z,MH,P0006,00,BDH,Q,-13.326135,178.674593,0,76600,MERMAID_452.020,20.007030,5248,,-1.146882
+Measurement:Pressure-Absolute:KELLER_Series_6,2022-11-22T02:12:47.000000Z,MH,P0006,,,,,,,76760,MERMAID_452.020,,,,

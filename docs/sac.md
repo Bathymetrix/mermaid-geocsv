@@ -15,7 +15,7 @@ All requested projections validate before any trace is modified.
 | --- | --- |
 | `stla` | Matched `Latitude` in declared `degrees_north`, within [-90, 90]. |
 | `stlo` | Matched `Longitude` in declared `degrees_east`, within [-180, 180]. |
-| `stel` | Adopted sea-level reference, zero metres; not submerged sensor elevation. |
+| `stel` | Explicit matched Recording `Elevation` in `meters`, required to be zero; missing raises. |
 | `stdp` | Nonnegative `WaterPressure` in declared `mbar`, divided by 100; approximate MERMAID station depth in metres, positive down. |
 
 The pressure conversion follows automaid's approximation: 100 mbar = 1 dbar

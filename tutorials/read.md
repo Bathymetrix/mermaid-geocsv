@@ -31,7 +31,7 @@ root = Path.cwd()
 if root.name in {"docs", "tutorials"}:
     root = root.parent
 
-path = root / "data/fixtures/P0006/P0006.geocsv"
+path = root / "data/fixtures/schema-1.0.0/P0006/P0006.geocsv"
 tables = geocsv.read(path)
 records = tables[0]  # A list is returned even for a single dataset.
 records.head()
@@ -49,12 +49,12 @@ print(records.dtypes)
 Select GPS measurements and display their positions:
 
 ```python
-gps = records.loc[records["MethodIdentifier"].str.startswith("Measurement:GPS")]
-gps[["StartTime", "Latitude", "Longitude"]].head()
+gps = records.loc[records["MethodIdentifier"].str.startswith("Measurement:Position")]
+gps[["Time", "Latitude", "Longitude"]].head()
 ```
 
 The index, `source_record_index`, identifies each row's original position
-among the file's data records. Filtering keeps those labels. `StartTime`
+among the file's data records. Filtering keeps those labels. `Time`
 remains a column.
 
 ## 3. Inspect source metadata
@@ -73,7 +73,7 @@ and exports may lose `attrs`.
 
 ```python
 converted = geocsv.read(path, datetime_timezone="America/Los_Angeles")
-converted[0]["StartTime"].head()
+converted[0]["Time"].head()
 ```
 
 This changes the displayed timezone while preserving the instant.

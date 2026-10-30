@@ -6,55 +6,14 @@ unresolved; they do not authorize silently changing scientific values or
 matching rules. The [GeoCSV v2.0.4 specification](references/GeoCSV_v2.0.4.pdf)
 does not settle every MERMAID convention or interoperability question.
 
-## Questions for the GeoCSV specification
+## Controlled-profile decisions
 
-### 1. Do custom keyword lines define dataset-wide metadata?
-
-Clarify whether custom declarations such as `#GeodeticDatum: WGS84` have
-dataset scope, and how they differ from free-text comments. If declarations
-can vary by row, define inheritance and the meaning of records preceding a
-declaration. Dataset-wide pandas attrs cannot represent row-varying values.
-The reader's [changed-declaration policy](reader-spec.md#comments-and-metadata-declarations)
-is provisional for unknown keys, rather than a requirement established by v2.0.4.
-
-### 2. What is the exact grammar of `field_*` lists?
-
-Specify width, separator, quoting, and empty-entry rules, including whitespace
-delimiters. Correct or explain the short IRIS units and R2R types lists and
-the unquoted comma in R2R's long name. The
-[preserved specification examples](../data/fixtures/GeoCSV_v2.0.4_examples/README.md)
-record these inconsistencies without repairing them. The reader requires
-one list entry per header field; the specification does not explicitly state
-that width rule.
-
-### 3. Which source values mean missing data?
-
-Define default missing tokens, `field_missing` precedence, and a representation
-for literal reserved strings. The reader's universal case-insensitive `nan`
-handling and special empty string-valued `Location` are MERMAID conventions,
-not v2.0.4 requirements. Current [missing-value rules](reader-spec.md#field-types-and-missing-values)
-are maintained in the reader reference.
-
-### 4. Does a datetime unit establish its timezone?
-
-UNAVCO declares UTC units for timezone-free timestamps. Clarify whether units
-establish timezone semantics and how they interact with explicit offsets.
-The reader preserves units without inferring a timezone.
-
-### 5. Which ISO 8601 datetime forms must readers support?
-
-Publish an interoperable profile covering date forms, offsets, fractional
-precision, range, and handling of otherwise valid forms outside that profile.
-The reader accepts its documented [extended-calendar subset](reader-spec.md#numeric-limits-and-datetime-syntax);
-it does not claim support for all ISO 8601 forms.
-
-### 6. How should container versions be recognized?
-
-Define version syntax, forward compatibility, and treatment of existing
-unversioned MERMAID declarations. The reader currently recognizes GeoCSV
-without validating a version, including future-looking version strings.
-Its allowance for comments before `#dataset` is an explicit compatibility
-choice, separate from the specification's first-line recommendation.
+Schema recognition, fixed field-list grammar, dataset-wide comments, empty-cell
+missingness, two-space known blank Location and six-digit UTC notation are
+settled by [schema 1.0.0](format-spec.md). Historical generic GeoCSV examples
+remain source evidence, without an active reader compatibility requirement.
+Finite signed pressure-sensor measurements preserve gauge error; Recording
+pressure and crossing proxies remain nonnegative. No source values are filled.
 
 ## MERMAID sampling-rate follow-up
 
@@ -161,8 +120,8 @@ Additional mappings require explicit agreement:
 
 | Concern | Constraint |
 | --- | --- |
-| `TimeCorrection` | Automaid uses `user3` in seconds; retain as metadata, never apply twice. |
-| `TimeDelay` | Needs an agreed slot and units; not `b`, `o`, or a pick header. |
+| `TimeCorrectionApplied` | Automaid uses `user3` in seconds; retain as metadata, never apply twice. |
+| `ClockOffset` | Needs an agreed slot and units; not `b`, `o`, or a pick header. |
 | `InstrumentDescription` | `kinst` fits a short designation, not the full description. |
 | `MethodIdentifier` | No faithful dedicated SAC field; extracting a version loses source content. |
 | `DataQuality` | SAC `iqual` has different categories; no direct Q/D/M mapping. |

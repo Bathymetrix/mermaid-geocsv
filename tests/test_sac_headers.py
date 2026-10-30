@@ -21,7 +21,7 @@ EXAMPLES = MANIFEST["examples"]
 
 @pytest.fixture(scope="module")
 def subsets():
-    return {item["path"]: geocsv.read(FIXTURES / item["subset"]["path"])
+    return {item["path"]: geocsv.read(FIXTURES.parent / "schema-1.0.0/association" / item["subset"]["path"])
             for item in MANIFEST["geocsv"]}
 
 
@@ -104,7 +104,7 @@ def test_option_requires_bool(value):
 
 
 @pytest.mark.parametrize("field,value", [
-    ("Latitude", pd.NA), ("Longitude", None), ("Latitude", 91),
+    ("Elevation", pd.NA), ("Elevation", 1), ("Latitude", pd.NA), ("Longitude", None), ("Latitude", 91),
     ("Longitude", -181), ("Latitude", np.inf),
     ("WaterPressure", pd.NA), ("WaterPressure", -1), ("WaterPressure", np.inf),
     ("DataQuality", pd.NA),
@@ -122,7 +122,7 @@ def test_invalid_geographic_source_fails_without_mutation(subsets, field, value)
 
 
 @pytest.mark.parametrize("field,unit", [
-    ("Latitude", "radians"), ("Longitude", None),
+    ("Elevation", "kilometers"), ("Latitude", "radians"), ("Longitude", None),
     ("WaterPressure", "dbar"), ("SampleRate", "kilohertz"),
 ])
 def test_declared_units_are_required(subsets, field, unit):
