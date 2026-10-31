@@ -1,21 +1,14 @@
 # MERMAID GeoCSV schema 1.0.0
 
-Status: locally implemented migration contract, 2026-10-29. Automaid v4.6.0
-and mermaid-geocsv 0.27.0 implement this profile. Local verification is recorded
-separately. The P0006/P0045 schema 1.0.0 testing snapshot was published on
-2026-10-30; see [publication evidence](../../mermaid-publisher/docs/geocsv/schema1-testing-publication.md).
-Production remains inactive; the payload publication required no Worker deployment.
-
 This is a controlled MERMAID GeoCSV profile, not a generic GeoCSV specification.
-Legacy MERMAID formats are unsupported: no aliases, alternate missing markers,
-legacy reader/writer paths or automatic fallback. Schema revision `1.0.0` is
+Only this schema is supported; aliases, alternate missing markers and automatic
+fallback are unsupported. Schema revision `1.0.0` is
 independent of package versions and does not authorize a software 1.0.0 release.
 
 Automaid owns writing. `mermaid-geocsv` owns parsing, typed tables and station
 association. The publisher's [publication/download contract](../../mermaid-publisher/docs/geocsv/contract.md)
 owns manifests, release identities, immutable paths and publication gates.
-The site serves exact bytes. See the paired [decision record](geocsv-method-identifiers.md)
-and [migration plan](../../automaid/docs/geocsv-migration-plan.md).
+The site serves exact bytes. See [producer source rules](../../automaid/docs/geocsv.md).
 
 ## File and CSV structure
 
@@ -240,18 +233,15 @@ the recorded start later; negative correction moves it earlier. GPS-fix offsets
 and recording corrections refer to different epochs; do not assume equal
 magnitudes or opposite signs for arbitrary pairs of rows. The correction has
 already been applied to Time and must never be added again. It is a signed
-numeric amount, not a MiniSEED boolean applied flag. The two renamed clock
-columns retain the existing source values and signs.
+numeric amount, not a MiniSEED boolean applied flag. The clock columns preserve these source values and signs.
 
 Position ClockOffset is optional because a GPS position can exist without a
 clock-offset observation. Recording TimeCorrectionApplied is required. GPS,
 pressure and crossing times do not acquire the recording clock correction.
 The [clock matrix](../../automaid/docs/clock-timing-matrix.md) records source
-and MiniSEED evidence. MiniSEED fixed-header quantization is outside this
-serialization change. The separate automaid v4.6.1 follow-up rounds correction
-fields to decimal ties-to-even 0.0001-second ticks; v4.6.2 checks the stored
-correction and applied bit in every record. Neither changes waveform timestamps
-or the clock model; see the clock matrix for verification and limitations.
+and MiniSEED evidence. MiniSEED correction fields use decimal ties-to-even 0.0001-second ticks;
+the helper verifies the stored correction and applied bit in every record.
+This does not change waveform timestamps or the clock model.
 
 ## Pressure, elevation and crossings
 
@@ -292,8 +282,7 @@ projections. Association algorithms and comparison tolerances do not change.
 ## Complete synthetic example
 
 The following is a complete file, including its final LF. It demonstrates the
-schema, not an observed instrument history or output from an already migrated
-writer. Version labels are illustrative. Independent timing examples do not
+schema, not an observed instrument history. Version labels are illustrative. Independent timing examples do not
 assert a clock interpolation history between the displayed GPS fixes.
 
 ```csv
@@ -326,7 +315,7 @@ the other two demonstrate positive and negative offsets.
 
 ## Acceptance and rejection cases
 
-These cases define the executable migration verification requirements. The complete example must parse to one
+These cases define the executable format verification requirements. The complete example must parse to one
 eight-row table with unchanged source order and all five method identifiers.
 
 | Case | Required result |
@@ -359,23 +348,20 @@ exact new output bytes, schema/literal-release provenance, association,
 source-derived elevation/SAC projections and unchanged scientific tolerances.
 Use representative real inputs alongside this explicitly synthetic example.
 
-## Release and implementation boundary
+## Snapshot identity and ownership
 
-New schema output requires a new shared #created and new immutable snapshot
-bytes. Existing hosted bytes, literal release identities and historical evidence
-remain unchanged. New #created strings use six digits; transport still preserves
+Changed output bytes require a new shared #created and immutable snapshot
+identity. Never rewrite published bytes or literal release identities.
+Payload #created strings use six digits; transport preserves
 every fractional digit of existing literal release IDs. URL/storage/download
 components replace only the two timestamp time-separator colons with hyphens.
 Illustrative token IDs remain unchanged. No encoded aliases or fallback return.
 
 Fetch can retrieve exact bytes independently of whether read supports that
-payload schema. A working download of old hosted data does not establish
-compatibility with the new-only reader. Coordinate compatible data and consumers
-before publishing new-format tutorials as operational examples. Testing-only
-status, production inactivity and all publication authorization gates remain.
+payload schema. Transport success does not establish reader compatibility.
+Use supported-schema snapshots with the matching consumer. Testing-only
+status, production inactivity and publication authorization gates apply.
 
-Implementation in automaid is restricted to scripts/geocsv.py plus the version
-value in scripts/setup.py. Stop for discussion before any other code change.
-The separately authorized local implementation changes no protected source
-archive, deployed bytes, pointer, commit or release. Fresh environment installs
-are local verification only.
+The producer owns writing, this package owns parsing and station association,
+the publisher owns validation/publication, and the site serves exact bytes.
+See [hosting responsibilities](hosting.md) for current service status.

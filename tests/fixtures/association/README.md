@@ -1,6 +1,6 @@
 # Historical synthetic association fixtures
 
-These pre-migration files are retained unchanged as historical test-design
+These unsupported-schema files are retained unchanged as source
 evidence and are unsupported by the current reader. Active synthetic tests
 use the separate [schema 1.0.0 fixtures](../schema-1.0.0/README.md). The
 descriptions below record the original fixtures and their former test purpose.

@@ -51,7 +51,7 @@ manifest; published release bytes are assumed immutable.
 
 Release IDs accept plain ASCII tokens or valid UTC timestamps
 `YYYY-MM-DDTHH:MM:SS[.digits]Z`. Pass the literal ID, without pre-encoding or
-normalizing fractional digits. Starting with 0.26.0, URL and local directory
+normalizing fractional digits. URL and local directory
 components replace only the creation timestamp's time-separator colons with
 hyphens: `release_id.replace(":", "-")`. For example,
 `2026-10-21T22:48:33.277Z` uses `2026-10-21T22-48-33.277Z`. Every fractional
@@ -60,12 +60,9 @@ digit is retained. Plain test-token IDs are unchanged. GeoCSV contents,
 original spelling. Pass the literal creation timestamp as `release`, rather
 than its directory spelling.
 
-The initial encoded-path testing collection was replaced under the
-[2026-10-28 compatibility review](../../mermaid-publisher/docs/geocsv/release-path-review.md).
-The old encoded testing URLs were retired on 2026-10-28; 0.25.x and the frozen
-0.24.0 client cannot fetch the new timestamped collection. There is no automatic
-legacy-path fallback or local directory migration. Existing downloads remain
-on disk; a new call writes to the hyphenated directory and retains the exact manifest.
+Encoded release-path aliases and automatic fallback are unsupported. Each call
+uses the hyphenated directory spelling and retains the exact manifest. Existing
+downloads are never renamed implicitly.
 
 The manifest contains `release_id`, `testing_only`, and `files`. Each entry
 requires a nonempty string `instrument_id`, a `filename`, a nonnegative
@@ -119,11 +116,11 @@ the whole batch succeeds. Parsing failures belong to `read` and raise
 behavior, and provenance using tracked fixtures over loopback HTTP. Ordinary
 tests do not require public hosting.
 
-## Payload compatibility during schema migration
+## Payload compatibility
 
-Consumer 0.27.0 reads only MERMAID schema 1.0.0. Testing latest serves the
-compatible P0006/P0045 snapshot `2026-10-30T18:08:32.316000Z`. Historical
-old-format snapshots remain readable only as exact bytes through fetch, not read.
+The reader requires MERMAID schema 1.0.0. Testing latest serves the
+compatible P0006/P0045 snapshot `2026-10-30T18:08:32.316000Z`. Other retained schemas can be downloaded as exact bytes, but cannot be parsed
+by this reader.
 The [fetch tutorial](../tutorials/01_fetch.md) downloads directly from the public
 testing collection. Ordinary tests replay published prefixes over loopback HTTP.
 Transport continues to preserve token IDs, exact bytes, literal release IDs and

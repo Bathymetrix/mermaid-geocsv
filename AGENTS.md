@@ -14,11 +14,8 @@ Read and follow the shared MERMAID AGENTS before changing this repository. If
 they cannot be located or read, stop and notify the user before making
 changes. If instructions conflict, this file takes precedence.
 
-The format and projection rules below and `docs/format-spec.md` define the
-selected migration target.
-They do not claim that the current implementation or its reference pages have
-already migrated. Complete the normative schema review before code changes;
-update implementation references and tests with the corresponding behavior.
+`docs/format-spec.md` defines the implemented payload schema. Keep public
+references, tests and tutorials synchronized with verified behavior.
 
 ## Repository Scope
 
@@ -34,15 +31,14 @@ or invent zero, an empty identity, a timestamp, or another assumed value.
 Preserve explicit source values, including zero and literal two-space Location.
 CSV decoding, declared typing and documented projections from complete source
 values are permitted; they do not authorize inference or default filling.
-The migration's zero Recording Elevation must come from the writer's explicit
+The zero Recording Elevation must come from the writer's explicit
 numeric cell `0`, with type `float` and unit `meters`. Never append a unit to
-the numeric cell. Remove legacy hard-coded elevation defaults rather than treating
-an adopted convention as permission to supply an absent value. Ordinary
+the numeric cell. An adopted convention does not permit supplying an absent value. Ordinary
 function/configuration defaults are separate from this source-data rule.
 
 Finite signed Pressure-Absolute sensor readings preserve reported gauge error.
 Recording pressure and crossing proxies remain nonnegative. Never clamp,
-replace, offset-correct or discard a reported gauge value during this migration.
+replace, offset-correct or discard a reported gauge value during parsing or projection.
 
 This repository does not handle earthquake parameters. Do not add earthquake-source
 parameter inference, calculations, projections, or header mappings, including
@@ -51,8 +47,7 @@ MERMAID receiver (station) locations. The approximation 100 mbar per metre
 supplies station depth in SAC `stdp`. Optional SAC projections populate only
 `stla`, `stlo`, `stel`, and `stdp`; never populate earthquake-source `ev*` headers.
 GeoCSV `Derivation:Recording:<source>` rows describe original waveform segments,
-not earthquake-source metadata. `Algorithm(event)` is a historical spelling,
-not a supported identifier in the replacement schema.
+not earthquake-source metadata. Unsupported method identifiers raise.
 
 Repository ethos: **simple rules, clear projections, and no surprise side effects**.
 Before changing association or describing ObsPy's main Stats attributes, consult
@@ -86,7 +81,7 @@ modify anything in that source tree without the user's express instruction.
 Document fixture provenance. Copy both waveform formats for each selected
 basename. Complete association GeoCSV histories are local, Git-ignored copies;
 retain their provenance/hashes in the tracked manifest. Do not stage them.
-As authorized on 2026-10-16, publish small association GeoCSV subsets for
+Use small association GeoCSV subsets for
 portable tests. Preserve original header and selected record bytes, retain
 nearby candidates and measurement context, and record the mapping from subset
 indices to original source-record indices. Subsets do not establish uniqueness
@@ -185,8 +180,7 @@ to SAC storage precision. Expect uncalibrated input; instrument correction,
 response removal and counts-to-pressure calibration are outside repository scope.
 Preserve association-time waveform sample count
 separately from raw source SampleCount so publisher verification can detect later length changes.
-The unused `project_sac` option was removed on 2026-10-16 before package
-exposure. Keep deferred mappings in `docs/open-questions.md`; do not
+Keep deferred mappings in `docs/open-questions.md`; do not
 reserve an unimplemented argument in the current associator.
 
 ### Automaid Source Reference
@@ -196,57 +190,25 @@ When MERMAID waveform-processing behavior needs verification, use
 inspect. Inspection is authorized; do not modify files in that repository
 unless the user separately and explicitly requests those changes.
 
-### Hosting Workflow and Related Repositories
+### Hosting workflow and related repositories
 
-`docs/hosting.md` records the hosting design, Mermaid workflow diagram, script
-ownership, and implementation checklist. Consult it before hosting, snapshot,
-release-protocol, or full-archive validation work. Keep this work aware of
-current changes in `/Users/jdsimon/programs/automaid/` and
-`/Users/jdsimon/programs/bathymetrix-site/`: inspect their relevant source,
-instructions and publication contract rather than assuming the recorded paths
-or behavior are still current. Inspection is authorized; changes there require
-separate authorization.
+Read `docs/hosting.md` and the publisher's `docs/geocsv/contract.md` for the
+canonical ownership and download agreement. Inspect adjacent implementations
+before cross-repository changes. The consumer owns scientific APIs; the
+publisher owns exhaustive validation, report schema, gating, transfer, latest
+activation and local archive recording. The site owns only read-only serving,
+listings, landing pages and infrastructure. Do not duplicate association or
+publication logic across these boundaries.
 
-`mermaid-publisher` owns snapshot creation, full-archive validation, the
-acceptance-report format and gate, transfer, latest activation and local archive
-recording. Its six modules live under `scripts/geocsv/`: create_snapshot,
-inspect_snapshot, validate_snapshot, _verify_sac, gate_snapshot and publish_snapshot. Only
-create, validate and publish are runnable commands. `bathymetrix-site` owns only
-its read-only Worker, landing page and hosting infrastructure. The canonical
-publication/download agreement is `mermaid-publisher/docs/geocsv/contract.md`.
-
-The publisher calls public `read`, `associate` and `fetch` APIs, uses optional
-SAC header creation and ObsPy writing, and owns export verification.
-This package owns scientific API behavior and package defect fixes. Do not add
-publication validators or report schemas here, or duplicate matching/projection
-logic in the publisher. Preserve archived baseline/download evidence as history,
-without requiring active compatibility with consumer 0.24.0 or older MERMAID
-schemas. The new profile requires the migrated consumer. Consumer >= 0.26.0
-is the historical floor for hyphenated paths, not proof of new-schema support.
-The 2026-10-28 path review explicitly replaces the initial testing collection;
-old testing URLs may be retired. Publisher edits do not implicitly redefine
-fetch behavior. The sampled
-fixture checker is package development tooling, not the publication gate.
-
-The external archive is `$MERMAID/publisher`, a separate local Git repository.
-Its `geocsv/testing/` collection retains testing payloads, manifests, source
-provenance, staging inventories, reports and publication receipts. The publisher
-derives this local namespace from `testing_only: true`. Initial workflow-testing
-artifacts may be retired through separately authorized cleanup; keep bytes
-immutable until retirement and never reuse retired identities for different bytes.
-Production retention remains indefinite. Original waveform archives are never
-copied there. Git sources require a clean entire working tree and full
-commit hash; ordinary source directories remain valid. Sources remain read-only.
-Successful publication includes a scoped local archive commit, never an automatic
-push. Software-repository commits still require explicit authorization.
-
-Update the diagram, relative paths, script names, implementation status and
-checklist when those scripts or responsibilities change. Distinguish existing
-tools from planned tools. Keep upstream timestamp/format changes and website
-URL/manifest changes coordinated with this package's fetch and scientific contracts;
-do not silently change scientific comparison rules. Unchanged historical data
-with changed comments and a new shared `#created` timestamp is a valid new
-snapshot; published bytes under an existing release ID remain immutable.
+Sources and original fixture bytes remain read-only. Artifact-bound reports,
+manifests, receipts and source mappings remain immutable evidence. Reports
+never accept changed bytes or software. The external publication archive is
+`$MERMAID/publisher`; testing artifacts use `geocsv/testing/`. Never copy original
+waveform archives there. A source in Git requires a clean entire worktree and
+full revision; fingerprints also account for ignored files. Publication includes
+a scoped local archive commit only when that publication is authorized; no
+push or software-repository commit is implicit. Retiring testing artifacts
+requires separate explicit authorization; production retention is indefinite.
 
 ### Current hosted-data phase
 
@@ -311,21 +273,12 @@ not compatibility targets. Do not reproduce their incidental limitations.
 
 ## Naming and Public Interface
 
-The paired design notes `docs/geocsv-method-identifiers.md` and
-`../automaid/docs/geocsv-method-identifiers.md` record format decisions
-and producer timing behavior. Update both when relevant automaid
-behavior or the agreed producer/consumer design changes; preserve the
-distinction between proposals and implemented behavior.
-`../automaid/docs/geocsv-migration-plan.md` records the coordinated migration
-and its automaid code allowlist. Latest explicit migration decisions override
-conflicting legacy format rules; preserve the scientific and ownership rules.
-The replacement supports only the controlled MERMAID GeoCSV schema, not a
-generic GeoCSV reader or legacy MERMAID formats. Complete and review the
-normative specification before functional migration changes.
-The migration preserves literal two-space source Location values and removes
-hard-coded zero elevation projections. Recording rows explicitly supply zero
-Elevation in the producer; association uses that source value for SAC `stel`
-and coordinate elevation. Missing required elevation raises; never fill it.
+`docs/format-spec.md` is the payload authority. Producer source precedence and
+clock behavior are documented in `../automaid/docs/geocsv.md` and its clock
+matrix. Keep all four repositories synchronized before suggesting commit messages.
+Only the controlled MERMAID schema is supported. Preserve literal two-space
+Location and project explicit Recording Elevation; missing required source
+values raise without defaults.
 
 Documentation and tutorial filenames use lowercase kebab-case. Retain
 the conventional `README.md`, `LICENSE`, and `AGENTS.md` names.

@@ -1,16 +1,15 @@
 # Schema 1.0.0 fixtures
 
-These separate fixtures project retained historical source evidence into the
-selected schema for portable parser, association and tutorial tests. They are
-not newly calculated observations or direct output from the migrated writer.
+These fixtures convert retained source evidence to schema 1.0.0 for portable parser, association and tutorial tests. They are
+not newly calculated observations or direct writer output.
 `manifest.json` records each source/hash and the mapping from each subset index to its historical source record.
 P0006 retains its first 300 records plus 12 GPS fixes for the plotting example.
 P0045 retains five initial context rows and 20 rows around the merge example.
-All original files remain unchanged in their former locations.
+Original fixture files retain their recorded paths and hashes.
 
 Column and method names, model notation and missing-cell spelling follow the
-new profile. Recording Elevation explicitly contains synthetic zero according
-to the selected producer convention. Historical printed epochs retain their
+schema. Recording Elevation explicitly contains synthetic zero according
+to the producer convention. Historical printed epochs retain their
 value with six digits; additional zeros do not recover submillisecond timing.
 Crossing direction comes from the corresponding saved cycle's explicit descent
 or ascent attribute, with its pickle hash recorded. No interpolation is rerun.

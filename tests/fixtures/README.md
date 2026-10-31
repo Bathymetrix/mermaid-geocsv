@@ -4,8 +4,8 @@
 association inputs. Real-data schema conversions live under
 [`data/fixtures/schema-1.0.0`](../../data/fixtures/schema-1.0.0/README.md).
 
-The older top-level `.geocsv` files and `association/synthetic.geocsv` and
-`association/indexed.geocsv` are preserved pre-migration test-design evidence.
+The top-level `.geocsv` files, `association/synthetic.geocsv` and
+`association/indexed.geocsv` are frozen unsupported-schema source evidence.
 They are unsupported by the current reader and are not active parsing inputs.
 Their original bytes remain unchanged.
 

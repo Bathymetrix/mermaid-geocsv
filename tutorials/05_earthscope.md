@@ -33,7 +33,7 @@ The examples use three isolated DET segments with complete pressure metadata:
 | 239 | 2018-07-15T22:48:15.969095Z | 5,440 | −1 |
 
 These are zero-based data-record indices in the complete published P0006
-history, pinned below. The migrated producer supplies six-digit source epochs;
+history, pinned below. The producer supplies six-digit source epochs;
 display width does not establish clock accuracy. All three associate as
 `single_segment`. The [association tutorial](03_associate.md#3-associate-a-clipped-window)
 demonstrates `anchor_segment` and a
@@ -262,7 +262,3 @@ current network availability; live execution is a separate check.
 
 Service behavior: [EarthScope dataselect help](https://service.earthscope.org/fdsnws/dataselect/docs/1/help/)
 and [ObsPy `get_waveforms`](https://docs.obspy.org/packages/autogen/obspy.clients.fdsn.client.Client.get_waveforms.html).
-The client filename/read boundary and nearby tests were inspected in the
-read-only ObsPy checkout at `50033e1daf95233cd4f30e95a49c37fd50be2ccd`.
-Live downloads and comparisons were checked on 2026-10-30 with the repository's
-separately installed ObsPy 1.5.1.

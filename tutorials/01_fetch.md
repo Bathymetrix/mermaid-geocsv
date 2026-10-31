@@ -44,8 +44,7 @@ print(downloads[0].provenance.testing_only)  # True
 print(records.attrs["geocsv"].schema_version)  # 1.0.0
 ```
 
-Without `release`, fetch resolves the collection's latest pointer. On
-2026-10-30 it selects `2026-10-30T18:08:32.316000Z`. Latest can change;
+Without `release`, fetch resolves the collection's latest pointer. Latest can change;
 retain the returned literal release ID to reproduce this download.
 
 ## 2. Save every instrument and reuse identical local files
