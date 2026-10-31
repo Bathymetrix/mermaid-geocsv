@@ -33,6 +33,16 @@ activation. Further uploads, deployment and retirement require explicit
 authorization. Never reuse an identity for different bytes or apply a report
 to changed inputs. Original source products and mirrors remain read-only.
 
+## Browser bundles
+
+Publisher 0.5.0 adds `MERMAID.geocsv.tar.gz`, containing exactly the snapshot's
+manifested instrument files. It is outside `manifest.files` and scientific
+reports; member integrity uses the existing manifest hashes. Fetch continues
+to select and verify individual manifest entries. The site implements plain
+clickable directory trees and `releases/<component>/` pages, with bundle links
+only when objects exist. These changes are local; deployment and bundle uploads
+remain separately authorized operations.
+
 ## Scientific client workflow
 
 Fetch selects a manifest-pinned snapshot and verifies sizes/SHA-256. Read
