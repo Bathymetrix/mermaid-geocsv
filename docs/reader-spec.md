@@ -18,7 +18,7 @@ labels retain exact source spellings. The `Time` column contains UTC timestamps;
 `datetime_timezone` converts their display timezone without changing instants.
 Timezone-free or alternate input spellings are rejected before conversion.
 
-Every frame has a zero-based `RangeIndex` named `source_record_index`, excluding
+Every frame has a zero-based `RangeIndex` named `source_index`, excluding
 comments and the column header. Original order and equal timestamps are retained;
 reading never sorts, deduplicates or infers segment identity. Nullable pandas
 `string`, `Float64` and `Int64` types represent the declared string, float and
@@ -65,7 +65,7 @@ Each newly parsed frame has one immutable `GeoCSVMetadata` value at
 | `field_long_names`, `field_standard_names` | Optional descriptive lists when supplied; empty mappings otherwise. |
 | `delimiter` | Required comma delimiter. |
 | `datetime_resolution_ns` | `Time` source indices mapped to 1000 ns, describing six-digit notation, not clock accuracy. |
-| `record_line_numbers` | Source indices mapped to one-based physical starting lines, including multiline CSV records. |
+| `line_numbers` | Source indices mapped to one-based physical starting lines, including multiline CSV records. |
 
 Mappings, nested timestamp maps and comment tuples are immutable. pandas uses
 experimental `attrs`: this guarantee applies to freshly parsed frames, not

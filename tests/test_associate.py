@@ -55,7 +55,7 @@ def test_default_accepts_real_writer_offset_beyond_100_microseconds(subsets):
     assert trace.stats == before.stats
     assert (trace.data == before.data).all()
     associate(trace, records)
-    assert trace.stats.geocsv.source_record_index == record_index
+    assert trace.stats.geocsv.source_index == record_index
 
 
 def test_sample_coverage_and_verbatim_copy_hashes():
@@ -79,7 +79,7 @@ def test_tracked_subset_hashes_and_record_maps(subsets):
         original_indices = subset["source_record_indices"]
         assert original_indices == sorted(set(original_indices))
         assert 0 <= min(original_indices) <= max(original_indices) < subset["source_record_count"]
-        assert frame.index.equals(pd.RangeIndex(len(original_indices), name="source_record_index"))
+        assert frame.index.equals(pd.RangeIndex(len(original_indices), name="source_index"))
         assert frame.attrs["geocsv"].source_path == (FIXTURES.parent / "schema-1.0.0/association" / subset["path"]).resolve()
         assert frame["SampleCount"].dtype == pd.Int64Dtype()
         assert frame["Location"].dtype == pd.StringDtype()
@@ -115,8 +115,8 @@ def test_sampled_association(example, subsets):
     attachment = trace.stats.geocsv
     assert attachment.DataQuality == expected_quality
     assert attachment.dataset_index == 0
-    assert attachment.source_record_index == example["subset_record_index"]
-    row = records[attachment.dataset_index].loc[attachment.source_record_index]
+    assert attachment.source_index == example["subset_record_index"]
+    row = records[attachment.dataset_index].loc[attachment.source_index]
     for field, value in row.items():
         actual = attachment[field]
         assert pd.isna(actual) if pd.isna(value) else actual == value
@@ -148,14 +148,14 @@ def test_independent_traces_can_use_the_same_source_row(subsets):
     trace, frame = one_event(subsets)
     stream = obspy.Stream([trace, trace.copy()])
     associate(stream, [frame], time_tolerance=0.001)
-    assert stream[0].stats.geocsv.source_record_index == stream[1].stats.geocsv.source_record_index
+    assert stream[0].stats.geocsv.source_index == stream[1].stats.geocsv.source_index
     assert stream[0].stats.geocsv is not stream[1].stats.geocsv
 
 
 def test_ambiguous_records_are_rejected_without_mutation(subsets):
     trace, frame = one_event(subsets)
     before = deepcopy(trace.stats)
-    with pytest.raises(ValueError, match="ambiguous.*record"):
+    with pytest.raises(ValueError, match="ambiguous.*row"):
         associate(trace, [frame, frame], time_tolerance=0.001)
     assert trace.stats == before
 
@@ -259,10 +259,10 @@ def test_real_report_keeps_measured_start_and_rate_differences(subsets):
     segment, = report.coverage_segments
     assert report.type == 'single_segment'
     assert report.waveform_start_offset_seconds == 0.000349
-    assert segment.source_record_index == EXAMPLES[0]['subset_record_index']
+    assert segment.source_index == EXAMPLES[0]['subset_record_index']
     source = subsets[EXAMPLES[0]['geocsv']][0]
-    assert segment.source_line_number == source.attrs['geocsv'].record_line_numbers[segment.source_record_index]
-    assert segment.starttime.ns == source.loc[segment.source_record_index, 'Time'].value
+    assert segment.source_line == source.attrs['geocsv'].line_numbers[segment.source_index]
+    assert segment.starttime.ns == source.loc[segment.source_index, 'Time'].value
     assert (segment.waveform_sample_start, segment.waveform_sample_stop) == (0, tr.stats.npts)
     assert report.max_sample_rate_difference.hz == abs(segment.sampling_rate_hz - tr.stats.sampling_rate)
     assert report.max_sample_grid_offset.seconds == pytest.approx(0.000412318, abs=1e-9)

@@ -74,14 +74,14 @@ def test_clipped_earthscope_response_association_and_sac_export(tmp_path):
     attached = waveform.stats.geocsv
     report = attached.association
     assert report.type == "anchor_segment"
-    assert attached.source_record_index == 237
+    assert attached.source_index == 237
     assert attached.SampleCount == 4768
     assert attached.DataQuality == "Q"  # Native archive M is not a selection hint.
     assert report.waveform.sample_count == waveform.stats.npts == 9403
     assert report.waveform_start_offset_seconds == 6.898533
     first, second = report.coverage_segments
     assert first.location == second.location == waveform.stats.location == "00"
-    assert [(row.dataset_index, row.source_record_index, row.source_line_number)
+    assert [(row.dataset_index, row.source_index, row.source_line)
             for row in (first, second)] == [(0, 237, 248), (0, 238, 249)]
     assert [(row.waveform_sample_start, row.waveform_sample_stop)
             for row in (first, second)] == [(0, 4630), (438, 9403)]
@@ -89,8 +89,8 @@ def test_clipped_earthscope_response_association_and_sac_export(tmp_path):
     assert second.starttime < waveform.stats.endtime < second.endtime
     assert first.waveform_sample_stop - second.waveform_sample_start == 4192
     assert dict(report.max_sample_grid_offset) == {
-        "seconds": 0.021813578, "dataset_index": 0, "source_record_index": 238,
-        "source_line_number": 249, "waveform_sample_index": 438}
+        "seconds": 0.021813578, "dataset_index": 0, "source_index": 238,
+        "source_line": 249, "waveform_sample_index": 438}
     assert report.max_sample_grid_offset.seconds < waveform.stats.delta / 2
     assert report.max_sample_rate_difference.hz == pytest.approx(1.8617771502249525e-7, abs=1e-15)
     assert all(waveform.stats[key] == value for key, value in original.stats.items())

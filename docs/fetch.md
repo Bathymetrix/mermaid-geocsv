@@ -89,7 +89,7 @@ Pass fetch results directly to `read` to retain this provenance as
 `frame.attrs["geocsv"].download`. Saved results are reverified before parsing.
 Reading a bare path records its resolved local path but does not discover an
 adjacent manifest; bare bytes have neither path nor download provenance.
-The [reader specification](reader-spec.md) defines table order, record indices,
+The [reader specification](reader-spec.md) defines table order, source indices,
 and the lifetime of parsed metadata.
 
 Memory retrieval retains every selected raw payload, and parsing needs

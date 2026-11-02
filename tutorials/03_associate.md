@@ -68,7 +68,7 @@ The same call associates every trace in the Stream:
 stream = read_waveforms(str(example_dir / "*/*.mseed"))
 geocsv.associate(stream, tables)
 for item in stream:
-    print(item.id, item.stats.geocsv.source_record_index)
+    print(item.id, item.stats.geocsv.source_index)
 ```
 
 If any match or required projection fails, the whole Stream is left unchanged.
@@ -88,7 +88,8 @@ print(window.stats.geocsv.association.type)  # anchor_segment
 
 The source must cover every retained waveform sample. The attached position
 remains the source segment's first-sample position, adopted for the window
-under the MERMAID negligible-drift convention. Clip or combine waveforms before
+using the unchanged producer estimate. Consult the automaid version in the
+GeoCSV attribution header for estimation methods and assumptions. Clip or combine waveforms before
 association; later waveform edits do not refresh the attachment.
 
 ## 4. Associate a combined window

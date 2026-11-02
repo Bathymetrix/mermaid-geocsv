@@ -44,7 +44,7 @@ def test_complete_projection_and_source_snapshot(records):
     assert 'coordinates' not in tr.stats.defaults
     assert associate(tr, records) is None
     assert dict(tr.stats.coordinates) == {'latitude': 10., 'longitude': 20., 'elevation': 0.}
-    assert tr.stats.geocsv.source_record_index == 1  # GPS row must not match.
+    assert tr.stats.geocsv.source_index == 1  # GPS row must not match.
     assert tr.stats.geocsv.Time.value == tr.stats.starttime.ns
     assert all(tr.stats[key] == value for key, value in before.items())
     records[0].loc[1, 'Latitude'] = 80
@@ -131,7 +131,7 @@ def test_known_empty_location_associates_exactly(tmp_path, location, allow_first
     before = tr.copy()
     associate(tr, records, allow_first_segment=allow_first_segment)
     assert tr.stats.geocsv.Location == '  '
-    assert tr.stats.geocsv.source_record_index == 1
+    assert tr.stats.geocsv.source_index == 1
     assert tr.stats.geocsv.association.type == ('anchor_segment' if allow_first_segment else 'single_segment')
     assert all(tr.stats[key] == value for key, value in before.stats.items())
     np.testing.assert_array_equal(tr.data, before.data)
@@ -152,7 +152,7 @@ def test_missing_source_identity_fails_preflight_without_mutation(records, field
     with pytest.raises(ValueError, match=f'invalid event identity fields.*{field}') as exc:
         associate(tr, records)
     assert str(FIXTURE.resolve()) in str(exc.value)
-    assert 'dataset 0' in str(exc.value) and 'records [1]' in str(exc.value)
+    assert 'dataset 0' in str(exc.value) and 'rows [1]' in str(exc.value)
     assert tr.stats == before.stats
     np.testing.assert_array_equal(tr.data, before.data)
 
@@ -189,7 +189,7 @@ def test_duplicate_empty_location_rows_fail_source_preflight(records):
     with pytest.raises(ValueError, match='ambiguous duplicate GeoCSV event rows') as exc:
         associate(tr, records + [duplicate])
     assert "('MH', 'SYN01', '', 'BDH')" in str(exc.value)
-    assert '(source, dataset, record)' in str(exc.value)
+    assert '(source, dataset, source_index)' in str(exc.value)
     assert 'geocsv' not in tr.stats
 
 
@@ -198,11 +198,11 @@ def test_same_identity_and_time_with_different_counts_can_be_unique(records):
     records[0].loc[9, 'SampleCount'] = 8
     tr = trace()
     associate(tr, records)
-    assert tr.stats.geocsv.source_record_index == 1
+    assert tr.stats.geocsv.source_index == 1
     tr = trace()
     tr.data = np.arange(8, dtype=np.float32)
     associate(tr, records)
-    assert tr.stats.geocsv.source_record_index == 9
+    assert tr.stats.geocsv.source_index == 9
 
 
 def test_all_matches_preflight_before_coordinate_projection(records):
@@ -259,7 +259,7 @@ def test_known_empty_location_on_independently_read_miniseed(tmp_path):
     associate(tr, records)
 
     assert tr.stats.geocsv.Location == '  '
-    assert tr.stats.geocsv.source_record_index == 1
+    assert tr.stats.geocsv.source_index == 1
     assert all(tr.stats[key] == value for key, value in before.stats.items())
     np.testing.assert_array_equal(tr.data, before.data)
 
@@ -281,7 +281,7 @@ def test_incomplete_unrelated_event_does_not_block_unique_match(records):
 
     tr = trace()
     associate(tr, records)
-    assert tr.stats.geocsv.source_record_index == 1
+    assert tr.stats.geocsv.source_index == 1
 
 
 def test_incomplete_event_is_reported_when_no_match_exists(records):
@@ -291,7 +291,7 @@ def test_incomplete_event_is_reported_when_no_match_exists(records):
 
     tr = trace()
     tr.stats.starttime += 10
-    with pytest.raises(ValueError, match='incomplete event rows.*record.*7'):
+    with pytest.raises(ValueError, match='incomplete event rows.*source_index.*7'):
         associate(tr, records)
 
 
@@ -421,7 +421,7 @@ def test_index_selects_expected_row_among_unsorted_competitors():
     assert 'geocsv' not in trace_with_default.stats
 
     # Expected from the invented input, independently of the returned selection.
-    assert tr.stats.geocsv.source_record_index == 1
+    assert tr.stats.geocsv.source_index == 1
     assert tr.stats.coordinates.latitude == 10.0
     assert tr.stats.geocsv.association.waveform_start_offset_seconds == 0.0001
 
@@ -446,7 +446,7 @@ def test_time_matching_does_not_require_source_resolution_metadata(records):
                                        datetime_resolution_ns={})
     tr = trace()
     associate(tr, records)
-    assert tr.stats.geocsv.source_record_index == 1
+    assert tr.stats.geocsv.source_index == 1
 
 
 @pytest.mark.parametrize('allow_first_segment', [False, True])
@@ -467,13 +467,13 @@ def test_first_segment_requires_opt_in_and_preserves_anchor_and_waveform(records
         associate(tr, records)
     assert 'MH.SYN01.00.BDH' in str(exc.value)
     assert str(FIXTURE.resolve()) in str(exc.value)
-    assert "'record': 1" in str(exc.value)
+    assert "'source_index': 1" in str(exc.value)
     assert tr.stats == before.stats
     associate(tr, records, allow_first_segment=True)
     assert tr.stats.geocsv.association.type == 'anchor_segment'
     assert tr.stats.geocsv.SampleCount == 4
     assert tr.stats.geocsv.DataQuality == 'Q'
-    assert tr.stats.geocsv.source_record_index == 1
+    assert tr.stats.geocsv.source_index == 1
     assert dict(tr.stats.coordinates) == {'latitude': 10., 'longitude': 20., 'elevation': 0.}
     assert all(tr.stats[key] == value for key, value in before.stats.items())
     np.testing.assert_array_equal(tr.data, before.data)
@@ -492,7 +492,7 @@ def test_clipped_windows_require_containing_anchor_and_complete_coverage(
         associate(tr, records)
     associate(tr, records, allow_first_segment=True, time_tolerance=0)
     assert tr.stats.geocsv.association.type == 'anchor_segment'
-    assert tr.stats.geocsv.source_record_index == anchor_index
+    assert tr.stats.geocsv.source_index == anchor_index
     assert tr.stats.geocsv.SampleCount == records[0].loc[anchor_index, 'SampleCount']
     assert tr.stats.geocsv.association.waveform.sample_count == count
     assert tr.stats.coordinates.latitude == records[0].loc[anchor_index, 'Latitude']
@@ -518,7 +518,7 @@ def test_earlier_containing_row_wins_over_a_nearer_row_that_already_ended(record
     tr.stats.starttime += 0.4
     tr.data = np.arange(2, dtype=np.float32)
     associate(tr, records, allow_first_segment=True, time_tolerance=0)
-    assert tr.stats.geocsv.source_record_index == 1
+    assert tr.stats.geocsv.source_index == 1
     assert tr.stats.geocsv.SampleCount == 20
     assert tr.stats.coordinates.latitude == 10
 
@@ -551,8 +551,8 @@ def test_containing_anchor_ambiguity_lists_all_affected_traces_and_source_lines(
     assert 'trace 0 MH.SYN01.00.BDH' in message
     assert 'trace 1 MH.SYN01.00.BDH' in message
     assert "'source': '<memory>'" in message
-    assert "'record': 1, 'line': 12" in message
-    assert "'record': 7, 'line': 18" in message
+    assert "'source_index': 1, 'source_line': 12" in message
+    assert "'source_index': 7, 'source_line': 18" in message
     assert 'fill headers manually' in message
     for item, original in zip(stream, before):
         assert item.stats == original.stats
@@ -709,7 +709,7 @@ def test_mixed_batch_labels_and_failure_atomicity(records):
 
 
 @pytest.mark.parametrize('column', ['association', 'metadata', 'dataset_index',
-                                    'source_record_index'])
+                                    'source_index'])
 def test_association_columns_are_reserved(records, column):
     records[0][column] = 'source value'
     tr = trace()
@@ -770,7 +770,7 @@ def test_batch_starttime_differences_are_signed_and_independent(records, allow_f
     for tr, offset_ns, original in zip(st, offsets_ns, before):
         assert tr.stats.geocsv.association.waveform_start_offset_seconds == offset_ns / 1_000_000_000
         assert tr.stats.geocsv.Time == source_time
-        assert tr.stats.geocsv.source_record_index == 1
+        assert tr.stats.geocsv.source_index == 1
         assert tr.stats.geocsv.association.type == ('anchor_segment' if allow_first_segment else 'single_segment')
         assert all(tr.stats[key] == value for key, value in original.items())
     assert len({id(tr.stats.geocsv) for tr in st}) == len(st)
@@ -792,14 +792,14 @@ def test_single_segment_report_is_complete_and_independent(records):
     assert report.waveform.endtime is not first.stats.endtime
     segment, = report.coverage_segments
     assert dict(segment) == {
-        **dict(report.waveform), 'dataset_index': 0, 'source_record_index': 1,
-        'source_line_number': 12, 'waveform_sample_start': 0, 'waveform_sample_stop': 4}
+        **dict(report.waveform), 'dataset_index': 0, 'source_index': 1,
+        'source_line': 12, 'waveform_sample_start': 0, 'waveform_sample_stop': 4}
     assert dict(report.max_sample_grid_offset) == {
-        'seconds': 0., 'dataset_index': 0, 'source_record_index': 1,
-        'source_line_number': 12, 'waveform_sample_index': 0}
+        'seconds': 0., 'dataset_index': 0, 'source_index': 1,
+        'source_line': 12, 'waveform_sample_index': 0}
     assert dict(report.max_sample_rate_difference) == {
-        'hz': 0., 'dataset_index': 0, 'source_record_index': 1,
-        'source_line_number': 12}
+        'hz': 0., 'dataset_index': 0, 'source_index': 1,
+        'source_line': 12}
     other = second.stats.geocsv.association
     assert report is not other
     for key in ('waveform', 'max_sample_grid_offset', 'max_sample_rate_difference'):
@@ -827,8 +827,8 @@ def test_anchor_report_retains_original_segments_and_clipped_ranges(records):
     assert report.type == 'anchor_segment'
     assert report.waveform_start_offset_seconds == 0.05
     first, second = report.coverage_segments
-    assert (first.source_record_index, first.source_line_number) == (1, 12)
-    assert (second.source_record_index, second.source_line_number) == (7, 18)
+    assert (first.source_index, first.source_line) == (1, 12)
+    assert (second.source_index, second.source_line) == (7, 18)
     assert (first.waveform_sample_start, first.waveform_sample_stop) == (0, 3)
     assert (second.waveform_sample_start, second.waveform_sample_stop) == (3, 6)
     assert first.sample_count == 4 and second.sample_count == 6
@@ -836,11 +836,11 @@ def test_anchor_report_retains_original_segments_and_clipped_ranges(records):
     assert first.endtime.ns == first.starttime.ns + 150_000_000
     assert second.endtime.ns > tr.stats.endtime.ns
     assert dict(report.max_sample_grid_offset) == {
-        'seconds': 0.00005, 'dataset_index': 0, 'source_record_index': 7,
-        'source_line_number': 18, 'waveform_sample_index': 3}
+        'seconds': 0.00005, 'dataset_index': 0, 'source_index': 7,
+        'source_line': 18, 'waveform_sample_index': 3}
     assert report.max_sample_rate_difference.hz == abs(20.000001 - 20.)
-    assert report.max_sample_rate_difference.source_record_index == 7
-    assert report.max_sample_rate_difference.source_line_number == 18
+    assert report.max_sample_rate_difference.source_index == 7
+    assert report.max_sample_rate_difference.source_line == 18
 
 
 @pytest.mark.parametrize('rate', [20., 40.])

@@ -120,7 +120,7 @@ trace matching. Different counts may disambiguate the same SNCL/time. Resolve
 every trace match before building projections; validate all projections before
 mutating traces. DataQuality remains independent source evidence, not a filter.
 
-The source position is the interpolated receiver position at the source
+The source position is the producer-estimated receiver position at the source
 segment's first sample, irrespective of when a repeat request was made.
 Do not average position over the waveform. Strict association requires original
 start/count agreement. With explicit `allow_first_segment=True`, a unique
@@ -150,9 +150,10 @@ Retain DET Q and REQ D as useful lineage/validation evidence, independent of
 rate. Loss of these distinctions in EarthScope M data, overlaps, contiguity,
 and reconstruction of transformed/merged coverage remain open design questions.
 The first-segment option adopts anchor geography without claiming that
-reconstruction. Under the user's MERMAID negligible-drift convention, anchor
-STLA/STLO/STDP/STEL projection to the entire window is valid, including SAC
-export. Missing REQ pressure remains undefined; never borrow another row's
+reconstruction. The consumer copies anchor
+STLA/STLO/STDP/STEL to the window, including SAC export. Producer estimation
+methods and scientific validation belong to versioned automaid and scientific
+publication; do not explain or endorse producer models here. Missing REQ pressure remains undefined; never borrow another row's
 pressure. Do not infer original segment identity from M.
 
 ### Association Inputs and SAC Comparison References
@@ -335,7 +336,7 @@ frames, but not after arbitrary pandas transformations or file exports.
 
 Keep original GeoCSV header spellings as the DataFrame column labels. Preserve
 file-wide data-record order with a zero-based `RangeIndex` named
-`source_record_index`, excluding headers and comments, and keep
+`source_index`, excluding headers and comments, and keep
 timestamps as a `Time` column rather than an index because source timestamps
 need not be unique. Require the schema's UTC `Z` timestamp spelling with six
 fractional digits; never infer a timezone for invalid or incomplete input.

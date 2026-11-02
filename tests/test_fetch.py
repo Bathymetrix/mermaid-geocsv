@@ -37,7 +37,7 @@ def collection(tmp_path):
         entries.append({
             "instrument_id": instrument, "filename": destination.name,
             "size_bytes": len(content), "sha256": hashlib.sha256(content).hexdigest(),
-            "provenance": {"source_path": str(source), "manual_edits": instrument == "P_TEST",
+            "provenance": {"source_path": str(source),
                            "notes": "Package-local test fixture"},
         })
     manifest = {"release_id": "test-001", "testing_only": True,
@@ -173,17 +173,17 @@ def test_memory_all_real_fixture_and_metadata(collection, monkeypatch):
     assert first.provenance.manifest == collection.manifest_path.read_bytes()
     assert first.provenance.testing_only is True
     assert first.provenance.release_id == "test-001"
-    assert json.loads(first.provenance.manifest)["files"][0]["provenance"]["manual_edits"] is False
+    assert "manual_edits" not in json.loads(first.provenance.manifest)["files"][0]["provenance"]
     frames = geocsv.read(results)
     assert len(frames) == 3
     assert results[2].content == (REAL_FIXTURES / "P0045/P0045.geocsv").read_bytes()
     assert frames[2]["Station"].eq("P0045").all()
-    assert frames[2].index.equals(pd.RangeIndex(len(frames[2]), name="source_record_index"))
+    assert frames[2].index.equals(pd.RangeIndex(len(frames[2]), name="source_index"))
     assert frames[2]["SampleCount"].dtype == pd.Int64Dtype()
     assert frames[2].attrs["geocsv"].download is results[2].provenance
     frame = frames[0]
     assert len(frame) == 312
-    assert frame.index.equals(pd.RangeIndex(312, name="source_record_index"))
+    assert frame.index.equals(pd.RangeIndex(312, name="source_index"))
     assert frame["SampleCount"].dtype == pd.Int64Dtype()
     assert frame["Latitude"].dtype == pd.Float64Dtype()
     assert frame["Station"].dtype == pd.StringDtype()
@@ -328,7 +328,7 @@ def test_memory_result_associates_without_losing_download_provenance(collection)
     assert trace.stats.geocsv.metadata.source_path is None
     assert trace.stats.geocsv.metadata.download is results[0].provenance
     assert trace.stats.coordinates.latitude == 10
-    assert trace.stats.geocsv.source_record_index == 1
+    assert trace.stats.geocsv.source_index == 1
 
 
 @pytest.mark.parametrize("change,match", [

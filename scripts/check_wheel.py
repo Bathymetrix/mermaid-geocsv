@@ -41,14 +41,14 @@ def main():
                    if item["path"] == example["geocsv"])
     tables = geocsv.read(fixtures.parent / "schema-1.0.0/association" / history["subset"]["path"])
     frame, = tables
-    assert frame.index.name == "source_record_index"
+    assert frame.index.name == "source_index"
     assert str(frame["SampleCount"].dtype) == "Int64"
     assert frame.attrs["geocsv"].source_path.is_absolute()
 
     waveform, = read(str(fixtures / example["mseed"]))
     geocsv.associate(waveform, tables, create_sac_header=True)
     source = waveform.stats.geocsv
-    assert source.source_record_index == example["subset_record_index"]
+    assert source.source_index == example["subset_record_index"]
     assert source.association.type == "single_segment"
 
     with TemporaryDirectory(prefix="geocsv-wheel-sac-") as temporary:

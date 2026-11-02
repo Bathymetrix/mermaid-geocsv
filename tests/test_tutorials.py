@@ -178,7 +178,7 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         combined, = namespace["combined"]
         assert combined.stats.npts == 45683
         assert combined.stats.geocsv.association.type == "anchor_segment"
-        assert combined.stats.geocsv.source_record_index == 13
+        assert combined.stats.geocsv.source_index == 13
         assert len(combined.stats.geocsv.association.coverage_segments) == 2
     if operation == "write-sac":
         import numpy as np
@@ -203,7 +203,7 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
     if operation == "earthscope":
         assert waveform_requests == [98, 169, 239]
         assert namespace["trace"].stats.geocsv.association.type == "single_segment"
-        assert namespace["waveform"].stats.geocsv.source_record_index == 239
+        assert namespace["waveform"].stats.geocsv.source_index == 239
         output_dir = namespace["output_dir"]
         assert len(list(output_dir.glob("*.mseed"))) == 3
         assert len(list(output_dir.glob("*.sac"))) == 3

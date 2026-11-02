@@ -49,11 +49,38 @@ CI coverage, and notebook setup.
 ```python
 from mermaid import geocsv
 
-tables = geocsv.read("data/fixtures/schema-1.0.0/P0006/P0006.geocsv")
-records = tables[0]  # One DataFrame per file, including single-file input.
-print(records.head())
-metadata = records.attrs["geocsv"]
+downloads = geocsv.fetch("P0006", base_url="https://bathymetrix.com/geocsv/testing/",
+                         output_dir=None)
+release = downloads[0].provenance.release_id
+records = geocsv.read(downloads)[0]
+print(release, records.head())
 ```
+
+For the full waveform workflow, install the ObsPy extra and use the included
+original MiniSEED example with the fetched P0006 table:
+
+```python
+from pathlib import Path
+import hashlib
+from obspy import read as read_waveforms
+
+mseed = Path("data/fixtures/P0006/waveforms/20180629T170731.06_5B3F1904.MER.DET.WLT5.mseed")
+trace, = read_waveforms(str(mseed))
+geocsv.associate(trace, [records], create_sac_header=True)
+project_metadata = {
+    "release_id": release,
+    "manifest_sha256": hashlib.sha256(downloads[0].provenance.manifest).hexdigest(),
+    "source_index": trace.stats.geocsv.source_index,
+    "source_line": trace.stats.geocsv.source_line,
+    "mseed_filename": mseed.name,
+}
+# Use your own unused output filename; ObsPy writes the projected SAC headers.
+# trace.write("my-output.sac", format="SAC")
+```
+
+Retain `project_metadata`, the fetched manifest and original MiniSEED with the
+research project. SAC does not preserve the complete GeoCSV attachment. This is
+an example of project metadata, not a package-managed sidecar contract.
 
 ## API and tutorials
 
@@ -85,3 +112,15 @@ limits, format rules, and fixture references are in the
 [documentation index](docs/README.md).
 
 Developed and maintained by [Bathymetrix®](https://bathymetrix.com).
+
+The example resolves testing latest once and retains its identity. Pin any further
+fetches with `release=release`. A canonical first-v1 example is deferred until that
+snapshot is published. Measurement rows supply observations; derived times and
+locations are producer estimates. Users may reinterpolate measurements. Consult
+the automaid version in `#attribution` for estimation methods and assumptions.
+
+Consumer 0.28.0 names GeoCSV references `source_index` (zero-based data rows)
+and `source_line` (one-based physical starting lines, as in a text editor).
+Metadata `line_numbers[index]` maps between them. This replaces
+`source_record_index`, `source_line_number`, and `record_line_numbers`; association's
+DataFrame-list argument is now `tables`. No compatibility aliases are supplied.

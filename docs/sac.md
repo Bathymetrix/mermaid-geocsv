@@ -35,7 +35,7 @@ for REQ. Downloaded MiniSEED quality never supplies this exception or a depth.
 Other rows and independent SAC files never fill missing values.
 
 For `anchor_segment`, the anchor's four geographic values apply to the entire
-window under the MERMAID negligible-drift convention. Source fields retain
+window using the unchanged anchor geography. Source fields retain
 their original meanings. Subsequent trimming, merging, or resampling does not
 refresh the headers or revalidate association.
 

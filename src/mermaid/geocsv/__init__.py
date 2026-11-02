@@ -12,7 +12,7 @@ from ._read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.27.0"
+__version__ = "0.28.0"
 
 __all__ = [
     "__version__",
@@ -28,7 +28,7 @@ __all__ = [
 ]
 
 
-def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=False,
+def associate(waveforms, tables, *, time_tolerance=0.001, allow_first_segment=False,
               create_sac_header=False):
     """Attach uniquely matched GeoCSV station metadata to ObsPy waveforms.
 
@@ -38,7 +38,7 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
         MiniSEED-derived waveforms with nonempty, loaded, unmasked samples.
         The destinations ``stats.geocsv`` and ``stats.coordinates`` must be
         absent. Every match and projection validates before any trace is modified.
-    records : list of pandas.DataFrame
+    tables : list of pandas.DataFrame
         Tables returned by ``read``, retaining source indices and immutable
         ``frame.attrs["geocsv"]`` metadata. May span datasets and files. Matching
         requires complete SNCL, timezone-aware starts, sample counts, and rates
@@ -102,6 +102,6 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
             "GeoCSV association requires ObsPy; install it with "
             "pip install 'mermaid-geocsv[obspy]'"
         ) from exc
-    return _associate(waveforms, records, time_tolerance=time_tolerance,
+    return _associate(waveforms, tables, time_tolerance=time_tolerance,
                       allow_first_segment=allow_first_segment,
                       create_sac_header=create_sac_header)

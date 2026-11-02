@@ -227,7 +227,7 @@ def test_stream_mixes_standard_and_anchor_matches_with_fresh_sac_headers(subsets
     expected = {"stla": float(row.Latitude), "stlo": float(row.Longitude),
                 "stel": 0.0, "stdp": float(row.WaterPressure) / 100}
     for trace, native in zip(stream, before):
-        assert trace.stats.geocsv.source_record_index == frame.index[0]
+        assert trace.stats.geocsv.source_index == frame.index[0]
         assert trace.stats.geocsv.SampleCount == row.SampleCount
         assert trace.stats.geocsv.association.waveform.sample_count == trace.stats.npts
         assert {key: trace.stats.sac[key] for key in expected} == expected

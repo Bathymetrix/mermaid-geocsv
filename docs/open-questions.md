@@ -6,19 +6,10 @@ unresolved; they do not authorize silently changing scientific values or
 matching rules. The [GeoCSV v2.0.4 specification](references/GeoCSV_v2.0.4.pdf)
 does not settle every MERMAID convention or interoperability question.
 
-## MERMAID sampling-rate follow-up
-
-Compare raw MER timing quantities and units, writer inputs and serialized
-rates, encoded MiniSEED rates, and ObsPy output. Establish whether differences
-arise from upstream formatting, waveform encoding, or reader conversion.
-Stored microseconds and six-decimal rates do not independently establish
-measurement accuracy. Rate computed from ObsPy's rate-derived endtime is
-not independent evidence.
-
-The [fixture evidence](../data/fixtures/association/README.md#tolerance-evidence)
-supports the current agreement criterion for the checked sample. It does not
-settle raw-MER precision across producers and instrument generations. Reading
-preserves supplied rates; upstream corrections belong in the producer.
+Scientific estimation methods, assumptions and validation belong to the automaid
+version in the GeoCSV attribution header and scientific publication. Measurement
+rows provide observations; derived times/locations are best estimates that users
+may reinterpolate.
 
 ## Association scientific questions
 
@@ -28,7 +19,7 @@ Determine which acquisition boundaries and samples survive long requests,
 partitioned requests, client trimming, MiniSEED record assembly, and archive
 overlap selection. Exact source-grid coverage does not identify which source
 supplied overlap values or detect gaps already filled upstream. The current
-fallback adopts one geographic anchor without reconstructing acquisition
+anchor association copies one source geography without reconstructing acquisition
 lineage. Quality M alone supplies neither provenance nor a merge history.
 
 A preserved month request for P0006, 2018-06-29 through 2018-07-29, produced
@@ -40,7 +31,7 @@ optional local evidence under ignored `data/local/obspy_retrievals/`; ordinary
 tests do not require them.
 
 Inspection of three original July 13 P0006 repeated REQ waveforms found equal
-starts, rates, counts, and sample arrays, all corresponding to source record
+starts, rates, counts, and sample arrays, all corresponding to source index
 238. That supports repeated traces independently using one row, without
 establishing archive transformation rules. The portable
 [clipped-response fixture](../tests/fixtures/association/P0006_20180713_earthscope/README.md)
@@ -53,8 +44,8 @@ have SNCL `MH.P0006.00.BDH` on 2018-07-06:
 
 | Source | Start UTC | Samples | Quality |
 | --- | --- | ---: | --- |
-| Complete GeoCSV record 100, REQ | 01:49:28.590000 | 4,800 | D |
-| Complete GeoCSV record 101, DET | 01:49:28.613000 | 4,736 | Q |
+| Complete GeoCSV source index 100, REQ | 01:49:28.590000 | 4,800 | D |
+| Complete GeoCSV source index 101, DET | 01:49:28.613000 | 4,736 | Q |
 | Saved EarthScope response | 01:49:28.613021 | 4,800 | M |
 
 Indices refer to the shared [P0006 snapshot](../data/fixtures/P0006/README.md).
@@ -74,29 +65,6 @@ MiniSEED bytes, returned record starts and sample arrays. Current processed
 originals alone do not establish the submitted bytes. Saving a raw FDSN
 response bypasses client trimming, but reading still assembles records into
 traces. The cause and responsible upstream component remain unresolved.
-
-### Instrument and product evidence
-
-Verify the hardware generations affected by reported REQ sampling-rate/time
-shifts and whether reconstruction uses acquisition-time or request-time rate.
-Claims that DET timing is more accurate, REQ location is less certain, and
-current hardware fixes earlier behavior require instrument-specific evidence.
-Do not generalize those claims across the archive.
-
-Check source MER classification and scale for the non-20-Hz DET.WLT2 example;
-the processed-header audit did not independently inspect every raw MER header.
-Preserve historical location codes as source evidence. The
-[product reference](mermaid-data-quality.md) distinguishes requested RAW events
-from recovered continuous-buffer data.
-
-Resolve the missing P0006 buffer average rate and verify the P0023 value and
-the proposed Pipatprathanporn & Simon (2022) citation. Identify the incomplete
-“Ivy” reference and verify Nolet et al. (2024). The supplied MERMAID manual
-reference 452.000.852, Version 00, reportedly uses 101 mbar per metre;
-independent verification is pending. Current SAC mapping follows automaid's
-100 mbar per metre approximation for MERMAID receiver (station) depth in SAC
-`stdp`. This question concerns the station-depth approximation; earthquake-source
-metadata and `ev*` projections remain outside package scope.
 
 ## Deferred workflows and mappings
 

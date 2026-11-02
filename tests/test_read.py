@@ -32,7 +32,7 @@ def test_complete_example_types_order_and_provenance(tmp_path):
     source.write_bytes(payload())
     frame, = geocsv.read(source)
     assert frame.shape == (8, 16)
-    assert frame.index.equals(pd.RangeIndex(8, name='source_record_index'))
+    assert frame.index.equals(pd.RangeIndex(8, name='source_index'))
     assert str(frame.Time.dtype) == 'datetime64[ns, UTC]'
     assert frame.SampleCount.dtype == 'Int64'
     assert all(frame[name].dtype == 'Float64' for name in ['Latitude', 'Elevation', 'ClockOffset'])
@@ -48,7 +48,7 @@ def test_complete_example_types_order_and_provenance(tmp_path):
     assert metadata.created == '2026-10-29T00:00:00.123456Z'
     assert metadata.field_units['Elevation'] == 'meters'
     assert dict(metadata.datetime_resolution_ns['Time']) == dict.fromkeys(range(8), 1000)
-    assert metadata.record_line_numbers[0] == 11
+    assert metadata.line_numbers[0] == 11
     assert deepcopy(metadata) is metadata
     with pytest.raises(TypeError):
         metadata.field_types['Time'] = 'string'
@@ -63,7 +63,7 @@ def test_literal_strings_and_csv_escaping(literal):
     content = payload(rows=lambda records: [row.__setitem__(3, literal) for row in records[1:]])
     frame, = geocsv.read(content)
     assert frame.Station.tolist() == [literal] * 8
-    assert frame.attrs['geocsv'].record_line_numbers[1] == (13 if '\n' in literal else 12)
+    assert frame.attrs['geocsv'].line_numbers[1] == (13 if '\n' in literal else 12)
 
 
 @pytest.mark.parametrize('field,value', [(4, ''), (4, ' '), (9, ''), (9, '0 m'), (9, '1'), (10, ''), (10, '-1'), (12, '0'), (13, '0'), (13, '1.0'), (13, '9223372036854775808'), (15, ''), (7, '91'), (8, '-181'), (7, 'nan'), (7, 'inf'), (7, '1e999'), (7, '1e-999'), (7, ' 1'), (14, '0'), (6, 'M'), (0, 'Algorithm(event):automaid:v4'), (0, 'Derivation:Recording:'), (0, 'Derivation:Recording:automaid-'), (0, 'Derivation:Recording:automaid-v1 extra'), (11, 'MERMAID_')])

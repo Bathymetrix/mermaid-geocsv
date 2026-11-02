@@ -68,12 +68,12 @@ class GeoCSVMetadata:
     delimiter : str
         Decoded, single-character CSV delimiter.
     datetime_resolution_ns : mapping of str to mapping of int to int
-        Datetime column names mapped to source record indices and timestamp
+        Datetime column names mapped to source indices and timestamp
         spelling resolutions in nanoseconds. Missing timestamps have no entry.
     download : GeoCSVDownload or None
         Retrieval provenance from a fetch result, or None for bare paths/bytes.
-    record_line_numbers : mapping of int to int
-        Source record indices mapped to one-based physical starting lines,
+    line_numbers : mapping of int to int
+        Source indices mapped to one-based physical starting lines,
         including records spanning multiple lines.
 
     Notes
@@ -96,7 +96,7 @@ class GeoCSVMetadata:
     delimiter: str
     datetime_resolution_ns: Mapping[str, Mapping[int, int]] = field(default_factory=dict)
     download: GeoCSVDownload | None = None
-    record_line_numbers: Mapping[int, int] = field(default_factory=dict)
+    line_numbers: Mapping[int, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Freeze comments and metadata mappings, including nested resolutions."""
@@ -106,7 +106,7 @@ class GeoCSVMetadata:
             "field_units",
             "field_long_names",
             "field_standard_names",
-            "record_line_numbers",
+            "line_numbers",
         ):
             object.__setattr__(self, name, MappingProxyType(dict(getattr(self, name))))
         object.__setattr__(self, "datetime_resolution_ns", MappingProxyType({
@@ -173,7 +173,7 @@ def read(
     -------
     frames : list of pandas.DataFrame
         One typed table per file, in source order. Batches are flattened in
-        result order. Each file has a zero-based ``source_record_index``. Original column names and duplicate
+        result order. Each file has a zero-based ``source_index``. Original column names and duplicate
         timestamps are retained. Immutable ``GeoCSVMetadata`` is stored at
         ``frame.attrs["geocsv"]`` on each freshly parsed frame.
 
@@ -457,7 +457,7 @@ def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list
         else:
             array = pd.array(columns[name], dtype={"string": "string", "float": "Float64", "integer": "Int64"}[kind])
         typed[name] = array
-    frame = pd.DataFrame(typed, index=pd.RangeIndex(len(data_lines), name="source_record_index"))
+    frame = pd.DataFrame(typed, index=pd.RangeIndex(len(data_lines), name="source_index"))
     frame.attrs["geocsv"] = GeoCSVMetadata(
         source_path=source_path, comments=tuple(comments), schema_version=_SCHEMA,
         created=declarations["created"].value, field_types=dict(zip(_COLUMNS, _TYPES)),
@@ -465,6 +465,6 @@ def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list
         field_long_names=dict(zip(_COLUMNS, declarations["field_long_name"])) if "field_long_name" in declarations else {},
         field_standard_names=dict(zip(_COLUMNS, declarations["field_standard_name"])) if "field_standard_name" in declarations else {},
         delimiter=",", datetime_resolution_ns={"Time": {i: 1000 for i in frame.index}},
-        download=download, record_line_numbers=dict(enumerate(data_lines)),
+        download=download, line_numbers=dict(enumerate(data_lines)),
     )
     return [frame]

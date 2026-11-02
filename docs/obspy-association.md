@@ -29,13 +29,13 @@ event row. Multiple traces may independently match that row, including
 identical waveforms requested in different MER files. One trace must resolve
 to exactly one row; ambiguity never permits combining source metadata.
 
-Position is the interpolated receiver position at the **source segment's first sample time**,
+Position is the producer-estimated receiver position at the **source segment's first sample time**,
 independent of duration or repeat-request date. It is not averaged over the
 waveform.
 
 ## Matching original traces
 
-The signature is `associate(waveforms, records, *, time_tolerance=0.001,
+The signature is `associate(waveforms, tables, *, time_tolerance=0.001,
 allow_first_segment=False, create_sac_header=False)`. It modifies a Trace or Stream in place and
 returns `None`; records are tables from `geocsv.read`, retaining their
 source indices and immutable GeoCSV metadata.
@@ -90,7 +90,8 @@ original field names, values, and missingness, plus:
 
 | Key | Meaning |
 | --- | --- |
-| `source_record_index` | Original file-wide data-record index, not a physical line number. |
+| `source_line` | One-based physical starting line of the matched source row. |
+| `source_index` | Original file-wide data-source index, not a physical line number. |
 | `dataset_index` | Position of the matched table in the supplied records list. |
 | `metadata` | That table's immutable `GeoCSVMetadata`, including units and source/download provenance. |
 | `association` | Nested association report described below. |
@@ -117,8 +118,8 @@ both key and attribute access. It contains outputs only, not input tolerances.
 | `waveform` | Association-time snapshot: `network`, `station`, `location`, `channel`, `starttime`, `endtime`, `sampling_rate_hz`, and `sample_count`. Times are fresh ObsPy `UTCDateTime` values preserving nanoseconds. |
 | `coverage_segments` | Chronological tuple of contributing source-segment descriptions. For a strict match, contains only the matched source segment. |
 | `waveform_start_offset_seconds` | Signed waveform start minus anchor start, computed using integer nanoseconds. An interior window can have a large positive offset; this is not its sample-grid error, a clock correction, or an uncertainty. |
-| `max_sample_grid_offset` | `seconds`, `dataset_index`, `source_record_index`, `source_line_number`, and `waveform_sample_index` identifying the largest absolute timing difference among retained first/last sample pairs of contributing source ranges. |
-| `max_sample_rate_difference` | `hz`, `dataset_index`, `source_record_index`, and `source_line_number` identifying the largest absolute source/waveform rate difference. |
+| `max_sample_grid_offset` | `seconds`, `dataset_index`, `source_index`, `source_line`, and `waveform_sample_index` identifying the largest absolute timing difference among retained first/last sample pairs of contributing source ranges. |
+| `max_sample_rate_difference` | `hz`, `dataset_index`, `source_index`, and `source_line` identifying the largest absolute source/waveform rate difference. |
 
 Each `coverage_segments` entry contains:
 
@@ -128,17 +129,17 @@ Each `coverage_segments` entry contains:
 | `starttime`, `endtime` | Full original source segment bounds as UTCDateTime values. End is the last sample, computed as `Time + (SampleCount - 1) / SampleRate`, rounded to integer nanoseconds. |
 | `sampling_rate_hz`, `sample_count` | Original source rate/count, not a clipped count. |
 | `dataset_index` | Zero-based position of the dataset in the supplied DataFrame list. |
-| `source_record_index` | Zero-based file-wide data-record index, excluding headers and comments; it does not restart for each dataset. |
-| `source_line_number` | One-based physical starting line in that source file, counting headers, comments and blank lines; `None` if the row has no recorded physical line. |
+| `source_index` | Zero-based file-wide data-source index, excluding headers and comments; it does not restart for each dataset. |
+| `source_line` | One-based physical starting line in that source file, counting headers, comments and blank lines; `None` if the row has no recorded physical line. |
 | `waveform_sample_start`, `waveform_sample_stop` | Clipped contributing waveform range, zero-based, start inclusive and stop exclusive. Overlaps may appear in different entries and are counted once for coverage. |
 
 `len(association.coverage_segments)` gives the source segment count. Source
-record and line numbers refer to the file actually parsed, including a fixture
+source indices and line numbers refer to the file actually parsed, including a fixture
 subset; they are not indices into an unparsed full history. Dataset indices
 refer to the supplied list, which can combine files.
 
 The geographic anchor is identified by `stats.geocsv.dataset_index` and
-`stats.geocsv.source_record_index`. It need not be the first chronological
+`stats.geocsv.source_index`. It need not be the first chronological
 coverage entry: an earlier segment ending just before the waveform start can
 contribute a retained boundary sample under the half-sample placement rule.
 
@@ -149,7 +150,7 @@ subject to nanosecond rounding. This is not a comparison of waveform sample
 values. Strict matching still validates start/count/rate only: its reported
 last-sample disagreement does not introduce a new endpoint acceptance check.
 For equal maxima, select the first segment in chronological order (ties by
-dataset then record index), and its first boundary sample before its last.
+dataset then source index), and its first boundary sample before its last.
 
 The report is a mutable association-time snapshot. Later changes to waveform
 Stats, source tables, or other traces do not refresh it. Association never
@@ -215,7 +216,7 @@ If the unique containing anchor also passes the standard match, the label
 remains `single_segment`; coverage validation applies to the fallback.
 Multiple containing anchors raise even when one passes standard matching.
 Errors include affected trace indices, source paths or download URLs, dataset
-and record indices, and one-based physical starting lines. No anchor is chosen
+and source indices, and one-based physical starting lines. No anchor is chosen
 automatically and no partial attachment is made.
 
 ### Separate absolute matching from grid placement
@@ -252,12 +253,10 @@ Choose merge behavior explicitly before association.
 
 ## Geographic meaning and later processing
 
-Under the MERMAID negligible-drift convention, the containing anchor's
-geographic metadata applies to the whole clipped or combined window. The
-source position still describes the source segment's original first sample;
-it is not interpolated to the clipped start or averaged over the window.
-This convention does not establish suitability for arbitrary moving sensors
-or long windows. Missing pressure is never filled from another row.
+Association copies the matched source row's geography. For combined or clipped
+windows, this is the containing anchor's geography, unchanged. Consult the
+automaid version in the GeoCSV `#attribution` header for scientific estimation
+methods and assumptions. Missing pressure remains absent.
 
 Associate the final waveform after any clipping or merging. Later changes to
 Stats, samples, or source tables do not refresh attachments or projections.
@@ -288,7 +287,7 @@ accuracy. Rate from an independently measured first-to-last duration is
 `(npts - 1) / duration`; a duration spanning `npts` whole intervals uses
 `npts / duration`. Deriving rate from ObsPy's rate-derived endtime is circular.
 Raw-MER and encoding precision remain an
-[open investigation](open-questions.md#mermaid-sampling-rate-follow-up).
+[open investigation](../../automaid/docs/geocsv.md#mermaid-sampling-rate-follow-up).
 
 The [P0045 fixture](../tests/fixtures/association/P0045_20220115/README.md)
 and [preserved P0006 service response](../tests/fixtures/association/P0006_20180713_earthscope/README.md)

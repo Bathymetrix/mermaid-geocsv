@@ -33,7 +33,7 @@ The examples use three isolated DET segments with complete pressure metadata:
 | 239 | 2018-07-15T22:48:15.969095Z | 5,440 | −1 |
 
 These are zero-based data-record indices in the complete published P0006
-history, pinned below. The producer supplies six-digit source epochs;
+history used for these examples. The producer supplies six-digit source epochs;
 display width does not establish clock accuracy. All three associate as
 `single_segment`. The [association tutorial](03_associate.md#3-associate-a-clipped-window)
 demonstrates `anchor_segment` and a
@@ -41,8 +41,8 @@ demonstrates `anchor_segment` and a
 
 ## 1. Download the matching GeoCSV snapshot
 
-Download the published schema 1.0.0 snapshot directly. Pinning keeps the record
-indices and source values reproducible even if testing latest changes.
+Resolve the latest testing snapshot and retain its identity for this run.
+The first canonical v1 snapshot will be pinned here once published.
 `output_dir=None` downloads into memory. Passing fetch results directly to
 `read` preserves download provenance.
 
@@ -50,9 +50,9 @@ indices and source values reproducible even if testing latest changes.
 from mermaid import geocsv
 
 base_url = "https://bathymetrix.com/geocsv/testing/"
-release = "2026-10-30T18:08:32.316000Z"
-downloads = geocsv.fetch("P0006", base_url=base_url, release=release,
+downloads = geocsv.fetch("P0006", base_url=base_url,
                          output_dir=None)
+release = downloads[0].provenance.release_id
 tables = geocsv.read(downloads)
 records = tables[0]
 print(downloads[0].provenance.release_id)
@@ -99,7 +99,7 @@ trace, = read_waveforms(str(raw_path), format="MSEED")
 print(trace)
 
 geocsv.associate(trace, tables, create_sac_header=True)
-assert trace.stats.geocsv.source_record_index == 98
+assert trace.stats.geocsv.source_index == 98
 assert trace.stats.geocsv.association.type == "single_segment"
 print(trace.stats.geocsv.association.type)
 ```
@@ -238,7 +238,7 @@ for record_index, basename, start_offset_ns in additional_examples:
     )
     waveform, = read_waveforms(str(raw_path), format="MSEED")
     geocsv.associate(waveform, tables, create_sac_header=True)
-    assert waveform.stats.geocsv.source_record_index == record_index
+    assert waveform.stats.geocsv.source_index == record_index
     assert waveform.stats.geocsv.association.type == "single_segment"
     sac_path = output_dir / f"P0006_record_{record_index}.sac"
     waveform.write(str(sac_path), format="SAC")

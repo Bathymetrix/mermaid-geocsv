@@ -56,7 +56,7 @@ gps = records.loc[records["MethodIdentifier"].str.startswith("Measurement:Positi
 gps[["Time", "Latitude", "Longitude"]].head()
 ```
 
-The index, `source_record_index`, identifies each row's original position
+The index, `source_index`, identifies each row's original position
 among the file's data records. Filtering keeps those labels. `Time`
 remains a column.
 

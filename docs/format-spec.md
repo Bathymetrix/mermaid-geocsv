@@ -135,10 +135,12 @@ sample rate, equate DET with 20 Hz, replace historical source codes with current
 helper values, or hard-code a model such as 452.020. An actual supplied model
 452.020 is emitted as `MERMAID_452.020`.
 
-Latitude and longitude preserve the producer's geographic values. The reader
-does not infer an additional geodetic datum, transform coordinates, wrap
-longitude or reconstruct a trajectory. This contract does not establish a
-datum assertion absent from the verified source evidence.
+Latitude and longitude preserve source values. Scientific estimation methods
+and assumptions belong to the automaid version in the `#attribution` header.
+Measurement rows supply observations; derived times and locations are the
+producer's best estimates, provided in the hope that they are useful. Users may
+reinterpolate the measurements for their own scientific purposes. Parsing and
+publication checks do not independently validate producer estimation methods.
 
 ## Method identifiers and row requirements
 
@@ -147,11 +149,11 @@ MethodIdentifier has exactly three nonempty colon-delimited components,
 
 | Identifier template | Meaning |
 | --- | --- |
-| `Measurement:Position:<GPS-sensor>` | Measured GPS station position at the GPS-fix epoch |
+| `Measurement:Position:<GPS-sensor>` | Source GPS position measurement |
 | `Measurement:Pressure-Absolute:<pressure-sensor>` | Reported absolute-pressure sensor reading at its source epoch |
-| `Derivation:Recording:automaid-<version>` | Original waveform segment, its corrected first-sample time and derived station position |
-| `Interpolation:Crossing-Descent:automaid-<version>` | Descent exits the base of the configured upper mixed layer |
-| `Interpolation:Crossing-Ascent:automaid-<version>` | Ascent enters the configured upper mixed layer through its base |
+| `Derivation:Recording:automaid-<version>` | Original waveform segment and producer-estimated time/location |
+| `Interpolation:Crossing-Descent:automaid-<version>` | Producer descent-crossing estimate |
+| `Interpolation:Crossing-Ascent:automaid-<version>` | Producer ascent-crossing estimate |
 
 Use the actual sensor or software identifier. Preserve the producer version's
 existing `v` where present, for example `automaid-v4.5.14`; do not invent or
@@ -250,19 +252,9 @@ including finite negative readings caused by gauge error. A negative reported
 reading does not assert negative physical absolute pressure. Do not clamp,
 replace, offset-correct or discard it. Recording pressure and crossing proxies
 remain nonnegative because they support different projections.
-Recording WaterPressure retains the producer's source recording pressure;
-REQ pressure may be absent. Crossing WaterPressure is the existing configured
-mixed-layer depth in metres multiplied by 100: a boundary proxy, not a pressure
-sensor measurement or a new equation-of-state calculation. Do not silently
-apply an atmospheric correction to any of these values.
-
-The upper mixed layer is approximately 50 m deep in this model; its boundary
-is configured, not identified from a measured temperature profile. Descent
-exits it and ascent enters it. Faster horizontal drift there is empirical;
-no fixed velocity ratio is imposed. Preserve the intentional interpolation
-stability fallback: the helper may return an anchor position and its epoch
-instead of a crossing estimate when closely spaced fixes would yield unstable
-velocity. Do not claim that every Crossing Time is the physical crossing epoch.
+Recording WaterPressure retains the source recording pressure; REQ pressure
+may be absent. Crossing values retain producer estimates. Consult the automaid
+version in `#attribution` for their meaning and source estimation assumptions.
 
 Only Recording rows contain Elevation, with literal writer value `0` and unit
 `meters`. This is the adopted sea-level reference, not the submerged sensor's
@@ -283,7 +275,7 @@ projections. Association algorithms and comparison tolerances do not change.
 
 The following is a complete file, including its final LF. It demonstrates the
 schema, not an observed instrument history. Version labels are illustrative. Independent timing examples do not
-assert a clock interpolation history between the displayed GPS fixes.
+establish a relationship between the displayed GPS fixes.
 
 ```csv
 # MERMAID GeoCSV schema: 1.0.0

@@ -65,8 +65,8 @@ def _sac_header(trace, row, metadata, coordinates):
         quality = row.get("DataQuality")
         if not isinstance(quality, str) or quality != "D":
             raise ValueError(f"{trace.id}: missing WaterPressure; "
-                             "only REQ source records (DataQuality D) may omit depth")
-        depth = -12345.0  # SAC undefined; never borrow another record's pressure.
+                             "only REQ source rows (DataQuality D) may omit depth")
+        depth = -12345.0  # SAC undefined; never borrow another row's pressure.
     else:
         if metadata.field_units.get("WaterPressure") != "mbar":
             raise ValueError(f"{trace.id}: WaterPressure requires declared units mbar")
@@ -93,10 +93,10 @@ def _source_last_sample_ns(time_ns, row):
     return time_ns + round(Decimal(int(count) - 1) * 1_000_000_000 / Decimal(str(rate)))
 
 
-def _record_context(dataset_index, record_index, metadata):
+def _row_context(dataset_index, row_index, metadata):
     return {"source": _source_name(metadata), "dataset": dataset_index,
-            "record": record_index,
-            "line": metadata.record_line_numbers.get(record_index, "unknown")}
+            "source_index": row_index,
+            "source_line": metadata.line_numbers.get(row_index, "unknown")}
 
 
 def _overlapping_events(trace, datasets, tolerance_ns):
@@ -109,12 +109,12 @@ def _overlapping_events(trace, datasets, tolerance_ns):
         events, timed_rows, timed_times, _, latest_ends = indexed
         first = bisect_left(latest_ends, trace.stats.starttime.ns - tolerance_ns)
         last = bisect_right(timed_times, trace.stats.endtime.ns + tolerance_ns)
-        for time_ns, record_index in timed_rows[first:last]:
-            row = events.loc[record_index]
+        for time_ns, row_index in timed_rows[first:last]:
+            row = events.loc[row_index]
             end_ns = _source_last_sample_ns(time_ns, row)
             if end_ns is not None and end_ns < trace.stats.starttime.ns - tolerance_ns:
                 continue
-            yield dataset_index, record_index, row, metadata
+            yield dataset_index, row_index, row, metadata
 
 
 def _association_details(trace, anchor, association_type, ranges):
@@ -127,12 +127,12 @@ def _association_details(trace, anchor, association_type, ranges):
     ranges = sorted(ranges, key=lambda item: (
         pd.Timestamp(item[0][2]["Time"]).value, item[0][0], item[0][1]))
     for match, first_sample, clipped_first, clipped_stop in ranges:
-        dataset_index, record_index, row, metadata = match
+        dataset_index, row_index, row, metadata = match
         start_ns = pd.Timestamp(row["Time"]).value
         source_rate = Decimal(str(row["SampleRate"]))
         reference = {"dataset_index": dataset_index,
-                     "source_record_index": int(record_index),
-                     "source_line_number": metadata.record_line_numbers.get(record_index)}
+                     "source_index": int(row_index),
+                     "source_line": metadata.line_numbers.get(row_index)}
         segments.append(AttribDict({
             **{key: row[field] for field, key in IDENTITY.items()},
             "starttime": UTCDateTime(ns=start_ns),
@@ -178,9 +178,9 @@ def _validate_coverage(trace, overlapping):
     rate = Decimal(str(trace.stats.sampling_rate))
     intervals = []
     ranges = []
-    for dataset_index, record_index, row, metadata in overlapping:
+    for dataset_index, row_index, row, metadata in overlapping:
         context = (f"{trace.id}: source coverage "
-                   f"{_record_context(dataset_index, record_index, metadata)}")
+                   f"{_row_context(dataset_index, row_index, metadata)}")
         count, source_rate = row["SampleCount"], row["SampleRate"]
         if (pd.isna(count) or not isfinite(float(count)) or count <= 0
                 or not float(count).is_integer()):
@@ -213,7 +213,7 @@ def _validate_coverage(trace, overlapping):
                 raise ValueError(f"{context}: retained sample {sample} is off the waveform "
                                  "sample grid by more than half a sample interval")
         intervals.append((clipped_first, clipped_stop))
-        ranges.append(((dataset_index, record_index, row, metadata),
+        ranges.append(((dataset_index, row_index, row, metadata),
                        first_sample, clipped_first, clipped_stop))
     covered = 0
     for first_sample, stop_sample in sorted(intervals):
@@ -229,7 +229,7 @@ def _validate_coverage(trace, overlapping):
     return ranges
 
 
-def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=False,
+def associate(waveforms, tables, *, time_tolerance=0.001, allow_first_segment=False,
               create_sac_header=False):
     """Validate and attach metadata for the public association operation.
 
@@ -263,7 +263,7 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
     seen_events = {}
     required = set(IDENTITY) | {"MethodIdentifier", "Time", "SampleRate",
                                 "SampleCount"}
-    for dataset_index, frame in enumerate(records):
+    for dataset_index, frame in enumerate(tables):
         if "MethodIdentifier" not in frame:
             continue
         events = frame.loc[frame["MethodIdentifier"].str.startswith(
@@ -278,7 +278,7 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
             raise ValueError(f"dataset {dataset_index} lacks geocsv.read provenance")
         if metadata.field_units.get("SampleRate") != "hertz":
             raise ValueError(f"dataset {dataset_index}: SampleRate requires declared units hertz")
-        reserved = {"source_record_index", "dataset_index", "metadata",
+        reserved = {"source_index", "source_line", "dataset_index", "metadata",
                     "association"} & set(frame.columns)
         if reserved:
             raise ValueError(f"event columns collide with attachment keys: {sorted(reserved)}")
@@ -294,7 +294,7 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
             invalid = _invalid_identity_fields(sncl, source=True)
             if invalid:
                 raise ValueError(
-                    f"{_source_name(metadata)}, dataset {dataset_index}, records "
+                    f"{_source_name(metadata)}, dataset {dataset_index}, rows "
                     f"{list(group.index)}: invalid event identity fields {invalid}; "
                     "Network, Station, Channel require nonempty strings; Location "
                     "requires a nonempty code or two literal spaces")
@@ -302,10 +302,10 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
             sncl = tuple("" if field == "Location" and code == "  " else code
                          for field, code in zip(IDENTITY, sncl))
             timed_rows, incomplete_rows = [], []
-            for record_index, row in group.iterrows():
+            for row_index, row in group.iterrows():
                 time = row["Time"]
                 if pd.isna(time) or pd.Timestamp(time).tzinfo is None:
-                    incomplete_rows.append((record_index,
+                    incomplete_rows.append((row_index,
                                             "missing or timezone-naive Time; row is ineligible"))
                     continue
                 time_ns = pd.Timestamp(time).value
@@ -314,7 +314,7 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
                         and float(count).is_integer() and not pd.isna(source_rate)
                         and isfinite(float(source_rate)) and source_rate > 0):
                     key = (sncl, time_ns, int(count), float(source_rate))
-                    source = _record_context(dataset_index, record_index, metadata)
+                    source = _row_context(dataset_index, row_index, metadata)
                     if key in seen_events:
                         end_ns = _source_last_sample_ns(time_ns, row)
                         affected = [
@@ -328,19 +328,19 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
                             f"ambiguous duplicate GeoCSV event rows for SNCL {sncl}, "
                             f"UTC Time={pd.Timestamp(time).tz_convert('UTC').isoformat()}, "
                             f"SampleCount={count}, SampleRate={source_rate}: "
-                            f"(source, dataset, record) {seen_events[key]} and {source}; "
+                            f"(source, dataset, source_index) {seen_events[key]} and {source}; "
                             f"affected traces: {affected}; source line numbers are one-based "
                             "physical starting lines. Quality and coordinates do not "
                             "disambiguate matching keys. No anchor was chosen; resolve "
                             "the source ambiguity or fill headers manually outside "
                             "geocsv.associate")
                     seen_events[key] = source
-                timed_rows.append((time_ns, record_index))
+                timed_rows.append((time_ns, row_index))
             timed_rows.sort()
             timed_times = tuple(item[0] for item in timed_rows)
             latest_ends = []
-            for time_ns, record_index in timed_rows:
-                end_ns = _source_last_sample_ns(time_ns, group.loc[record_index])
+            for time_ns, row_index in timed_rows:
+                end_ns = _source_last_sample_ns(time_ns, group.loc[row_index])
                 latest_ends.append(max(end_ns if end_ns is not None else time_ns,
                                        latest_ends[-1] if latest_ends else time_ns))
             event_index[sncl] = (group, timed_rows, timed_times, incomplete_rows, latest_ends)
@@ -374,12 +374,12 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
             events, timed_rows, timed_times, incomplete_rows, _ = indexed
             incomplete_events.extend({
                 "source": _source_name(metadata), "dataset": dataset_index,
-                "record": record_index, "reason": reason,
-            } for record_index, reason in incomplete_rows)
+                "source_index": row_index, "reason": reason,
+            } for row_index, reason in incomplete_rows)
             first = bisect_left(timed_times, trace_time_ns - tolerance_ns)
             last = bisect_right(timed_times, trace_time_ns + tolerance_ns)
-            for time_ns, record_index in timed_rows[first:last]:
-                row = events.loc[record_index]
+            for time_ns, row_index in timed_rows[first:last]:
+                row = events.loc[row_index]
                 difference_ns = abs(time_ns - trace_time_ns)
                 if difference_ns > tolerance_ns:
                     continue
@@ -393,8 +393,8 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
                            <= rate + SAMPLE_RATE_TOLERANCE_HZ)
                 if not rate_ok:
                     reasons.append(f"SampleRate={source_rate} incompatible with {rate} Hz")
-                match = (dataset_index, record_index, row, metadata)
-                candidates.append({**_record_context(dataset_index, record_index, metadata),
+                match = (dataset_index, row_index, row, metadata)
+                candidates.append({**_row_context(dataset_index, row_index, metadata),
                                    "reasons": reasons})
                 if reasons:
                     continue
@@ -405,14 +405,14 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
             overlapping = list(_overlapping_events(trace, datasets, tolerance_ns))
             anchors = []
             for match in overlapping:
-                dataset_index, record_index, row, metadata = match
+                dataset_index, row_index, row, metadata = match
                 source_ns = pd.Timestamp(row["Time"]).value
                 end_ns = _source_last_sample_ns(source_ns, row)
                 if (end_ns is not None and source_ns - tolerance_ns
                         <= trace_time_ns <= end_ns + tolerance_ns):
                     anchors.append(match)
             if len(anchors) > 1:
-                contexts = [dict(_record_context(item[0], item[1], item[3]),
+                contexts = [dict(_row_context(item[0], item[1], item[3]),
                                  Time=str(item[2]["Time"]),
                                  SampleCount=item[2]["SampleCount"],
                                  SampleRate=item[2]["SampleRate"])
@@ -420,7 +420,7 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
                 failures.append(
                     f"trace {trace_index} {trace.id} at {trace.stats.starttime} through "
                     f"{trace.stats.endtime}: ambiguous ({len(anchors)} containing anchor rows). "
-                    f"Source candidates (zero-based record, one-based physical starting line): "
+                    f"Source candidates (zero-based source index, one-based physical starting line): "
                     f"{contexts}. No anchor was chosen. Resolve the source ambiguity or "
                     "fill headers manually outside geocsv.associate.")
                 continue
@@ -445,8 +445,8 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
                 f"through {trace.stats.endtime}: {outcome}; "
                 f"required npts={trace.stats.npts}, rate={rate} Hz "
                 f"within {SAMPLE_RATE_TOLERANCE_HZ} Hz; "
-                f"SNCL/time candidates (source, dataset, record, line, reasons): {candidates}; "
-                f"incomplete event rows (source, dataset, record, reason): {incomplete_events}")
+                f"SNCL/time candidates (source, dataset, source_index, line, reasons): {candidates}; "
+                f"incomplete event rows (source, dataset, source_index, reason): {incomplete_events}")
             continue
         if ranges is None:
             ranges = [(matches[0], 0, 0, trace.stats.npts)]
@@ -458,8 +458,9 @@ def associate(waveforms, records, *, time_tolerance=0.001, allow_first_segment=F
 
     plans = []
     for trace, anchor, association_type, ranges in associations:
-        dataset_index, record_index, row, metadata = anchor
-        attachment = AttribDict({**row.to_dict(), "source_record_index": record_index,
+        dataset_index, row_index, row, metadata = anchor
+        attachment = AttribDict({**row.to_dict(), "source_index": row_index,
+                                 "source_line": metadata.line_numbers.get(row_index),
                                  "dataset_index": dataset_index, "metadata": metadata,
                                  "association": _association_details(
                                      trace, anchor, association_type, ranges)})

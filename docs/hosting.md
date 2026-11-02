@@ -56,3 +56,8 @@ or missing source values. See [association](obspy-association.md) and [SAC](sac.
 The [fixture checker](../scripts/fixtures/README.md) verifies sampled package
 inputs; it is not the exhaustive publication gate. Artifact-bound results are
 listed in the publisher's [evidence index](../../mermaid-publisher/docs/geocsv/evidence.md).
+
+Publisher 0.6.0 adds mandatory Recording coverage, bound producer clash reports,
+and hosted mapping/diff evidence. See the publisher
+[report contract](../../mermaid-publisher/docs/geocsv/publication-reports.md).
+This source update does not establish deployment or new corpus acceptance.
