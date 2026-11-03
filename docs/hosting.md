@@ -62,7 +62,11 @@ and hosted mapping/diff evidence. See the publisher
 [report contract](../../mermaid-publisher/docs/geocsv/publication-reports.md).
 This source update does not establish deployment or new corpus acceptance.
 
-Automaid v4.9.1 omits IcCycle and Init inputs from new GeoCSV generations; publisher
-0.6.1 excludes their waveform files from validation. The consumer continues to
+Automaid v4.9.2 collects Position and Pressure-Absolute measurements from all
+cycles, including Init and IcCycle, while omitting their Recording and crossing
+rows. Normal producer output is bounded by its configured deployment window
+and retained GPS span; excluded rows remain in local `outside_filterDate_gps.geocsv`.
+Publisher validation independently checks GPS bracketing and excludes Init/IcCycle
+waveform files. The consumer continues to
 parse supplied payloads faithfully and performs no IcCycle/Init inference or filtering.
 Fresh source generation and acceptance are required before a new publication.

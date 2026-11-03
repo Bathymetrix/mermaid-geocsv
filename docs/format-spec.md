@@ -142,6 +142,13 @@ producer's best estimates, provided in the hope that they are useful. Users may
 reinterpolate the measurements for their own scientific purposes. Parsing and
 publication checks do not independently validate producer estimation methods.
 
+The producer's GeoCSV writing policy selects rows inside its deployment window
+and retained GPS span, and records excluded rows in a local audit sidecar.
+The publisher independently checks GPS time bracketing for normal payloads.
+These selection policies do not add a reader constraint: the consumer parses
+supplied measurements and derived rows without inferring deployment bounds.
+See the [producer rules](../../automaid/docs/geocsv.md#measurement-retention-and-derived-row-exclusion).
+
 ## Method identifiers and row requirements
 
 MethodIdentifier has exactly three nonempty colon-delimited components,
