@@ -119,8 +119,8 @@ tests do not require public hosting.
 ## Payload compatibility
 
 The reader requires MERMAID schema 1.0.0. Testing latest serves the
-compatible P0006/P0045 snapshot `2026-10-30T18:08:32.316000Z`. Other retained schemas can be downloaded as exact bytes, but cannot be parsed
-by this reader.
+compatible P0006/P0045 snapshot `2026-11-03T22:29:17.981000Z`. Other retained
+schemas can be downloaded as exact bytes, but cannot be parsed by this reader.
 The [fetch tutorial](../tutorials/01_fetch.md) downloads directly from the public
 testing collection. Ordinary tests replay published prefixes over loopback HTTP.
 Transport continues to preserve token IDs, exact bytes, literal release IDs and

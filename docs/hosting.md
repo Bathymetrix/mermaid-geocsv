@@ -20,9 +20,9 @@ not a discovery API for fetch.
 ## Testing service
 
 The public testing collection is `https://bathymetrix.com/geocsv/testing/`.
-Testing latest selects P0006/P0045 snapshot `2026-10-30T18:08:32.316000Z`,
-using schema 1.0.0 and consumer >= 0.27.0. Production latest is absent.
-The [publication record](../../mermaid-publisher/docs/geocsv/schema1-testing-publication.md)
+Testing latest selects P0006/P0045 snapshot `2026-11-03T22:29:17.981000Z`,
+using schema 1.0.0 and consumer >= 0.28.0. Production latest is absent.
+The [publication record](../../mermaid-publisher/docs/geocsv/testing-publication-20261103.md)
 binds its manifest, report, receipt and source revision. Older retained
 snapshots can use unsupported schemas; downloading bytes does not establish
 reader compatibility.
@@ -40,8 +40,12 @@ manifested instrument files. It is outside `manifest.files` and scientific
 reports; member integrity uses the existing manifest hashes. Fetch continues
 to select and verify individual manifest entries. The site implements plain
 clickable directory trees and `releases/<component>/` pages, with bundle links
-only when objects exist. These changes are local; deployment and bundle uploads
-remain separately authorized operations.
+only when objects exist. This Worker support was deployed on 2026-11-03.
+Live release-directory GET/HEAD and pinned downloads passed. The separately
+authorized v4.9.2 snapshot publication then verified bundle/report bytes and
+selected the new testing latest. The Worker deployment itself did not upload
+data or change testing latest. Further deployments
+and bundle uploads remain separately authorized operations.
 
 ## Scientific client workflow
 
@@ -70,3 +74,7 @@ Publisher validation independently checks GPS bracketing and excludes Init/IcCyc
 waveform files. The consumer continues to
 parse supplied payloads faithfully and performs no IcCycle/Init inference or filtering.
 Fresh source generation and acceptance are required before a new publication.
+
+The publisher's metadata-change gate exempts automaid MethodIdentifier revision
+updates alone when the rest of each row is identical. Exact published diffs
+retain those provenance changes; other edits and deletions require review.

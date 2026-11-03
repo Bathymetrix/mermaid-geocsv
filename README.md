@@ -100,8 +100,8 @@ associates their metadata, and compares SAC exports with independent fixtures.
 | Plot and analyze records | Use pandas and Matplotlib downstream. | [06_plotting.md](tutorials/06_plotting.md) | [06_plotting.ipynb](tutorials/06_plotting.ipynb) |
 
 Hosted GeoCSV collections remain testing only. Testing latest serves the
-P0006/P0045 schema 1.0.0 snapshot `2026-10-30T18:08:32.316000Z`, compatible
-with consumer 0.27.0. Other retained snapshots may use unsupported schemas.
+P0006/P0045 schema 1.0.0 snapshot `2026-11-03T22:29:17.981000Z`, compatible
+with consumer 0.28.0. Other retained snapshots may use unsupported schemas.
 The [fetch tutorial](tutorials/01_fetch.md) downloads from the public testing collection.
 Transport still preserves exact bytes, token release IDs and all fractional digits;
 only the two timestamp time-separator colons become hyphens in paths. Package source and hosted snapshot identities are separate.
