@@ -61,3 +61,8 @@ Publisher 0.6.0 adds mandatory Recording coverage, bound producer clash reports,
 and hosted mapping/diff evidence. See the publisher
 [report contract](../../mermaid-publisher/docs/geocsv/publication-reports.md).
 This source update does not establish deployment or new corpus acceptance.
+
+Automaid v4.9.1 omits IcCycle and Init inputs from new GeoCSV generations; publisher
+0.6.1 excludes their waveform files from validation. The consumer continues to
+parse supplied payloads faithfully and performs no IcCycle/Init inference or filtering.
+Fresh source generation and acceptance are required before a new publication.
