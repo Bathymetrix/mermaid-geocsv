@@ -20,6 +20,9 @@ not a discovery API for fetch.
 ## Testing service
 
 The public testing collection is `https://bathymetrix.com/geocsv/testing/`.
+For a human-readable link that follows new publications, use
+`https://bathymetrix.com/geocsv/testing/latest/`. It temporarily redirects to
+the release directory selected by the testing latest pointer without caching.
 Testing latest selects P0006/P0045 snapshot `2026-11-03T22:29:17.981000Z`,
 using schema 1.0.0 and consumer >= 0.28.0. Production latest is absent.
 The [publication record](../../mermaid-publisher/docs/geocsv/testing-publication-20261103.md)
