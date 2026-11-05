@@ -13,7 +13,7 @@ approximate depth from water pressure. Optional SAC projections populate only
 projections are outside this package's scope.
 
 The reader supports only the controlled [MERMAID GeoCSV schema 1.0.0](docs/format-spec.md),
-with its required first-line declaration, fixed 16 columns and five method identifiers.
+with its dataset-first GeoCSV 2.0 declaration and explicit 1.0.0-family schema, fixed 16 columns and five method identifiers.
 It returns typed pandas tables preserving source order, literal identities,
 comments, units and schema/creation provenance. Only empty decoded cells are
 missing; two literal Location spaces denote known blank. Finite signed gauge
@@ -99,13 +99,13 @@ associates their metadata, and compares SAC exports with independent fixtures.
 | EarthScope workflow | Download P0006 waveforms, associate metadata, and verify SAC exports. | [05_earthscope.md](tutorials/05_earthscope.md) | [05_earthscope.ipynb](tutorials/05_earthscope.ipynb) |
 | Plot and analyze records | Use pandas and Matplotlib downstream. | [06_plotting.md](tutorials/06_plotting.md) | [06_plotting.ipynb](tutorials/06_plotting.ipynb) |
 
-Hosted GeoCSV collections remain testing only. Testing latest serves the
-P0006/P0045 schema 1.0.0 snapshot `2026-11-03T22:29:17.981000Z`, compatible
-with consumer 0.28.0. Other retained snapshots may use unsupported schemas.
-The [fetch tutorial](tutorials/01_fetch.md) downloads from the public testing collection.
-Transport still preserves exact bytes, token release IDs and all fractional digits;
-only the two timestamp time-separator colons become hyphens in paths. Package source and hosted snapshot identities are separate.
-See the [hosting workflow](docs/hosting.md) and [fetch reference](docs/fetch.md).
+Hosted GeoCSV collections remain testing only. The published histories retain
+their old headers and can be fetched as exact bytes, but cannot be parsed by
+this dataset-first reader. No rc1 snapshot has been published. Fetch and
+EarthScope tutorials use standalone temporary local rc1 collections until a
+compatible snapshot is separately authorized and published. The fixed 16
+columns, missingness and scientific matching rules remain unchanged.
+See [hosting](docs/hosting.md) and [fetch](docs/fetch.md).
 
 Detailed matching rules, association reports, SAC precision and provenance
 limits, format rules, and fixture references are in the
@@ -117,7 +117,7 @@ The example resolves testing latest once and retains its identity. Pin any furth
 fetches with `release=release`. A canonical first-v1 example is deferred until that
 snapshot is published. Measurement rows supply observations; derived times and
 locations are producer estimates. Users may reinterpolate measurements. Consult
-the automaid version in `#attribution` for estimation methods and assumptions.
+the automaid version in `producer` for estimation methods and assumptions.
 
 Consumer 0.28.0 names GeoCSV references `source_index` (zero-based data rows)
 and `source_line` (one-based physical starting lines, as in a text editor).

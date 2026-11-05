@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 from mermaid import geocsv
 
-FIXTURE = Path(__file__).parent / 'fixtures/schema-1.0.0/example.geocsv'
+FIXTURE = Path(__file__).parent / 'fixtures/schema-1.0.0-rc1/example.geocsv'
 
 
 def payload(rows=None, headers=None):
@@ -44,7 +44,7 @@ def test_complete_example_types_order_and_provenance(tmp_path):
     assert frame.Elevation.loc[[3, 7]].tolist() == [0., 0.]
     metadata = frame.attrs['geocsv']
     assert metadata.source_path == source.resolve()
-    assert metadata.schema_version == '1.0.0'
+    assert metadata.schema_version == '1.0.0-rc1'
     assert metadata.created == '2026-10-29T00:00:00.123456Z'
     assert metadata.field_units['Elevation'] == 'meters'
     assert dict(metadata.datetime_resolution_ns['Time']) == dict.fromkeys(range(8), 1000)
@@ -78,11 +78,11 @@ def test_invalid_time_spelling(stamp):
         geocsv.read(payload(rows=lambda records: records[1].__setitem__(1, stamp)))
 
 
-@pytest.mark.parametrize('key', [' MERMAID GeoCSV schema', 'dataset', 'created', 'delimiter', 'lineterminator', 'field_type', 'field_unit'])
+@pytest.mark.parametrize('key', ['schema', 'dataset', 'created', 'delimiter', 'lineterminator', 'field_type', 'field_unit'])
 @pytest.mark.parametrize('operation', ['missing', 'duplicate', 'wrong'])
 def test_required_declarations(key, operation):
     def edit(headers):
-        selected = next(line for line in headers if line.startswith(f'#{key}:'))
+        selected = next(line for line in headers if line.startswith(f'# {key}:'))
         if operation == 'missing': return [line for line in headers if line != selected]
         if operation == 'duplicate': return headers + [selected]
         return [line.replace(selected, selected.split(': ', 1)[0] + ': unsupported\n') for line in headers]
@@ -98,11 +98,11 @@ def test_unsupported_field_declarations(extra):
 
 def test_descriptive_comments_and_absence():
     def edit(headers):
-        return [line for line in headers if not line.startswith(('#description:', '#attribution:'))] + ['#opaque: untouched\n', '#opaque: repeated\n']
+        return [line for line in headers if not line.startswith(('# description:', '# producer:'))] + ['#opaque: untouched\n', '#opaque: repeated\n']
     frame, = geocsv.read(payload(headers=edit))
     assert [c.raw for c in frame.attrs['geocsv'].comments][-2:] == ['#opaque: untouched', '#opaque: repeated']
     assert frame.attrs['geocsv'].field_long_names == {}
-    assert not any(c.key in {'description', 'attribution'} for c in frame.attrs['geocsv'].comments)
+    assert not any(c.key in {'description', 'producer'} for c in frame.attrs['geocsv'].comments)
 
 
 @pytest.mark.parametrize('field', [2, 3, 11])
@@ -153,3 +153,39 @@ def test_valid_gregorian_epochs_outside_nanosecond_storage_range(year):
     assert str(frame.Time.dtype) == 'datetime64[us, UTC]'
     assert frame.Time.iloc[0].year == int(year)
     assert frame.Time.iloc[0].microsecond == 123456
+
+
+@pytest.mark.parametrize('version', ['1.0.0', '1.0.0-rc1', '1.0.0-rc2', '1.0.0-beta.3', '1.0.0-rc1+test.5'])
+def test_schema_family_preserves_literal_revision(version):
+    content = payload().replace(b'MERMAID GeoCSV v1.0.0-rc1', f'MERMAID GeoCSV v{version}'.encode())
+    frame, = geocsv.read(content)
+    assert frame.attrs['geocsv'].schema_version == version
+
+
+@pytest.mark.parametrize('version', ['1.0.01', '1.0.1', '1.0.0evil', '1.0.0-', '1.0.0-rc.','2.0.0'])
+def test_unsupported_schema_family_rejected(version):
+    with pytest.raises(geocsv.GeoCSVError, match='schema'):
+        geocsv.read(payload().replace(b'MERMAID GeoCSV v1.0.0-rc1', f'MERMAID GeoCSV v{version}'.encode()))
+
+
+def test_header_padding_is_normalized_without_trimming_data_or_raw_comments():
+    def padded(headers):
+        return [('#\t ' + line[2:].replace(': ', ' \t:  ', 1).rstrip('\n') + ' \t\n') for line in headers]
+    frame, = geocsv.read(payload(headers=padded))
+    metadata = frame.attrs['geocsv']
+    assert metadata.comments[0].key == 'dataset'
+    assert metadata.comments[0].value == 'GeoCSV 2.0'
+    assert metadata.comments[0].raw.startswith('#\t dataset \t:')
+    assert metadata.comments[0].raw.endswith(' \t')
+    assert frame.Location.loc[3] == '  '
+    assert frame.Location.loc[7] == '01'
+
+
+def test_field_list_padding_and_unquoted_delimiter():
+    content = payload().replace(b'# field_type: ', b'#field_type :  ').replace(b'string,datetime', b' string , datetime ')
+    frame, = geocsv.read(content)
+    assert frame.attrs['geocsv'].field_types['Time'] == 'datetime'
+    with pytest.raises(geocsv.GeoCSVError, match='delimiter'):
+        geocsv.read(content.replace(b'# delimiter: ,', b"# delimiter: ','"))
+    with pytest.raises(geocsv.GeoCSVError, match='lineterminator'):
+        geocsv.read(content.replace(b'# lineterminator: \\n', b"# lineterminator: '\\n'"))

@@ -63,7 +63,7 @@ def test_response_provenance_and_known_overlapping_originals():
 def test_clipped_earthscope_response_association_and_sac_export(tmp_path):
     # Read raw response bytes directly: no client trim, explicit merge, resampling or fill.
     waveform, = obspy.read(str(FIXTURE / MANIFEST["request"]["path"]), format="MSEED")
-    tables = geocsv.read(Path(__file__).parents[1] / "data/fixtures/schema-1.0.0/earthscope/P0006.geocsv")
+    tables = geocsv.read(Path(__file__).parents[1] / "data/fixtures/schema-1.0.0-rc1/earthscope/P0006.geocsv")
     original = waveform.copy()
     with pytest.raises(ValueError, match="no match"):
         geocsv.associate(waveform, tables, time_tolerance=0.001)

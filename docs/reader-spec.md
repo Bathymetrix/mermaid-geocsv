@@ -29,7 +29,7 @@ Gregorian years without losing any of the six source fractional digits.
 ```python
 from mermaid import geocsv
 
-records, = geocsv.read("data/fixtures/schema-1.0.0/P0006/P0006.geocsv")
+records, = geocsv.read("data/fixtures/schema-1.0.0-rc1/P0006/P0006.geocsv")
 recordings = records.loc[records.MethodIdentifier.str.startswith("Derivation:Recording:")]
 print(recordings[["Time", "SampleCount", "Elevation"]].head())
 ```
@@ -56,8 +56,8 @@ Each newly parsed frame has one immutable `GeoCSVMetadata` value at
 
 | Attribute | Source meaning |
 | --- | --- |
-| `schema_version` | Required literal supported schema revision, `1.0.0`. |
-| `created` | Exact six-digit UTC `#created` spelling. |
+| `schema_version` | Exact supported schema revision, including its prerelease/build suffix. |
+| `created` | Six-digit UTC creation identity after header padding removal; raw comment retained. |
 | `source_path` | Resolved absolute opened path, or `None` for memory input. |
 | `download` | Immutable fetch provenance when supplied; otherwise `None`. |
 | `comments` | Ordered immutable `GeoCSVComment` values with raw text, physical line, case-sensitive key and declaration text. |

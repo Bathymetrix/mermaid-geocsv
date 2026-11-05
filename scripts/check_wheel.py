@@ -39,7 +39,7 @@ def main():
     example = manifest["examples"][0]
     history = next(item for item in manifest["geocsv"]
                    if item["path"] == example["geocsv"])
-    tables = geocsv.read(fixtures.parent / "schema-1.0.0/association" / history["subset"]["path"])
+    tables = geocsv.read(fixtures.parent / "schema-1.0.0-rc1/association" / history["subset"]["path"])
     frame, = tables
     assert frame.index.name == "source_index"
     assert str(frame["SampleCount"].dtype) == "Int64"

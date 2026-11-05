@@ -19,7 +19,7 @@ maintained references.
 
 ## Schema and producer
 
-- [MERMAID GeoCSV schema 1.0.0](format-spec.md): exact fields/header, row requirements and worked example.
+- [MERMAID GeoCSV schema 1.0.0-rc1](format-spec.md): exact fields/header, row requirements and worked example.
 - [Producer source rules](../../automaid/docs/geocsv.md) and [clock matrix](../../automaid/docs/clock-timing-matrix.md).
 
 ## Fixtures and sources

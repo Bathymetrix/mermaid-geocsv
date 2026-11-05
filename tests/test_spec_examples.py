@@ -9,7 +9,7 @@ ROOT = Path(__file__).parents[1]
 
 def test_complete_specification_example_matches_fixture():
     example = re.findall(r'```csv\n(.*?)```', (ROOT / 'docs/format-spec.md').read_text(), re.S)[-1]
-    assert example.encode() == (ROOT / 'tests/fixtures/schema-1.0.0/example.geocsv').read_bytes()
+    assert example.encode() == (ROOT / 'tests/fixtures/schema-1.0.0-rc1/example.geocsv').read_bytes()
     frame, = geocsv.read(example.encode())
     assert len(frame) == 8
     assert frame.MethodIdentifier.str.split(':').str[:2].astype(str).nunique() == 5

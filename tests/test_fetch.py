@@ -17,7 +17,7 @@ from mermaid import geocsv
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
-REAL_FIXTURES = Path(__file__).parents[1] / "data/fixtures/schema-1.0.0"
+REAL_FIXTURES = Path(__file__).parents[1] / "data/fixtures/schema-1.0.0-rc1"
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def collection(tmp_path):
     # Two schema-converted instrument subsets plus an invented single-table file.
     # Keep the small synthetic entry second for the partial-batch failure test.
     for instrument, source in [("P0006", REAL_FIXTURES / "P0006/P0006.geocsv"),
-                               ("P_TEST", FIXTURES / "schema-1.0.0/typed.geocsv"),
+                               ("P_TEST", FIXTURES / "schema-1.0.0-rc1/typed.geocsv"),
                                ("P0045", REAL_FIXTURES / "P0045/P0045.geocsv")]:
         destination = directory / f"{instrument}.geocsv"
         shutil.copyfile(source, destination)
@@ -313,7 +313,7 @@ def test_memory_result_associates_without_losing_download_provenance(collection)
     obspy = pytest.importorskip("obspy")
     import numpy as np
 
-    content = (FIXTURES / "schema-1.0.0/synthetic.geocsv").read_bytes()
+    content = (FIXTURES / "schema-1.0.0-rc1/synthetic.geocsv").read_bytes()
     (collection.directory / "P0006.geocsv").write_bytes(content)
     collection.manifest["files"][0].update(size_bytes=len(content),
                                            sha256=hashlib.sha256(content).hexdigest())
@@ -372,7 +372,7 @@ def test_invalid_arguments_do_not_request(collection, kwargs):
 
 
 def test_byte_input_uses_same_parser_and_no_invented_provenance():
-    content = (FIXTURES / "schema-1.0.0/typed.geocsv").read_bytes()
+    content = (FIXTURES / "schema-1.0.0-rc1/typed.geocsv").read_bytes()
     frame, = geocsv.read(content, datetime_timezone="UTC")
     assert frame.attrs["geocsv"].source_path is None
     assert frame.attrs["geocsv"].download is None
@@ -380,14 +380,14 @@ def test_byte_input_uses_same_parser_and_no_invented_provenance():
     with pytest.raises(geocsv.GeoCSVError, match="<memory>:.*invalid UTF-8"):
         geocsv.read(b"# MERMAID GeoCSV schema: 1.0.0\n#opaque: \xff\n")
     with pytest.raises(geocsv.GeoCSVError, match="LF or CRLF"):
-        geocsv.read((FIXTURES / "schema-1.0.0/typed.geocsv").read_bytes()[:-1])
+        geocsv.read((FIXTURES / "schema-1.0.0-rc1/typed.geocsv").read_bytes()[:-1])
     with pytest.raises(TypeError, match="GeoCSVFetchResult"):
-        geocsv.read([FIXTURES / "schema-1.0.0/typed.geocsv"])
+        geocsv.read([FIXTURES / "schema-1.0.0-rc1/typed.geocsv"])
 
 
 def test_fetched_parser_error_identifies_url(collection):
     path = collection.directory / "P0006.geocsv"
-    content = (FIXTURES / "schema-1.0.0/typed.geocsv").read_bytes()[:-1]
+    content = (FIXTURES / "schema-1.0.0-rc1/typed.geocsv").read_bytes()[:-1]
     path.write_bytes(content)
     collection.manifest["files"][0].update(size_bytes=len(content),
                                            sha256=hashlib.sha256(content).hexdigest())

@@ -26,7 +26,7 @@ CONFIGURATION = {
 @pytest.fixture(scope="module")
 def subsets():
     # These real-data subsets are tracked and required, including on CI.
-    return {item["path"]: geocsv.read(FIXTURES.parent / "schema-1.0.0/association" / item["subset"]["path"])
+    return {item["path"]: geocsv.read(FIXTURES.parent / "schema-1.0.0-rc1/association" / item["subset"]["path"])
             for item in MANIFEST["geocsv"]}
 
 
@@ -80,7 +80,7 @@ def test_tracked_subset_hashes_and_record_maps(subsets):
         assert original_indices == sorted(set(original_indices))
         assert 0 <= min(original_indices) <= max(original_indices) < subset["source_record_count"]
         assert frame.index.equals(pd.RangeIndex(len(original_indices), name="source_index"))
-        assert frame.attrs["geocsv"].source_path == (FIXTURES.parent / "schema-1.0.0/association" / subset["path"]).resolve()
+        assert frame.attrs["geocsv"].source_path == (FIXTURES.parent / "schema-1.0.0-rc1/association" / subset["path"]).resolve()
         assert frame["SampleCount"].dtype == pd.Int64Dtype()
         assert frame["Location"].dtype == pd.StringDtype()
         for example in EXAMPLES:

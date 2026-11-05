@@ -34,7 +34,7 @@ waveform_path = (
     example_dir / "0009_20210528-04h30m10s"
     / "20210528T053250.0030_60B08BB3.MER.DET.WLT2.mseed"
 )
-tables = geocsv.read(root / "data/fixtures/schema-1.0.0/association/452.020-P-0030/association_subset.geocsv")
+tables = geocsv.read(root / "data/fixtures/schema-1.0.0-rc1/association/452.020-P-0030/association_subset.geocsv")
 trace = read_waveforms(str(waveform_path))[0]
 geocsv.associate(trace, tables)
 ```
@@ -56,7 +56,7 @@ association requires fresh `stats.geocsv` and `stats.coordinates` destinations.
 
 These small GeoCSV subsets are demonstration fixtures. Use complete histories
 for research; omitted records could affect uniqueness. See the
-[schema conversion and source mapping](../data/fixtures/schema-1.0.0/README.md)
+[schema conversion and source mapping](../data/fixtures/schema-1.0.0-rc1/README.md)
 and [original waveform provenance](../data/fixtures/association/README.md).
 
 ## 2. Associate a Stream
@@ -89,7 +89,7 @@ print(window.stats.geocsv.association.type)  # anchor_segment
 The source must cover every retained waveform sample. The attached position
 remains the source segment's first-sample position, adopted for the window
 using the unchanged producer estimate. Consult the automaid version in the
-GeoCSV attribution header for estimation methods and assumptions. Clip or combine waveforms before
+GeoCSV producer header for estimation methods and assumptions. Clip or combine waveforms before
 association; later waveform edits do not refresh the attachment.
 
 ## 4. Associate a combined window
@@ -104,7 +104,7 @@ the sample placement and source provenance.
 combined_dir = root / "tests/fixtures/association/P0045_20220115"
 combined = read_waveforms(str(combined_dir / "*.mseed"))
 combined.merge(method=1, interpolation_samples=0, misalignment_threshold=0)
-combined_tables = geocsv.read(root / "data/fixtures/schema-1.0.0/P0045/P0045.geocsv")
+combined_tables = geocsv.read(root / "data/fixtures/schema-1.0.0-rc1/P0045/P0045.geocsv")
 geocsv.associate(combined, combined_tables, allow_first_segment=True)
 print(combined[0].stats.geocsv.association.type)  # anchor_segment
 print(combined[0].stats.geocsv.association.coverage_segments)

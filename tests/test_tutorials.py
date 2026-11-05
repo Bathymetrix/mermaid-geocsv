@@ -6,9 +6,6 @@ import hashlib
 from pathlib import Path
 import re
 from types import SimpleNamespace
-from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from threading import Thread
 
 import pytest
 
@@ -19,41 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TUTORIALS = ROOT / "tutorials"
 NAMES = sorted(path.stem for path in TUTORIALS.glob("*.md"))
 TEST_RELEASE = "2026-10-30T18:08:32.316000Z"
-HOSTED_FIXTURES = ROOT / "data/fixtures/schema-1.0.0/hosted"
-
-
-@pytest.fixture
-def tutorial_collection(tmp_path):
-    """Replay published prefixes without requiring public network availability."""
-    server_root = tmp_path / "server"
-    component = TEST_RELEASE.replace(":", "-")
-    directory = server_root / "releases" / component
-    directory.mkdir(parents=True)
-    entries = []
-    for instrument in ("P0006", "P0045"):
-        name = f"{instrument}.geocsv"
-        content = (HOSTED_FIXTURES / name).read_bytes()
-        (directory / name).write_bytes(content)
-        entries.append({
-            "instrument_id": instrument, "filename": name,
-            "size_bytes": len(content), "sha256": hashlib.sha256(content).hexdigest(),
-            "provenance": {"notes": "Offline replay prefix; not the complete hosted file"},
-        })
-    (directory / "manifest.json").write_text(json.dumps({
-        "release_id": TEST_RELEASE, "testing_only": True, "files": entries}))
-    (server_root / "latest.json").write_text(json.dumps({
-        "release_id": TEST_RELEASE, "testing_only": True,
-        "manifest": f"releases/{component}/manifest.json"}))
-    handler = partial(SimpleHTTPRequestHandler, directory=str(server_root))
-    with ThreadingHTTPServer(("127.0.0.1", 0), handler) as server:
-        thread = Thread(target=server.serve_forever,
-                        kwargs={"poll_interval": 0.01}, daemon=True)
-        thread.start()
-        try:
-            yield f"http://127.0.0.1:{server.server_port}/"
-        finally:
-            server.shutdown()
-            thread.join()
+HOSTED_FIXTURES = ROOT / "data/fixtures/schema-1.0.0-rc1/hosted"
 
 
 def test_public_functions_have_tutorial_pairs():
@@ -101,19 +64,15 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
     if operation == "plotting":
         matplotlib = pytest.importorskip("matplotlib")
         matplotlib.use("Agg")
-    if operation in {"fetch", "earthscope"}:
+    if operation == "fetch":
         real_fetch = geocsv.fetch
-        local_base_url = request.getfixturevalue("tutorial_collection")
 
-        def fetch_from_local_collection(*args, **kwargs):
-            assert kwargs["base_url"] == "https://bathymetrix.com/geocsv/testing/"
-            kwargs["base_url"] = local_base_url
+        def isolated_output(*args, **kwargs):
             if kwargs.get("output_dir") is not None:
-                assert kwargs["output_dir"] == "geocsv-downloads"
                 kwargs["output_dir"] = tmp_path / "downloads"
             return real_fetch(*args, **kwargs)
 
-        monkeypatch.setattr(geocsv, "fetch", fetch_from_local_collection)
+        monkeypatch.setattr(geocsv, "fetch", isolated_output)
     if operation == "earthscope":
         import tempfile
 

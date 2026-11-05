@@ -18,8 +18,8 @@ python -m pip install '.[obspy]'
 
 See [installation and notebook setup](../docs/installation.md) if needed. Run the
 Python examples in order from the repository root, `docs/`, or `tutorials/`.
-Internet access is required for the hosted GeoCSV metadata and EarthScope
-waveform downloads. Tests replay saved metadata subsets and responses offline. Paired
+Internet access is required for EarthScope waveform downloads. GeoCSV metadata
+come from local rc1 fixture projections; no rc1 payload is yet hosted. Tests replay saved metadata subsets and responses offline. Paired
 reference files are included in the repository; see their
 [provenance manifest](../data/fixtures/P0006/waveforms/manifest.json) and
 [fixture notes](../data/fixtures/P0006/waveforms/README.md).
@@ -32,8 +32,8 @@ The examples use three isolated DET segments with complete pressure metadata:
 | 169 | 2018-07-12T06:51:58.293418Z | 4,448 | 0 |
 | 239 | 2018-07-15T22:48:15.969095Z | 5,440 | −1 |
 
-These are zero-based data-record indices in the complete published P0006
-history used for these examples. The producer supplies six-digit source epochs;
+These are zero-based data-record indices retained by the local P0006 prefix
+fixture used for these examples. The producer supplies six-digit source epochs;
 display width does not establish clock accuracy. All three associate as
 `single_segment`. The [association tutorial](03_associate.md#3-associate-a-clipped-window)
 demonstrates `anchor_segment` and a
@@ -41,15 +41,50 @@ demonstrates `anchor_segment` and a
 
 ## 1. Download the matching GeoCSV snapshot
 
-Resolve the latest testing snapshot and retain its identity for this run.
-The first canonical v1 snapshot will be pinned here once published.
-`output_dir=None` downloads into memory. Passing fetch results directly to
-`read` preserves download provenance.
+Start a temporary local collection of rc1 fixture projections. These preserve
+the three example source rows and nearby candidates, but do not establish
+uniqueness across a complete history. The fixture source-index mapping remains
+available in its manifest. No hosted old-header file is rewritten.
 
 ```python
 from mermaid import geocsv
 
-base_url = "https://bathymetrix.com/geocsv/testing/"
+from pathlib import Path
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from threading import Thread
+from tempfile import TemporaryDirectory
+import hashlib
+import json
+import shutil
+
+repository = next(path for path in (Path.cwd(), Path.cwd().parent)
+                  if (path / "data/fixtures/schema-1.0.0-rc1").is_dir())
+fixtures = repository / "data/fixtures/schema-1.0.0-rc1/hosted"
+workspace = TemporaryDirectory(prefix="mermaid-geocsv-tutorial-")
+server_root = Path(workspace.name)
+release = "2026-10-30T18:08:32.316000Z"
+component = release.replace(":", "-")
+directory = server_root / "releases" / component
+directory.mkdir(parents=True)
+entries = []
+for instrument in ("P0006", "P0045"):
+    filename = f"{instrument}.geocsv"
+    content = (fixtures / filename).read_bytes()
+    (directory / filename).write_bytes(content)
+    entries.append(dict(instrument_id=instrument, filename=filename,
+                        size_bytes=len(content), sha256=hashlib.sha256(content).hexdigest(),
+                        provenance={"notes": "Local rc1 fixture projection; not a hosted snapshot"}))
+(directory / "manifest.json").write_text(json.dumps(dict(
+    release_id=release, testing_only=True, files=entries)))
+(server_root / "latest.json").write_text(json.dumps(dict(
+    release_id=release, testing_only=True,
+    manifest=f"releases/{component}/manifest.json")))
+server = ThreadingHTTPServer(("127.0.0.1", 0),
+    partial(SimpleHTTPRequestHandler, directory=str(server_root)))
+thread = Thread(target=server.serve_forever, daemon=True)
+thread.start()
+base_url = f"http://127.0.0.1:{server.server_port}/"
 downloads = geocsv.fetch("P0006", base_url=base_url,
                          output_dir=None)
 release = downloads[0].provenance.release_id
@@ -262,3 +297,12 @@ current network availability; live execution is a separate check.
 
 Service behavior: [EarthScope dataselect help](https://service.earthscope.org/fdsnws/dataselect/docs/1/help/)
 and [ObsPy `get_waveforms`](https://docs.obspy.org/packages/autogen/obspy.clients.fdsn.client.Client.get_waveforms.html).
+
+## Close the temporary collection
+
+```python
+server.shutdown()
+server.server_close()
+thread.join()
+workspace.cleanup()
+```

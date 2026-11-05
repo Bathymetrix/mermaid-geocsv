@@ -21,7 +21,7 @@ EXAMPLES = MANIFEST["examples"]
 
 @pytest.fixture(scope="module")
 def subsets():
-    return {item["path"]: geocsv.read(FIXTURES.parent / "schema-1.0.0/association" / item["subset"]["path"])
+    return {item["path"]: geocsv.read(FIXTURES.parent / "schema-1.0.0-rc1/association" / item["subset"]["path"])
             for item in MANIFEST["geocsv"]}
 
 

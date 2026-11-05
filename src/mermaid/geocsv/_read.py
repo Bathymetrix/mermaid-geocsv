@@ -32,9 +32,9 @@ class GeoCSVComment:
     line_number : int
         One-based physical line number in the source file.
     key : str or None
-        Case-sensitive keyword, or None if no colon is present.
+        Case-sensitive keyword with syntactic padding removed, or None if no colon is present.
     value : str or None
-        Text following the declaration prefix, or None if no colon is present.
+        Header value with surrounding padding removed, or None if no colon is present.
     """
 
     raw: str
@@ -125,8 +125,7 @@ class GeoCSVError(ValueError):
     """Error raised for invalid or unsupported GeoCSV content."""
 
 
-_SCHEMA = "1.0.0"
-_SCHEMA_LINE = f"# MERMAID GeoCSV schema: {_SCHEMA}"
+_SCHEMA_VERSION = re.compile(r"1\.0\.0(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?\Z")
 _COLUMNS = (
     "MethodIdentifier", "Time", "Network", "Station", "Location", "Channel",
     "DataQuality", "Latitude", "Longitude", "Elevation", "WaterPressure",
@@ -138,7 +137,7 @@ _TYPES = ("string", "datetime", "string", "string", "string", "string", "string"
 _UNITS = ("unitless", "iso8601", "unitless", "unitless", "unitless", "unitless", "unitless",
           "degrees_north", "degrees_east", "meters", "mbar", "unitless", "hertz", "unitless",
           "seconds", "seconds")
-_REQUIRED_HEADERS = {"dataset", "created", "delimiter", "lineterminator", "field_type", "field_unit"}
+_REQUIRED_HEADERS = {"dataset", "schema", "created", "delimiter", "lineterminator", "field_type", "field_unit"}
 _FIELD_HEADERS = {"field_type", "field_unit", "field_long_name", "field_standard_name"}
 _INTEGER = re.compile(r"[+-]?[0-9]+\Z")
 _FLOAT = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?\Z")
@@ -241,8 +240,8 @@ def _source_lines(stream: TextIO) -> Iterator[tuple[int, str]]:
 def _comment(line: str, line_number: int) -> GeoCSVComment:
     raw = line.rstrip("\r\n")
     key, separator, value = raw[1:].partition(":")
-    return GeoCSVComment(raw, line_number, key if separator else None,
-                         value[1:] if value.startswith(" ") else value if separator else None)
+    return GeoCSVComment(raw, line_number, key.strip() if separator else None,
+                         value.strip() if separator else None)
 
 
 def _csv_record(
@@ -373,10 +372,13 @@ def _validate_row(row: Mapping, line_number: int) -> None:
 
 def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list[pd.DataFrame]:
     first = next(lines, None)
-    if first is None or first[1].rstrip("\r\n") != _SCHEMA_LINE:
-        raise GeoCSVError(f"first line must be exactly {_SCHEMA_LINE!r}; missing or unsupported schema")
-    comments = [GeoCSVComment(_SCHEMA_LINE, 1, "MERMAID GeoCSV schema", _SCHEMA)]
-    declarations = {}
+    if first is None or not first[1].startswith("#"):
+        raise GeoCSVError("schema requires dataset: GeoCSV 2.0 on the first physical line")
+    dataset = _comment(first[1], first[0])
+    if dataset.key != "dataset" or dataset.value != "GeoCSV 2.0":
+        raise GeoCSVError("schema requires dataset: GeoCSV 2.0 on the first physical line")
+    comments = [dataset]
+    declarations = {"dataset": dataset}
     columns = {name: [] for name in _COLUMNS}
     data_lines = []
     header_seen = False
@@ -387,13 +389,9 @@ def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list
                 raise GeoCSVError(f"line {line_number}: comments after the column header are invalid")
             comment = _comment(line, line_number)
             key = comment.key
-            if key == " MERMAID GeoCSV schema":
-                raise GeoCSVError(f"line {line_number}: duplicate schema declaration")
             if key and key.startswith("field_") and key not in _FIELD_HEADERS:
                 raise GeoCSVError(f"line {line_number}: unsupported #{key} declaration")
             if key in _REQUIRED_HEADERS | _FIELD_HEADERS:
-                if not comment.raw.startswith(f"#{key}: "):
-                    raise GeoCSVError(f"line {line_number}: requires literal '#{key}: ' prefix")
                 if key in declarations:
                     raise GeoCSVError(f"line {line_number}: duplicate #{key} declaration")
                 declarations[key] = comment
@@ -403,25 +401,31 @@ def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list
             missing = _REQUIRED_HEADERS - declarations.keys()
             if missing:
                 raise GeoCSVError(f"line {line_number}: missing required declarations {sorted(missing)}")
-            for key, expected in (("dataset", "GeoCSV"), ("delimiter", "','"),
-                                  ("lineterminator", "'\\n'")):
+            for key, expected in (("dataset", "GeoCSV 2.0"), ("delimiter", ","),
+                                  ("lineterminator", r"\n")):
                 if declarations[key].value != expected:
                     raise GeoCSVError(f"line {declarations[key].line_number}: #{key} must be {expected!r}")
+            schema = declarations["schema"].value
+            prefix = "MERMAID GeoCSV v"
+            schema_version = schema.removeprefix(prefix)
+            if not schema.startswith(prefix) or not _SCHEMA_VERSION.fullmatch(schema_version):
+                raise GeoCSVError("unsupported schema; requires MERMAID GeoCSV v1.0.0 family")
             try:
                 _timestamp(declarations["created"].value)
             except (ValueError, OverflowError) as exc:
                 raise GeoCSVError(f"invalid #created timestamp: {exc}") from exc
             for key in _FIELD_HEADERS & declarations.keys():
                 declaration = declarations[key]
-                values = _csv_record(declaration.value + "\n", iter(()), ",", declaration.line_number)
+                values = [value.strip() for value in _csv_record(
+                    declaration.value + "\n", iter(()), ",", declaration.line_number)]
                 if len(values) != 16:
                     raise GeoCSVError(f"line {declaration.line_number}: #{key} requires 16 entries")
                 expected = {"field_type": _TYPES, "field_unit": _UNITS}.get(key)
                 if expected is not None and tuple(values) != expected:
-                    raise GeoCSVError(f"line {declaration.line_number}: #{key} differs from schema {_SCHEMA}")
+                    raise GeoCSVError(f"line {declaration.line_number}: #{key} differs from MERMAID schema")
                 declarations[key] = values
             if tuple(_csv_record(line, lines, ",", line_number)) != _COLUMNS:
-                raise GeoCSVError(f"line {line_number}: column header differs from schema {_SCHEMA}")
+                raise GeoCSVError(f"line {line_number}: column header differs from MERMAID schema")
             header_seen = True
             continue
         cells = _csv_record(line, lines, ",", line_number)
@@ -459,7 +463,7 @@ def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list
         typed[name] = array
     frame = pd.DataFrame(typed, index=pd.RangeIndex(len(data_lines), name="source_index"))
     frame.attrs["geocsv"] = GeoCSVMetadata(
-        source_path=source_path, comments=tuple(comments), schema_version=_SCHEMA,
+        source_path=source_path, comments=tuple(comments), schema_version=schema_version,
         created=declarations["created"].value, field_types=dict(zip(_COLUMNS, _TYPES)),
         field_units=dict(zip(_COLUMNS, _UNITS)),
         field_long_names=dict(zip(_COLUMNS, declarations["field_long_name"])) if "field_long_name" in declarations else {},

@@ -7,7 +7,7 @@ matching rules. The [GeoCSV v2.0.4 specification](references/GeoCSV_v2.0.4.pdf)
 does not settle every MERMAID convention or interoperability question.
 
 Scientific estimation methods, assumptions and validation belong to the automaid
-version in the GeoCSV attribution header and scientific publication. Measurement
+version in the GeoCSV producer header and scientific publication. Measurement
 rows provide observations; derived times/locations are best estimates that users
 may reinterpolate.
 

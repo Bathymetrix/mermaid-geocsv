@@ -11,7 +11,7 @@ obspy = pytest.importorskip('obspy')
 from mermaid.geocsv import associate
 from mermaid import geocsv
 
-FIXTURE = Path(__file__).parent / 'fixtures/schema-1.0.0/synthetic.geocsv'
+FIXTURE = Path(__file__).parent / 'fixtures/schema-1.0.0-rc1/synthetic.geocsv'
 TIMES = {'SYN01': '2025-01-01T00:00:00.123456000Z',
          'SYN02': '2025-01-01T00:00:01.120Z',
          'SYN03': '2025-01-01T00:00:02Z',

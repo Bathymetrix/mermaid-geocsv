@@ -53,7 +53,7 @@ fixture directory to run it.
 
 Canonical fixture provenance is maintained with the data:
 
-- [Active schema 1.0.0 fixtures](../../data/fixtures/schema-1.0.0/README.md): portable parser, association and tutorial inputs with separate provenance.
+- [Active schema 1.0.0 fixtures](../../data/fixtures/schema-1.0.0-rc1/README.md): portable parser, association and tutorial inputs with separate provenance.
 - Historical [P0006](../../data/fixtures/P0006/README.md) and [P0045](../../data/fixtures/P0045/README.md): complete pre-migration GeoCSV evidence; unsupported by the current reader.
 - [Association](../../data/fixtures/association/README.md): paired waveforms, sampled subsets, and record mappings.
 - [P0006 responses](../../data/fixtures/P0006/waveforms/README.md): three original pairs and unmodified EarthScope responses for offline tutorial replay.

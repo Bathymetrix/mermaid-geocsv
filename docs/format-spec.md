@@ -1,9 +1,13 @@
-# MERMAID GeoCSV schema 1.0.0
+# MERMAID GeoCSV schema 1.0.0-rc1
 
 This is a controlled MERMAID GeoCSV profile, not a generic GeoCSV specification.
-Only this schema is supported; aliases, alternate missing markers and automatic
-fallback are unsupported. Schema revision `1.0.0` is
-independent of package versions and does not authorize a software 1.0.0 release.
+Only the controlled 1.0.0 schema family is supported. The writer emits
+`1.0.0-rc1`; the testing workflow accepts `1.0.0`, prerelease identifiers such
+as `1.0.0-rc2`, and optional build metadata. Other base versions, including
+`1.0.01` and `1.0.1`, raise. The exact declared revision remains in provenance.
+Final schema `1.0.0` is reserved for publication of the describing paper;
+accepting that spelling during tests does not declare the schema released.
+Schema versions are independent of software package and validation-report versions.
 
 Automaid owns writing. `mermaid-geocsv` owns parsing, typed tables and station
 association. The publisher's [publication/download contract](../../mermaid-publisher/docs/geocsv/contract.md)
@@ -44,47 +48,75 @@ Association independently rejects ambiguous complete matching keys.
 
 ## Header contract
 
-The first physical line is exactly:
+The first physical line declares the GeoCSV container, followed by the MERMAID
+application schema. Canonical writer spelling is:
 
 ```text
-# MERMAID GeoCSV schema: 1.0.0
+# dataset: GeoCSV 2.0
+# schema: MERMAID GeoCSV v1.0.0-rc1
 ```
 
-It occurs exactly once, without a trailing period. Missing, repeated or
-unsupported schema declarations raise; do not infer a version. All remaining
-metadata and comments precede the column header. Comments after it are invalid,
-except a `#` that is part of a quoted CSV field. Metadata declarations are
-single physical lines with a literal leading `#`, no leading whitespace and
-case-sensitive keys. Required declarations use the literal `#key: ` prefix,
-including one ASCII space after the colon.
+A comment begins with `#` as its first character. Readers accept zero or more
+whitespace characters after `#`, before the colon, and around header values,
+including individual values in metadata lists, following GeoCSV v2.0.4 rules
+5–6. Keyword names remain case-sensitive. Raw comment spelling is preserved
+alongside normalized keys/values. No such trimming applies to data cells.
 
-Each declaration below is required exactly once. Their order after the schema
-line is unrestricted; the complete example shows the canonical writer order.
+Exactly one dataset declaration is required on the first physical line.
+Exactly one schema declaration is required before the column header; its base
+version must be 1.0.0 with an optional hyphenated prerelease and/or `+` build
+metadata composed of dot-separated ASCII letters, digits and hyphens. Unknown
+base versions and missing/repeated declarations raise. Schema matching does
+not waive the field, scientific or CSV requirements below. Old magic-line
+headers are unsupported; there are no aliases or format fallback.
+
+All comments precede the column header. Comments after it are invalid except
+for `#` inside a quoted multiline CSV cell. One file contains one dataset.
+The remaining required declarations can occur in any order:
 
 | Declaration | Required value |
 | --- | --- |
-| `#dataset:` | `GeoCSV` |
-| `#created:` | File-creation timestamp in the six-digit UTC spelling below |
-| `#delimiter:` | `','` — the single quotes are literal declaration text |
-| `#lineterminator:` | `'\n'` — literal single quotes, backslash and letter n |
-| `#field_unit:` | The 16 units listed below, in column order |
-| `#field_type:` | The 16 types listed below, in column order |
+| `dataset` | `GeoCSV 2.0` |
+| `schema` | `MERMAID GeoCSV v` followed by a supported 1.0.0-family revision |
+| `created` | Six-digit UTC timestamp |
+| `delimiter` | A single comma, unquoted |
+| `lineterminator` | Literal backslash and letter n, unquoted: `\n` |
+| `field_unit` | Exactly 16 schema units, in column order |
+| `field_type` | Exactly 16 schema types, in column order |
 
-`field_type` and `field_unit` values are comma-separated CSV lists with exactly
-16 entries. Their first entry follows the declaration prefix; no extra empty
-entry is inserted after the colon. Types and units must match this schema
-exactly. Empty, unknown, inconsistent or repeated required declarations raise;
-neither types, units nor delimiters have source-data defaults.
+`field_type` and `field_unit` values are comma-separated lists; surrounding
+padding on each metadata value is discarded, while raw declarations remain
+source evidence. Types and units must match exactly after padding removal.
+They have no source-data defaults. Optional `field_long_name` and
+`field_standard_name` each occur once and contain 16 descriptive entries.
+Other `field_*` declarations, including `field_missing`, raise.
 
-`#description:` and `#attribution:` are optional descriptive text. Other
-descriptive comments and unknown keys are permitted before the column header
-and retained in source order, with their raw spelling. They cannot change
-typing, units, missingness or row requirements. Repeated descriptive comments
-do not create inheritance or row-specific metadata. Optional `field_long_name`
-and `field_standard_name` lists, if present, each occur once and contain 16
-entries; they are descriptive only. Other `field_*` declarations are unsupported.
-In particular, reject `field_missing`, even if its value is empty. Comment text
-is not wrapped in quotes as a whole CSV record.
+The writer emits `description`, `producer`, `publisher`, `hoster` and `consumer`
+comments. PPHC means Producer–Publisher–Hoster–Consumer. These comments identify
+project roles and links, not a claim that a local file was published or accepted.
+`producer` records the actual automaid software version and software DOI.
+`references` identifies the paper describing MERMAID GeoCSV and its utility;
+it is omitted until a real paper DOI exists. No placeholder is emitted.
+These and other descriptive comments are optional to the reader and retained
+in order; they cannot change typing, units, missingness or row requirements.
+`lineterminator` is a MERMAID descriptive extension, not a GeoCSV-defined keyword.
+
+Canonical writer comments (example creation identity and software version):
+
+```text
+# dataset: GeoCSV 2.0
+# schema: MERMAID GeoCSV v1.0.0-rc1
+# created: 2026-11-05T17:40:39.379513Z
+# description: metadata for drifting Mobile Earthquake Recording in Marine Areas by Independent Divers (MERMAID) hydrophones (http://earthscopeoceans.org)
+# producer: automaid v4.10.0 (https://github.com/earthscopeoceans/automaid, doi: 10.5281/zenodo.5057096) processes raw MERMAID data to generate miniSEED and GeoCSV files
+# publisher: mermaid-publisher (https://github.com/bathymetrix/mermaid-publisher) validates and publishes immutable metadata snapshots
+# hoster: bathymetrix (https://bathymetrix.com) provides read-only snapshot hosting
+# consumer: mermaid-geocsv (https://github.com/bathymetrix/mermaid-geocsv) fetches and parses metadata, associates it with waveforms, and optionally creates SAC station headers
+# lineterminator: \n
+# delimiter: ,
+# field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
+# field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
+```
 
 `#created` describes file creation, not a scientific observation. A snapshot
 uses one shared literal value across its files. Preserve that spelling in
@@ -136,7 +168,7 @@ helper values, or hard-code a model such as 452.020. An actual supplied model
 452.020 is emitted as `MERMAID_452.020`.
 
 Latitude and longitude preserve source values. Scientific estimation methods
-and assumptions belong to the automaid version in the `#attribution` header.
+and assumptions belong to the automaid version in the `producer` header.
 Measurement rows supply observations; derived times and locations are the
 producer's best estimates, provided in the hope that they are useful. Users may
 reinterpolate the measurements for their own scientific purposes. Parsing and
@@ -261,7 +293,7 @@ replace, offset-correct or discard it. Recording pressure and crossing proxies
 remain nonnegative because they support different projections.
 Recording WaterPressure retains the source recording pressure; REQ pressure
 may be absent. Crossing values retain producer estimates. Consult the automaid
-version in `#attribution` for their meaning and source estimation assumptions.
+version in `producer` for their meaning and source estimation assumptions.
 
 Only Recording rows contain Elevation, with literal writer value `0` and unit
 `meters`. This is the adopted sea-level reference, not the submerged sensor's
@@ -285,15 +317,15 @@ schema, not an observed instrument history. Version labels are illustrative. Ind
 establish a relationship between the displayed GPS fixes.
 
 ```csv
-# MERMAID GeoCSV schema: 1.0.0
-#dataset: GeoCSV
-#created: 2026-10-29T00:00:00.123456Z
-#description: Synthetic schema example; not an observed instrument history
-#attribution: Illustrative automaid-v4.5.14 source labels; not migrated writer output
-#lineterminator: '\n'
-#delimiter: ','
-#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
-#field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
+# dataset: GeoCSV 2.0
+# schema: MERMAID GeoCSV v1.0.0-rc1
+# created: 2026-10-29T00:00:00.123456Z
+# description: Synthetic schema example; not an observed instrument history
+# producer: Illustrative automaid-v4.5.14 source labels; not migrated writer output
+# lineterminator: \n
+# delimiter: ,
+# field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds
+# field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float
 MethodIdentifier,Time,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,ClockOffset,TimeCorrectionApplied
 Measurement:Position:u-blox_NEO-M8N,2026-01-01T12:00:00.000000Z,MH,PTEST,,,,-20.123456,-150.654321,,,MERMAID_452.020,,,2.000000,
 Measurement:Pressure-Absolute:KELLER_Series_6,2026-01-01T12:00:01.000000Z,MH,PTEST,,,,,,,1013,MERMAID_452.020,,,,
@@ -328,7 +360,7 @@ eight-row table with unchanged source order and all five method identifiers.
 | Quoted empty optional cell | Missing, equivalent to bare empty |
 | A quoted comma, doubled quote, or multiline value in an otherwise valid string field | Decode and preserve; a continuation `#` remains data |
 | Equal timestamps | Preserve all rows; no uniqueness inference from Time alone |
-| Optional description/attribution omitted | Accept; no replacement text is invented |
+| Optional descriptive project comments omitted | Accept; no replacement text is invented |
 | Unknown descriptive header comment | Preserve as opaque text; no semantic effect |
 | Missing/unsupported/duplicate schema or required declaration | Reject, including identical repetitions |
 | `field_missing`, wrong type/unit, changed/extra/reordered column or second dataset | Reject |

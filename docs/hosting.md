@@ -24,7 +24,9 @@ For a human-readable link that follows new publications, use
 `https://bathymetrix.com/geocsv/testing/latest/`. It temporarily redirects to
 the release directory selected by the testing latest pointer without caching.
 Testing latest selects P0006/P0045 snapshot `2026-11-03T22:29:17.981000Z`,
-using schema 1.0.0 and consumer >= 0.28.0. Production latest is absent.
+using the previous header readable by consumer 0.28.0. Production latest is
+absent. Consumer >= 0.29.0 requires the new dataset-first header; no rc1
+snapshot is published.
 The [publication record](../../mermaid-publisher/docs/geocsv/testing-publication-20261103.md)
 binds its manifest, report, receipt and source revision. Older retained
 snapshots can use unsupported schemas; downloading bytes does not establish
@@ -81,3 +83,17 @@ Fresh source generation and acceptance are required before a new publication.
 The publisher's metadata-change gate exempts automaid MethodIdentifier revision
 updates alone when the rest of each row is identical. Exact published diffs
 retain those provenance changes; other edits and deletions require review.
+
+## PPHC header and testing schema
+
+The writer emits dataset-first GeoCSV 2.0 with `schema: MERMAID GeoCSV
+v1.0.0-rc1`, padded comment keywords, unquoted comma/LF declarations and
+producer/publisher/hoster/consumer project descriptions. `references` is reserved
+for the describing paper and omitted until its DOI exists. Final schema 1.0.0
+is reserved for paper publication. Testing accepts the 1.0.0 version family,
+retains the exact revision and applies all scientific requirements.
+
+This header requires consumer >= 0.29.0 and publisher >= 0.8.0. Existing hosted
+snapshots retain their original old header; fetch can retrieve their exact bytes,
+but the dataset-first reader rejects them. No upload, activation or retirement
+is implied by local candidate validation. Canonical sources remain read-only.

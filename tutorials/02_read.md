@@ -3,7 +3,7 @@
 `geocsv.read` accepts only MERMAID GeoCSV schema 1.0.0 and returns one pandas
 DataFrame per file, preserving source columns, timestamps, units, and metadata.
 Generic GeoCSV and legacy MERMAID files are unsupported. This example uses a
-[schema-converted P0006 subset](../data/fixtures/schema-1.0.0/README.md),
+[schema-converted P0006 subset](../data/fixtures/schema-1.0.0-rc1/README.md),
 not newly generated producer output. Its provenance records representation
 changes and the mapping to historical source records.
 
@@ -34,7 +34,7 @@ root = Path.cwd()
 if root.name in {"docs", "tutorials"}:
     root = root.parent
 
-path = root / "data/fixtures/schema-1.0.0/P0006/P0006.geocsv"
+path = root / "data/fixtures/schema-1.0.0-rc1/P0006/P0006.geocsv"
 tables = geocsv.read(path)
 records = tables[0]  # A list is returned even for a single dataset.
 records.head()

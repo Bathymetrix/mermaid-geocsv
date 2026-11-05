@@ -1,5 +1,10 @@
 # Data fixture roles
 
+Active rc1 inputs live under [schema-1.0.0-rc1](schema-1.0.0-rc1/README.md).
+Their manifests retain original schema fixture hashes and the unchanged row
+mapping. They are local header projections, not hosted output. Original
+schema-1.0.0 fixtures and published replay prefixes remain frozen evidence.
+
 - [Published tutorial replay inputs](schema-1.0.0/hosted/README.md): unchanged
   prefixes of the public schema 1.0.0 histories for offline fetch/EarthScope tests.
 - [Schema 1.0.0](schema-1.0.0/README.md): active typed-reader, association,

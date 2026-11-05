@@ -341,8 +341,10 @@ timestamps as a `Time` column rather than an index because source timestamps
 need not be unique. Require the schema's UTC `Z` timestamp spelling with six
 fractional digits; never infer a timezone for invalid or incomplete input.
 The digit count defines display format, not clock accuracy or measurement
-precision. Preserve the required `# MERMAID GeoCSV schema: 1.0.0` declaration
-in metadata and provenance; missing or unsupported schemas raise.
+precision. Require dataset-first GeoCSV 2.0 and a supported MERMAID 1.0.0-family schema
+declaration. Preserve the exact revision and raw comments in provenance. Trim
+only header syntax padding, including each metadata list value; data cells
+retain their literal contents. Missing, repeated or unsupported declarations raise.
 
 Do not expose parser internals, implementation modules, or convenience
 wrappers as stable interfaces merely because tests use them. Do not create

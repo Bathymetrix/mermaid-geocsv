@@ -10,7 +10,7 @@ from obspy.io.sac import SACTrace
 import numpy as np
 import pandas as pd
 
-from ._read import GeoCSVMetadata
+from ._read import GeoCSVMetadata, _SCHEMA_VERSION
 
 
 IDENTITY = {"Network": "network", "Station": "station",
@@ -274,7 +274,8 @@ def associate(waveforms, tables, *, time_tolerance=0.001, allow_first_segment=Fa
         if missing:
             raise ValueError(f"event dataset {dataset_index} lacks columns {sorted(missing)}")
         metadata = frame.attrs.get("geocsv")
-        if not isinstance(metadata, GeoCSVMetadata) or metadata.schema_version != "1.0.0":
+        if not isinstance(metadata, GeoCSVMetadata) or (not isinstance(metadata.schema_version, str)
+                or not _SCHEMA_VERSION.fullmatch(metadata.schema_version)):
             raise ValueError(f"dataset {dataset_index} lacks geocsv.read provenance")
         if metadata.field_units.get("SampleRate") != "hertz":
             raise ValueError(f"dataset {dataset_index}: SampleRate requires declared units hertz")

@@ -118,10 +118,10 @@ tests do not require public hosting.
 
 ## Payload compatibility
 
-The reader requires MERMAID schema 1.0.0. Testing latest serves the
-compatible P0006/P0045 snapshot `2026-11-03T22:29:17.981000Z`. Other retained
-schemas can be downloaded as exact bytes, but cannot be parsed by this reader.
-The [fetch tutorial](../tutorials/01_fetch.md) downloads directly from the public
-testing collection. Ordinary tests replay published prefixes over loopback HTTP.
-Transport continues to preserve token IDs, exact bytes, literal release IDs and
-all fractional digits. No encoded aliases or automatic fallback are supported.
+Fetch verifies exact bytes without interpreting scientific schema or header
+syntax. Read separately requires dataset-first GeoCSV 2.0 and a supported
+MERMAID 1.0.0-family schema. Existing hosted old-header files are downloadable
+but are not readable by consumer >= 0.29.0. No rc1 snapshot is yet published.
+The [fetch tutorial](../tutorials/01_fetch.md) runs against a temporary local
+rc1 fixture collection. Testing snapshots remain immutable until authorized
+retirement; transport does not rewrite or upgrade payloads.

@@ -12,7 +12,7 @@ from ._read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.28.0"
+__version__ = "0.29.0"
 
 __all__ = [
     "__version__",

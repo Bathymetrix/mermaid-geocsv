@@ -2,7 +2,7 @@
 
 Read the included P0006 data and make two plots with pandas and Matplotlib.
 These examples run offline and perform analysis after parsing. The
-[schema-converted subset](../data/fixtures/schema-1.0.0/README.md) retains
+[schema-converted subset](../data/fixtures/schema-1.0.0-rc1/README.md) retains
 selected historical records, including 12 GPS fixes for 2019; these plots do
 not represent a complete instrument history.
 
@@ -31,7 +31,7 @@ root = Path.cwd()
 if root.name in {"docs", "tutorials"}:
     root = root.parent
 
-records = geocsv.read(root / "data/fixtures/schema-1.0.0/P0006/P0006.geocsv")[0]
+records = geocsv.read(root / "data/fixtures/schema-1.0.0-rc1/P0006/P0006.geocsv")[0]
 ```
 
 ## 2. Plot pressure measurements

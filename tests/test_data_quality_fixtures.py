@@ -18,7 +18,7 @@ def test_mermaid_geocsv_event_quality_values_follow_stream_map() -> None:
     """Check event quality values and their independence from sample rate."""
     paths = sorted(
         path
-        for station_directory in (MERMAID_FIXTURES / "schema-1.0.0").glob("P*")
+        for station_directory in (MERMAID_FIXTURES / "schema-1.0.0-rc1").glob("P*")
         for path in station_directory.rglob("*.geocsv")
     )
     assert paths, "expected the canonical MERMAID GeoCSV fixture"
