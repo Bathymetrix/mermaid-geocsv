@@ -121,7 +121,8 @@ tests do not require public hosting.
 Fetch verifies exact bytes without interpreting scientific schema or header
 syntax. Read separately requires dataset-first GeoCSV 2.0 and a supported
 MERMAID 1.0.0-family schema. Existing hosted old-header files are downloadable
-but are not readable by consumer >= 0.29.0. No rc1 snapshot is yet published.
-The [fetch tutorial](../tutorials/01_fetch.md) runs against a temporary local
-rc1 fixture collection. Testing snapshots remain immutable until authorized
+but are not readable by consumer >= 0.29.0. Testing latest now serves the
+full-corpus rc1 snapshot `2026-11-05T23:41:47.235000Z`.
+The [fetch tutorial](../tutorials/01_fetch.md) uses the public testing
+collection; unit tests replay exact rc1 prefixes through a local HTTP server. Testing snapshots remain immutable until authorized
 retirement; transport does not rewrite or upgrade payloads.

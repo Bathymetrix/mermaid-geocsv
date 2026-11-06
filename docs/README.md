@@ -32,7 +32,7 @@ maintained references.
 [Source verification records](audit/README.md) retain commit-specific audits;
 they do not replace current reference requirements.
 
-Publisher 0.6.0 adds mandatory Recording coverage, bound producer clash reports,
+Publication requires complete Recording coverage, bound producer clash reports
 and hosted mapping/diff evidence. See the publisher
-[report contract](../../mermaid-publisher/docs/geocsv/publication-reports.md).
-This source update does not establish deployment or new corpus acceptance.
+[report contract](../../mermaid-publisher/docs/geocsv/publication-reports.md) and
+[full-corpus rc1 testing record](../../mermaid-publisher/docs/geocsv/full-corpus-rc1-publication.md).

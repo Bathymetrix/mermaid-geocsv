@@ -1,7 +1,7 @@
 # MERMAID GeoCSV reader
 
 `geocsv.read(source, *, datetime_timezone=None)` parses only the controlled
-[MERMAID GeoCSV schema 1.0.0](format-spec.md). That document defines the exact
+[MERMAID GeoCSV 1.0.0 schema family](format-spec.md). That document defines the exact
 header, field types and units, row matrix, finite numeric domains, CSV grammar,
 six-digit UTC timestamps and acceptance/rejection cases. Generic GeoCSV dialects
 and legacy MERMAID payloads are unsupported. There are no aliases or fallback.

@@ -3,8 +3,11 @@
 import json
 import inspect
 import hashlib
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import re
+from threading import Thread
 from types import SimpleNamespace
 
 import pytest
@@ -15,8 +18,40 @@ from mermaid import geocsv
 ROOT = Path(__file__).resolve().parents[1]
 TUTORIALS = ROOT / "tutorials"
 NAMES = sorted(path.stem for path in TUTORIALS.glob("*.md"))
-TEST_RELEASE = "2026-10-30T18:08:32.316000Z"
-HOSTED_FIXTURES = ROOT / "data/fixtures/schema-1.0.0-rc1/hosted"
+TEST_RELEASE = "2026-11-05T23:41:47.235000Z"
+HOSTED_FIXTURES = ROOT / "data/fixtures/hosted-full-rc1-20261105"
+
+
+@pytest.fixture
+def tutorial_collection(tmp_path):
+    """Replay exact metadata prefixes without requiring public network access."""
+    directory = tmp_path / "http"
+    component = TEST_RELEASE.replace(":", "-")
+    release = directory / "releases" / component
+    release.mkdir(parents=True)
+    manifest = json.loads((HOSTED_FIXTURES / "manifest.json").read_text())
+    entries = []
+    for entry in manifest["files"]:
+        content = (HOSTED_FIXTURES / entry["path"]).read_bytes()
+        (release / entry["path"]).write_bytes(content)
+        entries.append(dict(instrument_id=entry["instrument_id"], filename=entry["path"],
+                            size_bytes=len(content), sha256=hashlib.sha256(content).hexdigest(),
+                            provenance={"notes": "Offline tutorial prefix replay"}))
+    (release / "manifest.json").write_text(json.dumps(dict(
+        release_id=TEST_RELEASE, testing_only=True, files=entries)))
+    (directory / "latest.json").write_text(json.dumps(dict(
+        release_id=TEST_RELEASE, testing_only=True,
+        manifest=f"releases/{component}/manifest.json")))
+    server = ThreadingHTTPServer(("127.0.0.1", 0),
+        partial(SimpleHTTPRequestHandler, directory=str(directory)))
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}/"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
 
 
 def test_public_functions_have_tutorial_pairs():
@@ -64,10 +99,13 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
     if operation == "plotting":
         matplotlib = pytest.importorskip("matplotlib")
         matplotlib.use("Agg")
-    if operation == "fetch":
+    if operation in {"fetch", "earthscope"}:
+        collection = request.getfixturevalue("tutorial_collection")
         real_fetch = geocsv.fetch
 
         def isolated_output(*args, **kwargs):
+            assert kwargs["base_url"] == "https://bathymetrix.com/geocsv/testing/"
+            kwargs["base_url"] = collection
             if kwargs.get("output_dir") is not None:
                 kwargs["output_dir"] = tmp_path / "downloads"
             return real_fetch(*args, **kwargs)

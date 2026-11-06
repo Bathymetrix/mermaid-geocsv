@@ -1,9 +1,7 @@
 # Fetch GeoCSV files
 
-Fetch schema 1.0.0-rc1 fixture metadata through a temporary local collection.
-The published testing collection still uses the old header and is not input
-for this reader. This example exercises the same fetch/read APIs without
-publishing new data. The fixture prefixes are not complete instrument histories.
+Fetch verified metadata from the full-corpus testing collection. The hosted
+rc1 snapshot uses the dataset-first header supported by this reader.
 
 Companions: [Markdown](01_fetch.md) · [Notebook](01_fetch.ipynb).
 
@@ -17,54 +15,19 @@ python -m pip install .
 ```
 
 The examples require mermaid-geocsv 0.29.0 or newer.
-The cloned repository supplies local fixtures. Hosted examples require an
-rc1 snapshot to be published separately; no upload is part of this tutorial.
+Internet access is required. Tests replay small, exact snapshot prefixes
+through a local HTTP server; live downloads contain complete instrument histories.
 See [installation and notebook setup](../docs/installation.md).
 
 ## 1. Download one instrument from latest
 
-`base_url` selects the temporary local testing collection. `output_dir=None` downloads
+`base_url` selects the public testing collection. `output_dir=None` downloads
 into memory without saving a file:
 
 ```python
 from mermaid import geocsv
 
-from pathlib import Path
-from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from threading import Thread
-from tempfile import TemporaryDirectory
-import hashlib
-import json
-import shutil
-
-repository = next(path for path in (Path.cwd(), Path.cwd().parent)
-                  if (path / "data/fixtures/schema-1.0.0-rc1").is_dir())
-fixtures = repository / "data/fixtures/schema-1.0.0-rc1/hosted"
-workspace = TemporaryDirectory(prefix="mermaid-geocsv-tutorial-")
-server_root = Path(workspace.name)
-release = "2026-10-30T18:08:32.316000Z"
-component = release.replace(":", "-")
-directory = server_root / "releases" / component
-directory.mkdir(parents=True)
-entries = []
-for instrument in ("P0006", "P0045"):
-    filename = f"{instrument}.geocsv"
-    content = (fixtures / filename).read_bytes()
-    (directory / filename).write_bytes(content)
-    entries.append(dict(instrument_id=instrument, filename=filename,
-                        size_bytes=len(content), sha256=hashlib.sha256(content).hexdigest(),
-                        provenance={"notes": "Local rc1 fixture projection; not a hosted snapshot"}))
-(directory / "manifest.json").write_text(json.dumps(dict(
-    release_id=release, testing_only=True, files=entries)))
-(server_root / "latest.json").write_text(json.dumps(dict(
-    release_id=release, testing_only=True,
-    manifest=f"releases/{component}/manifest.json")))
-server = ThreadingHTTPServer(("127.0.0.1", 0),
-    partial(SimpleHTTPRequestHandler, directory=str(server_root)))
-thread = Thread(target=server.serve_forever, daemon=True)
-thread.start()
-base_url = f"http://127.0.0.1:{server.server_port}/"
+base_url = "https://bathymetrix.com/geocsv/testing/"
 downloads = geocsv.fetch("P0006", base_url=base_url, output_dir=None)
 records = geocsv.read(downloads)[0]
 records.head()
@@ -100,8 +63,8 @@ for item in saved:
 
 Identical local files are verified and reused. Conflicting bytes raise rather
 than being overwritten. The snapshot directory replaces only the timestamp's
-two time-separator colons with hyphens: this fixture collection uses
-`2026-10-30T18-08-32.316000Z`. Provenance retains the original colons and every
+two time-separator colons with hyphens: the rc1 snapshot uses
+`2026-11-05T23-41-47.235000Z`. Provenance retains the original colons and every
 fractional digit. Pass saved results directly to `read` to retain download
 provenance. `fetch(["P0006", "P0045"], ...)` selects instruments explicitly.
 
@@ -118,12 +81,3 @@ print(pinned[0].provenance.release_id)
 For result fields and transport rules, see the [fetch reference](../docs/fetch.md).
 Testing snapshots may be retired through separately authorized cleanup; pinning
 identifies exact bytes but does not promise indefinite testing availability.
-
-## Close the temporary collection
-
-```python
-server.shutdown()
-server.server_close()
-thread.join()
-workspace.cleanup()
-```

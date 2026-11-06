@@ -12,7 +12,7 @@ approximate depth from water pressure. Optional SAC projections populate only
 `stla`, `stlo`, `stel`, and `stdp`. Earthquake-source metadata and `ev*` header
 projections are outside this package's scope.
 
-The reader supports only the controlled [MERMAID GeoCSV schema 1.0.0](docs/format-spec.md),
+The reader supports only the controlled [MERMAID GeoCSV 1.0.0 schema family](docs/format-spec.md),
 with its dataset-first GeoCSV 2.0 declaration and explicit 1.0.0-family schema, fixed 16 columns and five method identifiers.
 It returns typed pandas tables preserving source order, literal identities,
 comments, units and schema/creation provenance. Only empty decoded cells are
@@ -99,12 +99,11 @@ associates their metadata, and compares SAC exports with independent fixtures.
 | EarthScope workflow | Download P0006 waveforms, associate metadata, and verify SAC exports. | [05_earthscope.md](tutorials/05_earthscope.md) | [05_earthscope.ipynb](tutorials/05_earthscope.ipynb) |
 | Plot and analyze records | Use pandas and Matplotlib downstream. | [06_plotting.md](tutorials/06_plotting.md) | [06_plotting.ipynb](tutorials/06_plotting.ipynb) |
 
-Hosted GeoCSV collections remain testing only. The published histories retain
-their old headers and can be fetched as exact bytes, but cannot be parsed by
-this dataset-first reader. No rc1 snapshot has been published. Fetch and
-EarthScope tutorials use standalone temporary local rc1 collections until a
-compatible snapshot is separately authorized and published. The fixed 16
-columns, missingness and scientific matching rules remain unchanged.
+Hosted GeoCSV collections remain testing only. Testing latest serves the
+full-corpus schema `1.0.0-rc1` snapshot `2026-11-05T23:41:47.235000Z`, generated
+by automaid v4.10.0. Fetch and EarthScope tutorials use this compatible collection;
+unit tests replay exact metadata prefixes and recorded waveform responses offline.
+Older retained snapshots may have incompatible headers. Production is inactive.
 See [hosting](docs/hosting.md) and [fetch](docs/fetch.md).
 
 Detailed matching rules, association reports, SAC precision and provenance
@@ -114,13 +113,12 @@ limits, format rules, and fixture references are in the
 Developed and maintained by [Bathymetrix®](https://bathymetrix.com).
 
 The example resolves testing latest once and retains its identity. Pin any further
-fetches with `release=release`. A canonical first-v1 example is deferred until that
-snapshot is published. Measurement rows supply observations; derived times and
-locations are producer estimates. Users may reinterpolate measurements. Consult
+fetches with `release=release`. Final schema 1.0.0 is reserved for paper
+publication. Measurement rows supply observations; derived times and locations
+are producer estimates. Users may reinterpolate measurements. Consult
 the automaid version in `producer` for estimation methods and assumptions.
 
-Consumer 0.28.0 names GeoCSV references `source_index` (zero-based data rows)
-and `source_line` (one-based physical starting lines, as in a text editor).
-Metadata `line_numbers[index]` maps between them. This replaces
-`source_record_index`, `source_line_number`, and `record_line_numbers`; association's
-DataFrame-list argument is now `tables`. No compatibility aliases are supplied.
+GeoCSV references use `source_index` for zero-based data rows and `source_line`
+for one-based physical starting lines, as in a text editor. Metadata
+`line_numbers[index]` maps between them. Association accepts the parsed
+DataFrame list as `tables`.
