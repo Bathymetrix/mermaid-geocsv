@@ -31,6 +31,8 @@ maintained references.
 
 [Source verification records](audit/README.md) retain commit-specific audits;
 they do not replace current reference requirements.
+The [2026-11-06 release checklist](audit/release-audit-2026-11-06.md) links the
+publisher and consumer findings for the latest published full corpus.
 
 Publication requires complete Recording coverage, bound producer clash reports
 and hosted mapping/diff evidence. See the publisher
