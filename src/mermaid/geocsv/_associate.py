@@ -13,8 +13,7 @@ import pandas as pd
 from ._read import GeoCSVMetadata, _SCHEMA_VERSION
 
 
-IDENTITY = {"Network": "network", "Station": "station",
-            "Location": "location", "Channel": "channel"}
+IDENTITY = ("network", "station", "location", "channel")
 SAMPLE_RATE_TOLERANCE_HZ = 0.00001  # Absolute rate agreement, independent of grid placement.
 
 
@@ -25,22 +24,22 @@ def _source_name(metadata):
 
 
 def _invalid_identity_fields(codes, *, source=False):
-    """Return invalid SNCL field names; only Location may be a known empty string."""
+    """Return invalid SNCL field names; only location may be a known empty string."""
     return [field for field, code in zip(IDENTITY, codes)
             if not isinstance(code, str)
-            or (not code.strip() and not (field == "Location" and code == ("  " if source else "")))]
+            or (not code.strip() and not (field == "location" and code == ("  " if source else "")))]
 
 
 def _coordinates(trace, row, metadata):
-    missing = [field for field in ("Latitude", "Longitude")
+    missing = [field for field in ("estimated_latitude", "estimated_longitude")
                if pd.isna(row.get(field, pd.NA))]
     if missing:
-        raise ValueError(f"{trace.id}: coordinate projection requires both Latitude "
-                         f"and Longitude; missing {', '.join(missing)}")
+        raise ValueError(f"{trace.id}: coordinate projection requires both estimated_latitude "
+                         f"and estimated_longitude; missing {', '.join(missing)}")
     projected = {}
     for field, key, unit, lower, upper in (
-        ("Latitude", "latitude", "degrees_north", -90, 90),
-        ("Longitude", "longitude", "degrees_east", -180, 180),
+        ("estimated_latitude", "latitude", "degrees_north", -90, 90),
+        ("estimated_longitude", "longitude", "degrees_east", -180, 180),
     ):
         value = row[field]
         if metadata.field_units.get(field) != unit:
@@ -48,44 +47,36 @@ def _coordinates(trace, row, metadata):
         if not isfinite(float(value)) or not lower <= value <= upper:
             raise ValueError(f"{trace.id}: invalid {field} {value!r}")
         projected[key] = float(value)
-    elevation = row.get("Elevation")
-    if metadata.field_units.get("Elevation") != "meters":
-        raise ValueError(f"{trace.id}: Elevation requires declared units meters")
-    if elevation is None or pd.isna(elevation) or not isfinite(float(elevation)) or elevation != 0:
-        raise ValueError(f"{trace.id}: requires explicit zero Recording Elevation")
-    # Only the explicit zero sea-level reference is supported. No geoid model.
-    projected["elevation"] = float(elevation)
     return AttribDict(projected)
 
 
 def _sac_header(trace, row, metadata, coordinates):
-    """Create ObsPy's fresh SAC baseline plus four station location fields."""
-    pressure = row.get("WaterPressure")
+    """Create ObsPy's fresh SAC baseline plus the available station fields."""
+    pressure = row.get("measured_pressure")
     if pressure is None or pd.isna(pressure):
-        quality = row.get("DataQuality")
+        quality = row.get("data_quality")
         if not isinstance(quality, str) or quality != "D":
-            raise ValueError(f"{trace.id}: missing WaterPressure; "
-                             "only REQ source rows (DataQuality D) may omit depth")
+            raise ValueError(f"{trace.id}: missing measured_pressure; "
+                             "only REQ source rows (data_quality D) may omit depth")
         depth = -12345.0  # SAC undefined; never borrow another row's pressure.
     else:
-        if metadata.field_units.get("WaterPressure") != "mbar":
-            raise ValueError(f"{trace.id}: WaterPressure requires declared units mbar")
+        if metadata.field_units.get("measured_pressure") != "mbar":
+            raise ValueError(f"{trace.id}: measured_pressure requires declared units mbar")
         if not isfinite(float(pressure)) or pressure < 0:
-            raise ValueError(f"{trace.id}: requires finite nonnegative WaterPressure")
+            raise ValueError(f"{trace.id}: requires finite nonnegative measured_pressure")
         # MERMAID station depth for SAC stdp: 100 mbar = 1 dbar, approximately 1 m.
         # This station projection supplies no earthquake-source (ev*) metadata.
         depth = float(pressure) / 100
 
     sac = SACTrace.from_obspy_trace(trace, keep_sac_header=False)
     headers = sac.to_obspy_trace(round_sampling_interval=False).stats.sac
-    headers.update({"stla": coordinates.latitude, "stlo": coordinates.longitude,
-                    "stel": float(row["Elevation"]), "stdp": depth})
+    headers.update({"stla": coordinates.latitude, "stlo": coordinates.longitude, "stdp": depth})
     return headers
 
 
 def _source_last_sample_ns(time_ns, row):
     """Return last-sample UTC nanoseconds, or None for unusable count/rate."""
-    count, rate = row["SampleCount"], row["SampleRate"]
+    count, rate = row["sample_count"], row["sample_rate"]
     if (pd.isna(count) or not isfinite(float(count)) or count <= 0
             or not float(count).is_integer() or pd.isna(rate)
             or not isfinite(float(rate)) or rate <= 0):
@@ -101,7 +92,7 @@ def _row_context(dataset_index, row_index, metadata):
 
 def _overlapping_events(trace, datasets, tolerance_ns):
     """Yield same-SNCL interval candidates overlapping the trace within tolerance."""
-    sncl = tuple(trace.stats[key] for key in IDENTITY.values())
+    sncl = tuple(trace.stats[key] for key in IDENTITY)
     for dataset_index, event_index, metadata in datasets:
         indexed = event_index.get(sncl)
         if indexed is None:
@@ -125,20 +116,20 @@ def _association_details(trace, anchor, association_type, ranges):
     max_rate = None
     # Stable ordering also determines the reported source/sample in a tie.
     ranges = sorted(ranges, key=lambda item: (
-        pd.Timestamp(item[0][2]["Time"]).value, item[0][0], item[0][1]))
+        pd.Timestamp(item[0][2]["derived_time"]).value, item[0][0], item[0][1]))
     for match, first_sample, clipped_first, clipped_stop in ranges:
         dataset_index, row_index, row, metadata = match
-        start_ns = pd.Timestamp(row["Time"]).value
-        source_rate = Decimal(str(row["SampleRate"]))
+        start_ns = pd.Timestamp(row["derived_time"]).value
+        source_rate = Decimal(str(row["sample_rate"]))
         reference = {"dataset_index": dataset_index,
                      "source_index": int(row_index),
                      "source_line": metadata.line_numbers.get(row_index)}
         segments.append(AttribDict({
-            **{key: row[field] for field, key in IDENTITY.items()},
+            **{key: row[key] for key in IDENTITY},
             "starttime": UTCDateTime(ns=start_ns),
             "endtime": UTCDateTime(ns=_source_last_sample_ns(start_ns, row)),
             "sampling_rate_hz": float(source_rate),
-            "sample_count": int(row["SampleCount"]),
+            "sample_count": int(row["sample_count"]),
             **reference,
             "waveform_sample_start": clipped_first,
             "waveform_sample_stop": clipped_stop,
@@ -157,7 +148,7 @@ def _association_details(trace, anchor, association_type, ranges):
     return AttribDict({
         "type": association_type,
         "waveform": {
-            **{key: trace.stats[key] for key in IDENTITY.values()},
+            **{key: trace.stats[key] for key in IDENTITY},
             "starttime": UTCDateTime(ns=trace.stats.starttime.ns),
             "endtime": UTCDateTime(ns=trace.stats.endtime.ns),
             "sampling_rate_hz": trace.stats.sampling_rate,
@@ -165,7 +156,7 @@ def _association_details(trace, anchor, association_type, ranges):
         },
         "coverage_segments": tuple(segments),
         "waveform_start_offset_seconds": (
-            trace.stats.starttime.ns - pd.Timestamp(anchor[2]["Time"]).value
+            trace.stats.starttime.ns - pd.Timestamp(anchor[2]["derived_time"]).value
         ) / 1_000_000_000,
         "max_sample_grid_offset": {"seconds": max_grid[0] / 1_000_000_000,
                                    **max_grid[1]},
@@ -181,17 +172,17 @@ def _validate_coverage(trace, overlapping):
     for dataset_index, row_index, row, metadata in overlapping:
         context = (f"{trace.id}: source coverage "
                    f"{_row_context(dataset_index, row_index, metadata)}")
-        count, source_rate = row["SampleCount"], row["SampleRate"]
+        count, source_rate = row["sample_count"], row["sample_rate"]
         if (pd.isna(count) or not isfinite(float(count)) or count <= 0
                 or not float(count).is_integer()):
-            raise ValueError(f"{context}: requires a positive integer SampleCount")
+            raise ValueError(f"{context}: requires a positive integer sample_count")
         if (pd.isna(source_rate) or not isfinite(float(source_rate))
                 or float(source_rate) <= 0
                 or not trace.stats.sampling_rate - SAMPLE_RATE_TOLERANCE_HZ
                 <= float(source_rate)
                 <= trace.stats.sampling_rate + SAMPLE_RATE_TOLERANCE_HZ):
-            raise ValueError(f"{context}: incompatible SampleRate={source_rate}")
-        offset_ns = pd.Timestamp(row["Time"]).value - trace.stats.starttime.ns
+            raise ValueError(f"{context}: incompatible sample_rate={source_rate}")
+        offset_ns = pd.Timestamp(row["derived_time"]).value - trace.stats.starttime.ns
         first_sample = round(Decimal(offset_ns) * rate / 1_000_000_000)
         stop_sample = first_sample + int(count)
         clipped_first = max(0, first_sample)
@@ -261,24 +252,21 @@ def associate(waveforms, tables, *, time_tolerance=0.001, allow_first_segment=Fa
                                  "association requires absent destination containers")
     datasets = []
     seen_events = {}
-    required = set(IDENTITY) | {"MethodIdentifier", "Time", "SampleRate",
-                                "SampleCount"}
+    required = set(IDENTITY) | {"derived_time", "sample_rate", "sample_count"}
     for dataset_index, frame in enumerate(tables):
-        if "MethodIdentifier" not in frame:
+        metadata = frame.attrs.get("geocsv")
+        if "type" not in frame:
             continue
-        events = frame.loc[frame["MethodIdentifier"].str.startswith(
-            "Derivation:Recording:", na=False)]
+        events = frame.loc[frame["type"].eq("waveform")]
         if events.empty:
             continue
         missing = required - set(events.columns)
         if missing:
-            raise ValueError(f"event dataset {dataset_index} lacks columns {sorted(missing)}")
-        metadata = frame.attrs.get("geocsv")
-        if not isinstance(metadata, GeoCSVMetadata) or (not isinstance(metadata.schema_version, str)
-                or not _SCHEMA_VERSION.fullmatch(metadata.schema_version)):
+            raise ValueError(f"waveform dataset {dataset_index} lacks columns {sorted(missing)}")
+        if not isinstance(metadata, GeoCSVMetadata) or metadata.schema_version != _SCHEMA_VERSION:
             raise ValueError(f"dataset {dataset_index} lacks geocsv.read provenance")
-        if metadata.field_units.get("SampleRate") != "hertz":
-            raise ValueError(f"dataset {dataset_index}: SampleRate requires declared units hertz")
+        if metadata.field_units.get("sample_rate") != "hertz":
+            raise ValueError(f"dataset {dataset_index}: sample_rate requires declared units hertz")
         reserved = {"source_index", "source_line", "dataset_index", "metadata",
                     "association"} & set(frame.columns)
         if reserved:
@@ -297,20 +285,20 @@ def associate(waveforms, tables, *, time_tolerance=0.001, allow_first_segment=Fa
                 raise ValueError(
                     f"{_source_name(metadata)}, dataset {dataset_index}, rows "
                     f"{list(group.index)}: invalid event identity fields {invalid}; "
-                    "Network, Station, Channel require nonempty strings; Location "
+                    "network, station, channel require nonempty strings; location "
                     "requires a nonempty code or two literal spaces")
             # Compare the defined source blank code without rewriting either identity.
-            sncl = tuple("" if field == "Location" and code == "  " else code
+            sncl = tuple("" if field == "location" and code == "  " else code
                          for field, code in zip(IDENTITY, sncl))
             timed_rows, incomplete_rows = [], []
             for row_index, row in group.iterrows():
-                time = row["Time"]
+                time = row["derived_time"]
                 if pd.isna(time) or pd.Timestamp(time).tzinfo is None:
                     incomplete_rows.append((row_index,
-                                            "missing or timezone-naive Time; row is ineligible"))
+                                            "missing or timezone-naive derived_time; row is ineligible"))
                     continue
                 time_ns = pd.Timestamp(time).value
-                count, source_rate = row['SampleCount'], row['SampleRate']
+                count, source_rate = row['sample_count'], row['sample_rate']
                 if (not pd.isna(count) and isfinite(float(count)) and count > 0
                         and float(count).is_integer() and not pd.isna(source_rate)
                         and isfinite(float(source_rate)) and source_rate > 0):
@@ -322,13 +310,13 @@ def associate(waveforms, tables, *, time_tolerance=0.001, allow_first_segment=Fa
                             f"trace {index} {trace.id} at {trace.stats.starttime} "
                             f"through {trace.stats.endtime}"
                             for index, trace in enumerate(traces)
-                            if tuple(trace.stats[name] for name in IDENTITY.values()) == sncl
+                            if tuple(trace.stats[name] for name in IDENTITY) == sncl
                             and time_ns - tolerance_ns <= trace.stats.starttime.ns
                             <= end_ns + tolerance_ns]
                         raise ValueError(
                             f"ambiguous duplicate GeoCSV event rows for SNCL {sncl}, "
-                            f"UTC Time={pd.Timestamp(time).tz_convert('UTC').isoformat()}, "
-                            f"SampleCount={count}, SampleRate={source_rate}: "
+                            f"UTC derived_time={pd.Timestamp(time).tz_convert('UTC').isoformat()}, "
+                            f"sample_count={count}, sample_rate={source_rate}: "
                             f"(source, dataset, source_index) {seen_events[key]} and {source}; "
                             f"affected traces: {affected}; source line numbers are one-based "
                             "physical starting lines. Quality and coordinates do not "
@@ -350,11 +338,11 @@ def associate(waveforms, tables, *, time_tolerance=0.001, allow_first_segment=Fa
     associations = []
     failures = []
     for trace_index, trace in enumerate(traces):
-        sncl = tuple(trace.stats[key] for key in IDENTITY.values())
+        sncl = tuple(trace.stats[key] for key in IDENTITY)
         invalid = _invalid_identity_fields(sncl)
         if invalid:
             raise ValueError(f"trace {trace_index} {trace.id}: invalid waveform identity "
-                             f"fields {invalid}; only Location may be an empty string; "
+                             f"fields {invalid}; only location may be an empty string; "
                              "no identity field may be missing")
         if not len(trace.data):
             raise ValueError(f"{trace.id}: association requires nonempty loaded samples")
@@ -384,16 +372,16 @@ def associate(waveforms, tables, *, time_tolerance=0.001, allow_first_segment=Fa
                 difference_ns = abs(time_ns - trace_time_ns)
                 if difference_ns > tolerance_ns:
                     continue
-                count, source_rate = row["SampleCount"], row["SampleRate"]
+                count, source_rate = row["sample_count"], row["sample_rate"]
                 reasons = []
                 if pd.isna(count) or count != trace.stats.npts:
-                    reasons.append(f"SampleCount={count} differs from npts={trace.stats.npts}")
+                    reasons.append(f"sample_count={count} differs from npts={trace.stats.npts}")
                 rate_ok = (not pd.isna(source_rate) and isfinite(float(source_rate))
                            and float(source_rate) > 0
                            and rate - SAMPLE_RATE_TOLERANCE_HZ <= float(source_rate)
                            <= rate + SAMPLE_RATE_TOLERANCE_HZ)
                 if not rate_ok:
-                    reasons.append(f"SampleRate={source_rate} incompatible with {rate} Hz")
+                    reasons.append(f"sample_rate={source_rate} incompatible with {rate} Hz")
                 match = (dataset_index, row_index, row, metadata)
                 candidates.append({**_row_context(dataset_index, row_index, metadata),
                                    "reasons": reasons})
@@ -407,16 +395,16 @@ def associate(waveforms, tables, *, time_tolerance=0.001, allow_first_segment=Fa
             anchors = []
             for match in overlapping:
                 dataset_index, row_index, row, metadata = match
-                source_ns = pd.Timestamp(row["Time"]).value
+                source_ns = pd.Timestamp(row["derived_time"]).value
                 end_ns = _source_last_sample_ns(source_ns, row)
                 if (end_ns is not None and source_ns - tolerance_ns
                         <= trace_time_ns <= end_ns + tolerance_ns):
                     anchors.append(match)
             if len(anchors) > 1:
                 contexts = [dict(_row_context(item[0], item[1], item[3]),
-                                 Time=str(item[2]["Time"]),
-                                 SampleCount=item[2]["SampleCount"],
-                                 SampleRate=item[2]["SampleRate"])
+                                 derived_time=str(item[2]["derived_time"]),
+                                 sample_count=item[2]["sample_count"],
+                                 sample_rate=item[2]["sample_rate"])
                             for item in anchors]
                 failures.append(
                     f"trace {trace_index} {trace.id} at {trace.stats.starttime} through "

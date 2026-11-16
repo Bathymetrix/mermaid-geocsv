@@ -12,7 +12,7 @@ from ._read import GeoCSVComment, GeoCSVError, GeoCSVMetadata, read
 __author__ = "Joel D. Simon <jdsimon@bathymetrix.com>"
 __license__ = "MIT"
 __copyright__ = "© 2026 Bathymetrix, LLC"
-__version__ = "0.29.0"
+__version__ = "0.30.0"
 
 __all__ = [
     "__version__",
@@ -42,7 +42,7 @@ def associate(waveforms, tables, *, time_tolerance=0.001, allow_first_segment=Fa
         Tables returned by ``read``, retaining source indices and immutable
         ``frame.attrs["geocsv"]`` metadata. May span datasets and files. Matching
         requires complete SNCL, timezone-aware starts, sample counts, and rates
-        in ``hertz``. Known blank source Location is exactly two literal spaces. Coordinates require latitude
+        in ``hertz``. Known blank source location is exactly two literal spaces. Coordinates require latitude
         and longitude in ``degrees_north`` and ``degrees_east``.
     time_tolerance : float, optional
         Inclusive absolute start/containment tolerance in seconds. Default 0.001
@@ -56,10 +56,10 @@ def associate(waveforms, tables, *, time_tolerance=0.001, allow_first_segment=Fa
     create_sac_header : bool, optional
         Default False leaves ``stats.sac`` untouched. True requires it to be absent
         and creates ObsPy's fresh SAC baseline plus ``stla``, ``stlo``, ``stel``,
-        and ``stdp`` for the MERMAID station location. Station depth is
-        approximately ``WaterPressure / 100`` metres positive downward, with
-        pressure in mbar. Earthquake-source ``ev*`` fields are not populated.
-        Missing pressure is allowed only for source DataQuality D, leaving
+        and ``stdp`` where supplied by the schema. Station depth is
+        approximately ``measured_pressure / 100`` metres positive downward
+        for rc2, with pressure in mbar. Earthquake-source ``ev*`` fields are not populated.
+        Missing pressure is allowed only for source data_quality D, leaving
         station depth undefined. Write with ObsPy's ``Trace.write`` or ``Stream.write``.
 
     Returns
@@ -67,8 +67,8 @@ def associate(waveforms, tables, *, time_tolerance=0.001, allow_first_segment=Fa
     None
         Each trace receives fresh ``stats.geocsv`` and ``stats.coordinates``
         containers, plus ``stats.sac`` when requested. Samples and native waveform
-        headers are preserved. Coordinate elevation and SAC stel use the explicit source Recording
-        Elevation, required to be zero metres in schema 1.0.0.
+        headers are preserved. In rc2, coordinate elevation is absent and SAC
+        stel is undefined.
 
     Raises
     ------

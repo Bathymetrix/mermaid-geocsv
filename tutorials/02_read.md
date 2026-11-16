@@ -1,11 +1,8 @@
 # Read GeoCSV into pandas tables
 
-`geocsv.read` accepts only MERMAID GeoCSV schema 1.0.0 and returns one pandas
-DataFrame per file, preserving source columns, timestamps, units, and metadata.
-Generic GeoCSV and legacy MERMAID files are unsupported. This example uses a
-[schema-converted P0006 subset](../data/fixtures/schema-1.0.0-rc1/README.md),
-not newly generated producer output. Its provenance records representation
-changes and the mapping to historical source records.
+`geocsv.read` returns one typed pandas DataFrame per MERMAID GeoCSV file.
+This example uses a [P0006 rc2 subset](../data/fixtures/schema-1.0.0-rc2/README.md)
+generated with automaid v4.11.2.
 
 Companions: [Markdown](02_read.md) · [Notebook](02_read.ipynb).
 
@@ -34,7 +31,7 @@ root = Path.cwd()
 if root.name in {"docs", "tutorials"}:
     root = root.parent
 
-path = root / "data/fixtures/schema-1.0.0-rc1/P0006/P0006.geocsv"
+path = root / "data/fixtures/schema-1.0.0-rc2/P0006.geocsv"
 tables = geocsv.read(path)
 records = tables[0]  # A list is returned even for a single dataset.
 records.head()
@@ -52,19 +49,18 @@ print(records.dtypes)
 Select GPS measurements and display their positions:
 
 ```python
-gps = records.loc[records["MethodIdentifier"].str.startswith("Measurement:Position")]
-gps[["Time", "Latitude", "Longitude"]].head()
+gps = records.loc[records["type"].eq("gps")]
+gps[["measured_time", "measured_latitude", "measured_longitude"]].head()
 ```
 
 The index, `source_index`, identifies each row's original position
-among the file's data records. Filtering keeps those labels. `Time`
-remains a column.
+among the file's data records. Filtering keeps those labels. The `measured_time` and `derived_time` columns retain their distinct meanings.
 
 ## 3. Inspect source metadata
 
 ```python
 metadata = records.attrs["geocsv"]
-print(metadata.field_units["WaterPressure"])
+print(metadata.field_units["measured_pressure"])
 print(metadata.source_path)
 ```
 
@@ -76,7 +72,7 @@ and exports may lose `attrs`.
 
 ```python
 converted = geocsv.read(path, datetime_timezone="America/Los_Angeles")
-converted[0]["Time"].head()
+converted[0]["measured_time"].head()
 ```
 
 This changes the displayed timezone while preserving the instant.
@@ -94,7 +90,7 @@ import pandas as pd
 
 raw_cells = pd.read_csv(path, comment="#", dtype="string",
                         keep_default_na=False, skipinitialspace=False)
-print(raw_cells[["Station", "Location"]].head())
+print(raw_cells[["station", "location"]].head())
 ```
 
 This example reads the included single-line-record fixture. The `comment="#"`

@@ -18,29 +18,29 @@ from mermaid import geocsv
 ROOT = Path(__file__).resolve().parents[1]
 TUTORIALS = ROOT / "tutorials"
 NAMES = sorted(path.stem for path in TUTORIALS.glob("*.md"))
-TEST_RELEASE = "2026-11-05T23:41:47.235000Z"
-HOSTED_FIXTURES = ROOT / "data/fixtures/hosted-full-rc1-20261105"
+RC2_FIXTURES = ROOT / "data/fixtures/schema-1.0.0-rc2"
+RC2_MANIFEST = json.loads((RC2_FIXTURES / "manifest.json").read_text())
 
 
 @pytest.fixture
 def tutorial_collection(tmp_path):
-    """Replay exact metadata prefixes without requiring public network access."""
+    """Serve the rc2 tutorial subsets through the testing download protocol."""
     directory = tmp_path / "http"
-    component = TEST_RELEASE.replace(":", "-")
+    release_id = RC2_MANIFEST["created"]
+    component = release_id.replace(":", "-")
     release = directory / "releases" / component
     release.mkdir(parents=True)
-    manifest = json.loads((HOSTED_FIXTURES / "manifest.json").read_text())
     entries = []
-    for entry in manifest["files"]:
-        content = (HOSTED_FIXTURES / entry["path"]).read_bytes()
+    for entry in RC2_MANIFEST["files"]:
+        content = (RC2_FIXTURES / entry["path"]).read_bytes()
         (release / entry["path"]).write_bytes(content)
-        entries.append(dict(instrument_id=entry["instrument_id"], filename=entry["path"],
+        entries.append(dict(instrument_id=entry["station"], filename=entry["path"],
                             size_bytes=len(content), sha256=hashlib.sha256(content).hexdigest(),
-                            provenance={"notes": "Offline tutorial prefix replay"}))
+                            provenance={"notes": "Offline rc2 tutorial subset"}))
     (release / "manifest.json").write_text(json.dumps(dict(
-        release_id=TEST_RELEASE, testing_only=True, files=entries)))
+        release_id=release_id, testing_only=True, files=entries)))
     (directory / "latest.json").write_text(json.dumps(dict(
-        release_id=TEST_RELEASE, testing_only=True,
+        release_id=release_id, testing_only=True,
         manifest=f"releases/{component}/manifest.json")))
     server = ThreadingHTTPServer(("127.0.0.1", 0),
         partial(SimpleHTTPRequestHandler, directory=str(directory)))
@@ -99,7 +99,7 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
     if operation == "plotting":
         matplotlib = pytest.importorskip("matplotlib")
         matplotlib.use("Agg")
-    if operation in {"fetch", "earthscope"}:
+    if operation == "fetch":
         collection = request.getfixturevalue("tutorial_collection")
         real_fetch = geocsv.fetch
 
@@ -117,7 +117,7 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         fixtures = ROOT / "data/fixtures/P0006/waveforms"
         manifest = json.loads((fixtures / "manifest.json").read_text())
         waveform_requests = []
-        source, = geocsv.read(HOSTED_FIXTURES / "P0006.geocsv")
+        source, = geocsv.read(RC2_FIXTURES / "P0006.geocsv")
 
         def replay_waveforms(**kwargs):
             example = manifest["examples"][len(waveform_requests)]
@@ -128,8 +128,8 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
                     from obspy import UTCDateTime
 
                     row = source.loc[example["source_record_index"]]
-                    start = UTCDateTime(row.Time.isoformat())
-                    last = start + (int(row.SampleCount) - 1) / float(row.SampleRate)
+                    start = UTCDateTime(row.derived_time.isoformat())
+                    last = start + (int(row.sample_count) - 1) / float(row.sample_rate)
                     expected = start - 1 if key == "starttime" else last + 1
                     assert kwargs[key].ns == expected.ns
                 else:
@@ -175,7 +175,7 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         combined, = namespace["combined"]
         assert combined.stats.npts == 45683
         assert combined.stats.geocsv.association.type == "anchor_segment"
-        assert combined.stats.geocsv.source_index == 13
+        assert combined.stats.geocsv.source_index == 2
         assert len(combined.stats.geocsv.association.coverage_segments) == 2
     if operation == "write-sac":
         import numpy as np
@@ -183,19 +183,20 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         assert "sac" in namespace["trace"].stats
         assert namespace["trace"].stats.geocsv.association.type == "single_segment"
         reopened = namespace["reopened"]
-        assert reopened.stats.sac.stla == np.float32(namespace["trace"].stats.geocsv.Latitude)
-        assert reopened.stats.sac.stlo == np.float32(namespace["trace"].stats.geocsv.Longitude)
+        assert reopened.stats.sac.stla == np.float32(namespace["trace"].stats.geocsv.estimated_latitude)
+        assert reopened.stats.sac.stlo == np.float32(namespace["trace"].stats.geocsv.estimated_longitude)
+        assert "stel" not in reopened.stats.sac
         np.testing.assert_array_equal(reopened.data, namespace["trace"].data.astype(np.float32))
         assert namespace["written_names"] == [
             "segment01.sac", "segment02.sac", "segment03.sac"]
         assert all("sac" in trace.stats for trace in namespace["stream"])
     if operation == "fetch":
         assert namespace["downloads"][0].provenance.testing_only is True
-        assert namespace["records"]["Station"].eq("P0006").all()
+        assert namespace["records"]["station"].eq("P0006").all()
         saved = namespace["saved"]
         assert [item.provenance.instrument_id for item in saved] == ["P0006", "P0045"]
         assert all(item.path.is_file() for item in saved)
-        assert namespace["pinned"][0].provenance.release_id == TEST_RELEASE
+        assert namespace["pinned"][0].provenance.release_id == RC2_MANIFEST["created"]
         assert namespace["pinned"][0].content == namespace["downloads"][0].content
     if operation == "earthscope":
         assert waveform_requests == [98, 169, 239]
@@ -204,29 +205,15 @@ def test_tutorial_examples(name, working_directory, monkeypatch, tmp_path, reque
         output_dir = namespace["output_dir"]
         assert len(list(output_dir.glob("*.mseed"))) == 3
         assert len(list(output_dir.glob("*.sac"))) == 3
-        assert namespace["downloads"][0].provenance.release_id == TEST_RELEASE
 
 
 def test_earthscope_tutorial_fixture_provenance():
     fixtures = ROOT / "data/fixtures/P0006/waveforms"
     manifest = json.loads((fixtures / "manifest.json").read_text())
-    entries = [manifest["geocsv"]]
+    entries = []
     for example in manifest["examples"]:
         entries.extend(example[key] for key in ("mseed", "sac", "request"))
     for entry in entries:
         content = (fixtures / entry["path"]).read_bytes()
         assert len(content) == entry["size_bytes"]
         assert hashlib.sha256(content).hexdigest() == entry["sha256"]
-
-
-def test_hosted_tutorial_prefix_provenance():
-    manifest = json.loads((HOSTED_FIXTURES / "manifest.json").read_text())
-    assert manifest["release_id"] == TEST_RELEASE
-    for item in manifest["files"]:
-        path = HOSTED_FIXTURES / item["path"]
-        content = path.read_bytes()
-        assert len(content) == item["size_bytes"]
-        assert hashlib.sha256(content).hexdigest() == item["sha256"]
-        frame, = geocsv.read(path)
-        assert frame.index.tolist() == item["source_record_indices"] == list(range(300))
-        assert frame.attrs["geocsv"].created == TEST_RELEASE

@@ -12,7 +12,7 @@ from mermaid import geocsv
 
 
 def test_fetch_public_api():
-    assert geocsv.__version__ == "0.29.0"
+    assert geocsv.__version__ == "0.30.0"
     assert {"fetch", "GeoCSVFetchResult", "GeoCSVDownload", "GeoCSVFetchError"} <= set(geocsv.__all__)
     parameters = inspect.signature(geocsv.fetch).parameters
     assert parameters["instrument_ids"].default is None
@@ -56,7 +56,7 @@ def test_optional_obspy_imports(missing_module):
         frame, = geocsv.read(sys.argv[2])
         assert len(frame) == 2
         assert frame.index.name == "source_index"
-        assert str(frame["Latitude"].dtype) == "Float64"
+        assert str(frame["estimated_latitude"].dtype) == "Float64"
         assert frame.attrs["geocsv"].source_path.is_absolute()
         try:
             geocsv.associate(None, [frame], create_sac_header=True)
@@ -71,7 +71,7 @@ def test_optional_obspy_imports(missing_module):
         else:
             raise AssertionError("Expected an import error")
     ''')
-    fixture = Path(__file__).parent / "fixtures" / "schema-1.0.0-rc1/typed.geocsv"
+    fixture = Path(__file__).parent / "fixtures" / "schema-1.0.0-rc2/typed.geocsv"
     result = subprocess.run(
         [sys.executable, "-c", script, missing_module, str(fixture.resolve())],
         capture_output=True, text=True,

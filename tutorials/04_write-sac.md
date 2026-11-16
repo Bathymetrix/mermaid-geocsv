@@ -30,21 +30,18 @@ root = Path.cwd()
 if root.name in {"docs", "tutorials"}:
     root = root.parent
 
-example_dir = root / "data/fixtures/association/452.020-P-0030"
-waveform_path = (
-    example_dir / "0009_20210528-04h30m10s"
-    / "20210528T053250.0030_60B08BB3.MER.DET.WLT2.mseed"
-)
+example_dir = root / "data/fixtures/P0006/waveforms"
+waveform_path = example_dir / "20180629T170731.06_5B3F1904.MER.DET.WLT5.mseed"
 trace = read_waveforms(str(waveform_path))[0]
-tables = geocsv.read(root / "data/fixtures/schema-1.0.0-rc1/association/452.020-P-0030/association_subset.geocsv")
+tables = geocsv.read(root / "data/fixtures/schema-1.0.0-rc2/P0006.geocsv")
 geocsv.associate(trace, tables, create_sac_header=True)
 print(trace.stats.sac)
 ```
 
 `create_sac_header=True` requires an absent `stats.sac`. It creates ObsPy's
-standard headers and adds station latitude, longitude, the adopted sea-level
-reference, and approximate MERMAID station depth: `stdp = WaterPressure / 100`
-in metres positive downward, with pressure in mbar (100 mbar approximately 1 m).
+standard headers and adds station latitude, longitude, and approximate MERMAID
+station depth (`stdp = measured_pressure / 100`). The rc2 export leaves `stel` undefined.
+Depth is in metres positive downward, with pressure in mbar (100 mbar approximately 1 m).
 These are station-location `st*` projections; earthquake-source `ev*` headers
 are not populated. The [SAC mapping](../docs/sac.md#geographic-mapping) defines
 units and the missing-REQ-pressure exception. Samples remain raw counts.
@@ -74,7 +71,7 @@ then create headers for the whole batch. ObsPy writes one numbered SAC file
 per trace when given a single output filename:
 
 ```python
-stream = read_waveforms(str(example_dir / "*/*.mseed"))
+stream = read_waveforms(str(example_dir / "*.mseed"))
 geocsv.associate(stream, tables, create_sac_header=True)
 with TemporaryDirectory() as directory:
     stream.write(str(Path(directory) / "segment.sac"), format="SAC")

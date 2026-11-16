@@ -39,7 +39,7 @@ def check_installation(interpreter, requirements):
         run([python, "--version"], directory)
         run([python, "-m", "pip", "list", "--format=freeze"], directory)
         run([python, "-I", str(ROOT / "scripts/check_wheel.py"),
-             str(ROOT / "data/fixtures/association")], directory)
+             str(ROOT / "data/fixtures")], directory)
         run([python, "-m", "pip", "install", "pytest>=8"], directory)
         # Disable the checkout's src path so the full suite tests the installed
         # distribution, rather than silently importing the working tree.

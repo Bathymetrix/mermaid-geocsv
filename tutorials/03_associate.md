@@ -2,7 +2,7 @@
 
 `geocsv.associate` attaches the matching GeoCSV waveform-acquisition record
 and MERMAID receiver (station) coordinates to an ObsPy Trace or Stream.
-The source subject `Recording` identifies an original contiguous waveform segment. These examples use included MiniSEED and GeoCSV fixtures and run offline.
+The rc2 row type `waveform` identifies an original contiguous waveform segment. These examples use included MiniSEED and GeoCSV fixtures and run offline.
 
 Companions: [Markdown](03_associate.md) · [Notebook](03_associate.ipynb).
 
@@ -29,12 +29,9 @@ root = Path.cwd()
 if root.name in {"docs", "tutorials"}:
     root = root.parent
 
-example_dir = root / "data/fixtures/association/452.020-P-0030"
-waveform_path = (
-    example_dir / "0009_20210528-04h30m10s"
-    / "20210528T053250.0030_60B08BB3.MER.DET.WLT2.mseed"
-)
-tables = geocsv.read(root / "data/fixtures/schema-1.0.0-rc1/association/452.020-P-0030/association_subset.geocsv")
+example_dir = root / "data/fixtures/P0006/waveforms"
+waveform_path = example_dir / "20180629T170731.06_5B3F1904.MER.DET.WLT5.mseed"
+tables = geocsv.read(root / "data/fixtures/schema-1.0.0-rc2/P0006.geocsv")
 trace = read_waveforms(str(waveform_path))[0]
 geocsv.associate(trace, tables)
 ```
@@ -44,7 +41,7 @@ It preserves the waveform samples and native headers. Inspect the attached
 source record and coordinates:
 
 ```python
-print(trace.stats.geocsv.MethodIdentifier)
+print(trace.stats.geocsv.type)
 print(trace.stats.coordinates)
 print(trace.stats.geocsv.association.type)  # single_segment
 ```
@@ -56,8 +53,8 @@ association requires fresh `stats.geocsv` and `stats.coordinates` destinations.
 
 These small GeoCSV subsets are demonstration fixtures. Use complete histories
 for research; omitted records could affect uniqueness. See the
-[schema conversion and source mapping](../data/fixtures/schema-1.0.0-rc1/README.md)
-and [original waveform provenance](../data/fixtures/association/README.md).
+[rc2 subset provenance](../data/fixtures/schema-1.0.0-rc2/README.md)
+and [original waveform provenance](../data/fixtures/P0006/waveforms/README.md).
 
 ## 2. Associate a Stream
 
@@ -65,7 +62,7 @@ ObsPy can read the three included MiniSEED files for this float using a wildcard
 The same call associates every trace in the Stream:
 
 ```python
-stream = read_waveforms(str(example_dir / "*/*.mseed"))
+stream = read_waveforms(str(example_dir / "*.mseed"))
 geocsv.associate(stream, tables)
 for item in stream:
     print(item.id, item.stats.geocsv.source_index)
@@ -104,7 +101,7 @@ the sample placement and source provenance.
 combined_dir = root / "tests/fixtures/association/P0045_20220115"
 combined = read_waveforms(str(combined_dir / "*.mseed"))
 combined.merge(method=1, interpolation_samples=0, misalignment_threshold=0)
-combined_tables = geocsv.read(root / "data/fixtures/schema-1.0.0-rc1/P0045/P0045.geocsv")
+combined_tables = geocsv.read(root / "data/fixtures/schema-1.0.0-rc2/P0045.geocsv")
 geocsv.associate(combined, combined_tables, allow_first_segment=True)
 print(combined[0].stats.geocsv.association.type)  # anchor_segment
 print(combined[0].stats.geocsv.association.coverage_segments)

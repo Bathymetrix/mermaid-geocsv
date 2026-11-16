@@ -2,14 +2,6 @@
   "collected": "2026-10-20",
   "obspy_version": "1.5.1",
   "obspy_source_commit": "50033e1daf95233cd4f30e95a49c37fd50be2ccd",
-  "geocsv": {
-    "path": "../../../../data/fixtures/P0045/P0045.geocsv",
-    "sha256": "6a1e92c09aa3c6b7f55e194b487487b57f3e583de735817857fb0558996acdc9",
-    "size_bytes": 18031322,
-    "record_count": 124022,
-    "provenance": "Verbatim current processed GeoCSV snapshot, automaid v4.5.14; no header or record edits",
-    "source_path": "/Users/jdsimon/mermaid/processed/452.020-P-0045/geo_DET_REQ.csv"
-  },
   "day_inventory": [
     {
       "source_path": "/Users/jdsimon/mermaid/waveforms/mseed/20220115T034444.0045_62AAD314.MER.REQ.WLT5.mseed",

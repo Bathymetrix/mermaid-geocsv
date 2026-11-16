@@ -28,17 +28,12 @@ carry quality M and originals carry Q. Their identity, rate, count, and samples
 agree exactly. Download-minus-original start differences are −6 µs, 0 µs, and
 −1 µs for records 98, 169, and 239 respectively. The manifest records them in
 integer nanoseconds, and the tutorial checks them explicitly without changing
-any timing. Their cause is not established. Current tests associate all three as `single_segment` using the separate
-[schema subset](../../schema-1.0.0/P0006/P0006.geocsv), which retains these
-record indices. Its [manifest](../../schema-1.0.0/manifest.json) records the
-source mapping. The waveform manifest preserves the historical complete
-[P0006 GeoCSV](../README.md) path/hash and former hosted snapshot as provenance;
-that old-format file is not parsed by the current reader.
+any timing. Their cause is not established. Current tests associate all three as `single_segment` using the [rc2 P0006 prefix](../../schema-1.0.0-rc2/P0006.geocsv), which retains their source indices.
 
 SAC files are independent output comparison references, never association
 inputs. Their samples agree with the downloaded counts at SAC float32
 precision. The [EarthScope tutorial](../../../../tutorials/05_earthscope.md)
-compares identity, absolute start, count, interval, samples, and stla/stlo/stel/stdp
+compares identity, absolute start, count, interval, samples, and stla/stlo/stdp
 after export. It documents units, precision, and the limited header coverage.
 Tests replay these raw responses offline; later live downloads need not have
 identical bytes. Do not regenerate these files during tests.

@@ -1,0 +1,37 @@
+{
+  "producer": {
+    "version": "v4.11.2",
+    "revision": "d973be5"
+  },
+  "created": "2026-11-16T18:00:00.000000Z",
+  "files": [
+    {
+      "station": "P0006",
+      "serial": "452.020-P-06",
+      "path": "P0006.geocsv",
+      "size_bytes": 27375,
+      "sha256": "83926e156f9b90d7109cdaedd740371e77bbc10cb65f12106e497be2640d9219",
+      "full_geocsv_sha256": "b952812853bda8fe515b9478e79b505a5778b45ef7e3b807c62ba5749db103e0",
+      "source_record_ranges": [
+        [
+          0,
+          300
+        ]
+      ]
+    },
+    {
+      "station": "P0045",
+      "serial": "452.020-P-0045",
+      "path": "P0045.geocsv",
+      "size_bytes": 2015,
+      "sha256": "1a0a5e9b0034c602b78d9fc58c552254a45fb59335f07e604faa8131c4eaba82",
+      "full_geocsv_sha256": "ffbf73707e0afa521935159a5b1413b98467b6c7dcdcff747289c61e22ced4bd",
+      "source_record_ranges": [
+        [
+          101431,
+          101437
+        ]
+      ]
+    }
+  ]
+}

@@ -1,30 +1,5 @@
-# Data fixture roles
+# GeoCSV and waveform fixtures
 
-Active rc1 inputs live under [schema-1.0.0-rc1](schema-1.0.0-rc1/README.md).
-Their manifests retain original schema fixture hashes and the unchanged row
-mapping. They are local header projections, not hosted output. Original
-schema-1.0.0 fixtures and published replay prefixes remain frozen evidence.
-
-- [Current full-corpus rc1 tutorial prefixes](hosted-full-rc1-20261105/README.md):
-  exact prefixes bound to the November 5 snapshot, used for offline tutorial replay
-- [Earlier published tutorial replay inputs](schema-1.0.0/hosted/README.md): unchanged
-  prefixes of the public schema 1.0.0 histories for offline fetch/EarthScope tests.
-- [Schema 1.0.0](schema-1.0.0/README.md): retained typed-reader, association,
-  download and tutorial inputs, converted from historical source evidence.
-  The manifest records source hashes, row mappings and conversion assumptions.
-  These are not regenerated producer output or full histories.
-- [Association](association/README.md): unchanged original MiniSEED/SAC pairs,
-  frozen pre-migration GeoCSV subsets, original manifests and historical audits.
-  Tests parse the separate schema subsets and use the original waveforms here.
-- [P0006](P0006/README.md) and [P0045](P0045/README.md): complete historical
-  pre-migration GeoCSV snapshots retained for provenance, not active parsing.
-  [P0006 waveforms](P0006/waveforms/README.md) also retain original pairs and
-  saved EarthScope responses for current offline tutorial replay.
-
-Original manifests describe original bytes and remain unchanged. Current
-association record indices refer to the schema file actually read; use the
-schema manifest to recover historical source indices. Subsets cannot establish
-uniqueness across omitted full-history rows. Tests never regenerate fixtures.
-
-General [GeoCSV specification examples](../../docs/references/geocsv-v2.0.4-examples/README.md)
-are reference documents outside the fixture tree. They are unsupported inputs.
+- [Producer rc2 subsets](schema-1.0.0-rc2/README.md) with exact source-row mappings.
+- [P0006 waveform references](P0006/waveforms/README.md) for strict association and EarthScope testing.
+- [Combined and clipped waveform references](../../tests/fixtures/association/README.md).

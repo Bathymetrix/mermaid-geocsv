@@ -17,7 +17,7 @@ from mermaid import geocsv
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
-REAL_FIXTURES = Path(__file__).parents[1] / "data/fixtures/schema-1.0.0-rc1"
+REAL_FIXTURES = Path(__file__).parents[1] / "data/fixtures/schema-1.0.0-rc2"
 
 
 @pytest.fixture
@@ -26,11 +26,11 @@ def collection(tmp_path):
     directory = root / "releases" / "test-001"
     directory.mkdir(parents=True)
     entries = []
-    # Two schema-converted instrument subsets plus an invented single-table file.
+    # Two producer instrument subsets plus an invented single-table file.
     # Keep the small synthetic entry second for the partial-batch failure test.
-    for instrument, source in [("P0006", REAL_FIXTURES / "P0006/P0006.geocsv"),
-                               ("P_TEST", FIXTURES / "schema-1.0.0-rc1/typed.geocsv"),
-                               ("P0045", REAL_FIXTURES / "P0045/P0045.geocsv")]:
+    for instrument, source in [("P0006", REAL_FIXTURES / "P0006.geocsv"),
+                               ("P_TEST", FIXTURES / "schema-1.0.0-rc2/typed.geocsv"),
+                               ("P0045", REAL_FIXTURES / "P0045.geocsv")]:
         destination = directory / f"{instrument}.geocsv"
         shutil.copyfile(source, destination)
         content = destination.read_bytes()
@@ -168,7 +168,7 @@ def test_memory_all_real_fixture_and_metadata(collection, monkeypatch):
     assert list(collection.client.iterdir()) == []
     assert all(result.path is None and isinstance(result.content, bytes) for result in results)
     first = results[0]
-    assert first.content == (REAL_FIXTURES / "P0006/P0006.geocsv").read_bytes()
+    assert first.content == (REAL_FIXTURES / "P0006.geocsv").read_bytes()
     assert first.provenance.sha256 == hashlib.sha256(first.content).hexdigest()
     assert first.provenance.manifest == collection.manifest_path.read_bytes()
     assert first.provenance.testing_only is True
@@ -176,28 +176,28 @@ def test_memory_all_real_fixture_and_metadata(collection, monkeypatch):
     assert "manual_edits" not in json.loads(first.provenance.manifest)["files"][0]["provenance"]
     frames = geocsv.read(results)
     assert len(frames) == 3
-    assert results[2].content == (REAL_FIXTURES / "P0045/P0045.geocsv").read_bytes()
-    assert frames[2]["Station"].eq("P0045").all()
+    assert results[2].content == (REAL_FIXTURES / "P0045.geocsv").read_bytes()
+    assert frames[2]["station"].eq("P0045").all()
     assert frames[2].index.equals(pd.RangeIndex(len(frames[2]), name="source_index"))
-    assert frames[2]["SampleCount"].dtype == pd.Int64Dtype()
+    assert frames[2]["sample_count"].dtype == pd.Int64Dtype()
     assert frames[2].attrs["geocsv"].download is results[2].provenance
     frame = frames[0]
-    assert len(frame) == 312
-    assert frame.index.equals(pd.RangeIndex(312, name="source_index"))
-    assert frame["SampleCount"].dtype == pd.Int64Dtype()
-    assert frame["Latitude"].dtype == pd.Float64Dtype()
-    assert frame["Station"].dtype == pd.StringDtype()
-    assert frame["Time"].iloc[0].tzinfo is not None
+    assert len(frame) == 300
+    assert frame.index.equals(pd.RangeIndex(300, name="source_index"))
+    assert frame["sample_count"].dtype == pd.Int64Dtype()
+    assert frame["estimated_latitude"].dtype == pd.Float64Dtype()
+    assert frame["station"].dtype == pd.StringDtype()
+    assert frame["measured_time"].iloc[0].tzinfo is not None
     metadata = frame.attrs["geocsv"]
     assert metadata.source_path is None
     assert metadata.download is first.provenance
     assert metadata.download.url == collection.url + "releases/test-001/P0006.geocsv"
-    assert metadata.field_units["Latitude"] == "degrees_north"
-    assert metadata.datetime_resolution_ns["Time"][0] == 1000
+    assert metadata.field_units["estimated_latitude"] == "degrees_north"
+    assert metadata.datetime_resolution_ns["measured_time"][0] == 1000
     assert deepcopy(metadata) is metadata
     with pytest.raises(FrozenInstanceError):
         metadata.download.release_id = "changed"
-    expected, = geocsv.read(REAL_FIXTURES / "P0006/P0006.geocsv")
+    expected, = geocsv.read(REAL_FIXTURES / "P0006.geocsv")
     pd.testing.assert_frame_equal(frame, expected)
     assert frames[1].index.tolist() == [0, 1]
     assert frames[1].attrs["geocsv"].download is results[1].provenance
@@ -210,7 +210,7 @@ def test_default_local_output_and_reuse(collection, monkeypatch):
     first, = geocsv.fetch("P0006", base_url=collection.url.rstrip("/"))
     assert first.path == collection.client / "test-001/P0006.geocsv"
     assert first.content is None
-    assert first.path.read_bytes() == (REAL_FIXTURES / "P0006/P0006.geocsv").read_bytes()
+    assert first.path.read_bytes() == (REAL_FIXTURES / "P0006.geocsv").read_bytes()
     assert (first.path.parent / "manifest.json").read_bytes() == first.provenance.manifest
     frame, = geocsv.read(first)
     assert frame.attrs["geocsv"].source_path == first.path
@@ -231,8 +231,8 @@ def test_selected_order_and_explicit_release_bypass_latest(collection):
     assert results[0].path.parent == collection.client / "downloads/test-001"
     assert "/latest.json" not in collection.requests
     frames = geocsv.read(results)
-    assert frames[0]["Station"].eq("P0045").all()
-    assert frames[1]["Station"].eq("P0006").all()
+    assert frames[0]["station"].eq("P0045").all()
+    assert frames[1]["station"].eq("P0006").all()
     assert frames[0].attrs["geocsv"].download is results[0].provenance
     assert frames[1].attrs["geocsv"].download is results[1].provenance
     assert "/releases/test-001/P_TEST.geocsv" not in collection.requests
@@ -313,7 +313,7 @@ def test_memory_result_associates_without_losing_download_provenance(collection)
     obspy = pytest.importorskip("obspy")
     import numpy as np
 
-    content = (FIXTURES / "schema-1.0.0-rc1/synthetic.geocsv").read_bytes()
+    content = (FIXTURES / "schema-1.0.0-rc2/synthetic.geocsv").read_bytes()
     (collection.directory / "P0006.geocsv").write_bytes(content)
     collection.manifest["files"][0].update(size_bytes=len(content),
                                            sha256=hashlib.sha256(content).hexdigest())
@@ -372,22 +372,22 @@ def test_invalid_arguments_do_not_request(collection, kwargs):
 
 
 def test_byte_input_uses_same_parser_and_no_invented_provenance():
-    content = (FIXTURES / "schema-1.0.0-rc1/typed.geocsv").read_bytes()
+    content = (FIXTURES / "schema-1.0.0-rc2/typed.geocsv").read_bytes()
     frame, = geocsv.read(content, datetime_timezone="UTC")
     assert frame.attrs["geocsv"].source_path is None
     assert frame.attrs["geocsv"].download is None
-    assert str(frame["Time"].dtype).endswith(", UTC]")
+    assert str(frame["derived_time"].dtype).endswith(", UTC]")
     with pytest.raises(geocsv.GeoCSVError, match="<memory>:.*invalid UTF-8"):
         geocsv.read(b"# MERMAID GeoCSV schema: 1.0.0\n#opaque: \xff\n")
     with pytest.raises(geocsv.GeoCSVError, match="LF or CRLF"):
-        geocsv.read((FIXTURES / "schema-1.0.0-rc1/typed.geocsv").read_bytes()[:-1])
+        geocsv.read((FIXTURES / "schema-1.0.0-rc2/typed.geocsv").read_bytes()[:-1])
     with pytest.raises(TypeError, match="GeoCSVFetchResult"):
-        geocsv.read([FIXTURES / "schema-1.0.0-rc1/typed.geocsv"])
+        geocsv.read([FIXTURES / "schema-1.0.0-rc2/typed.geocsv"])
 
 
 def test_fetched_parser_error_identifies_url(collection):
     path = collection.directory / "P0006.geocsv"
-    content = (FIXTURES / "schema-1.0.0-rc1/typed.geocsv").read_bytes()[:-1]
+    content = (FIXTURES / "schema-1.0.0-rc2/typed.geocsv").read_bytes()[:-1]
     path.write_bytes(content)
     collection.manifest["files"][0].update(size_bytes=len(content),
                                            sha256=hashlib.sha256(content).hexdigest())
@@ -423,8 +423,8 @@ def test_real_download_read_associate_write_sac_pipeline(collection, memory, cli
     actual = SACTrace.read(str(output))
     reference = SACTrace.read(str(directory / item['sac']['path']))
     assert actual.to_obspy_trace(round_sampling_interval=False).id == trace.id
-    assert actual.stla == np.float32(trace.stats.geocsv.Latitude)
-    assert actual.stlo == np.float32(trace.stats.geocsv.Longitude)
+    assert actual.stla == np.float32(trace.stats.geocsv.estimated_latitude)
+    assert actual.stlo == np.float32(trace.stats.geocsv.estimated_longitude)
     assert actual.stdp is reference.stdp is None  # REQ has no measured pressure.
     expected = reference.data[10:110] if clipped else reference.data
     np.testing.assert_array_equal(actual.data, expected)

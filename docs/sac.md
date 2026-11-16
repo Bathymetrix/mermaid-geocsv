@@ -7,34 +7,34 @@ report are defined in the [association reference](obspy-association.md).
 
 ## Geographic mapping
 
-Association constructs ObsPy's fresh SAC baseline and adds only these four
-GeoCSV projections. `stats.sac` must be absent, including an empty container.
+Association constructs ObsPy's fresh SAC baseline and adds these geographic
+projections. `stats.sac` must be absent, including an empty container.
 All requested projections validate before any trace is modified.
 
 | SAC header | Source and units |
 | --- | --- |
-| `stla` | Matched `Latitude` in declared `degrees_north`, within [-90, 90]. |
-| `stlo` | Matched `Longitude` in declared `degrees_east`, within [-180, 180]. |
-| `stel` | Explicit matched Recording `Elevation` in `meters`, required to be zero; missing raises. |
-| `stdp` | Nonnegative `WaterPressure` in declared `mbar`, divided by 100; approximate MERMAID station depth in metres, positive down. |
+| `stla` | Matched `estimated_latitude`, in `degrees_north`. |
+| `stlo` | Matched `estimated_longitude`, in `degrees_east`. |
+| `stel` | Undefined. |
+| `stdp` | Nonnegative `measured_pressure` in `mbar` divided by 100. |
 
 The pressure conversion follows automaid's approximation: 100 mbar = 1 dbar
 corresponds to approximately one metre of MERMAID receiver (station) depth.
-Thus `stdp = WaterPressure / 100` describes the submerged station, in metres
+Thus `stdp = measured_pressure / 100` describes the submerged station, in metres
 positive downward. It uses no density model, latitude correction, or additional
 atmospheric-pressure correction, and does not reconstruct a depth trajectory.
 This package does not supply earthquake-source metadata or populate `evla`,
 `evlo`, `evel`, or `evdp`. The [coordinate convention](obspy-association.md#adopted-sea-level-reference)
 defines the vertical-reference limits.
 
-Missing pressure is accepted only for source `DataQuality="D"` (REQ).
+Missing pressure is accepted only for source quality `D` (REQ).
 `stdp` is then SAC undefined: -12345 in the stored numeric header, `None`
 through `SACTrace`, and absent from `stats.sac` when read as an ObsPy Trace.
 Missing DET pressure raises. Present pressure must have valid mbar units even
 for REQ. Downloaded MiniSEED quality never supplies this exception or a depth.
 Other rows and independent SAC files never fill missing values.
 
-For `anchor_segment`, the anchor's four geographic values apply to the entire
+For `anchor_segment`, the anchor's available geographic values apply to the entire
 window using the unchanged anchor geography. Source fields retain
 their original meanings. Subsequent trimming, merging, or resampling does not
 refresh the headers or revalidate association.
@@ -81,7 +81,7 @@ references can contain instrument, orientation, trigger, or calibration fields
 without a GeoCSV mapping. Compare absolute sample times rather than requiring
 the same split between reference-time fields and `b`.
 
-See [fixture provenance](../data/fixtures/association/README.md) for sampled
+See [fixture provenance](../data/fixtures/schema-1.0.0-rc2/README.md) for sampled
 product coverage and [open questions](open-questions.md#deferred-workflows-and-mappings)
 for deferred mappings. The read-only source reference is ObsPy commit
 `50033e1daf95233cd4f30e95a49c37fd50be2ccd`, especially

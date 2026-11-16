@@ -10,8 +10,7 @@ DIRECTORY = Path(__file__).parent / "fixtures/association/P0045_20220115"
 
 def test_fixture_bytes_match_provenance():
     manifest = json.loads((DIRECTORY / "manifest.json").read_text())
-    files = [manifest["geocsv"]]
-    files += [item[extension] for item in manifest["selected"]
+    files = [item[extension] for item in manifest["selected"]
               for extension in ("mseed", "sac")]
     for item in files:
         path = DIRECTORY / item["path"]

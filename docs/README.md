@@ -19,22 +19,10 @@ maintained references.
 
 ## Schema and producer
 
-- [MERMAID GeoCSV schema 1.0.0-rc1](format-spec.md): exact fields/header, row requirements and worked example.
+- [MERMAID GeoCSV schema 1.0.0-rc2](format-spec.md): exact fields/header, row requirements and worked example.
 - [Producer source rules](../../automaid/docs/geocsv.md) and [clock matrix](../../automaid/docs/clock-timing-matrix.md).
 
 ## Fixtures and sources
 
 - [Fixture roles and provenance](../data/fixtures/README.md).
-- [Fixture maintenance](../scripts/fixtures/README.md).
-- [GeoCSV v2.0.4](references/GeoCSV_v2.0.4.pdf) and [preserved specification examples](references/geocsv-v2.0.4-examples/README.md).
-- [Artifact-bound publication and validation records](../../mermaid-publisher/docs/geocsv/evidence.md).
-
-[Source verification records](audit/README.md) retain commit-specific audits;
-they do not replace current reference requirements.
-The [2026-11-06 release checklist](audit/release-audit-2026-11-06.md) links the
-publisher and consumer findings for the latest published full corpus.
-
-Publication requires complete Recording coverage, bound producer clash reports
-and hosted mapping/diff evidence. See the publisher
-[report contract](../../mermaid-publisher/docs/geocsv/publication-reports.md) and
-[full-corpus rc1 testing record](../../mermaid-publisher/docs/geocsv/full-corpus-rc1-publication.md).
+- [GeoCSV specification](references/GeoCSV_v2.0.4.pdf).

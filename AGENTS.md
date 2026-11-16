@@ -31,12 +31,7 @@ or invent zero, an empty identity, a timestamp, or another assumed value.
 Preserve explicit source values, including zero and literal two-space Location.
 CSV decoding, declared typing and documented projections from complete source
 values are permitted; they do not authorize inference or default filling.
-The zero Recording Elevation must come from the writer's explicit
-numeric cell `0`, with type `float` and unit `meters`. Never append a unit to
-the numeric cell. An adopted convention does not permit supplying an absent value. Ordinary
-function/configuration defaults are separate from this source-data rule.
-
-Finite signed Pressure-Absolute sensor readings preserve reported gauge error.
+Finite signed gauge pressure readings preserve reported gauge error.
 Recording pressure and crossing proxies remain nonnegative. Never clamp,
 replace, offset-correct or discard a reported gauge value during parsing or projection.
 
@@ -44,10 +39,11 @@ This repository does not handle earthquake parameters. Do not add earthquake-sou
 parameter inference, calculations, projections, or header mappings, including
 earthquake origin, hypocentre, depth, or magnitude. Geographic metadata describe
 MERMAID receiver (station) locations. The approximation 100 mbar per metre
-supplies station depth in SAC `stdp`. Optional SAC projections populate only
-`stla`, `stlo`, `stel`, and `stdp`; never populate earthquake-source `ev*` headers.
-GeoCSV `Derivation:Recording:<source>` rows describe original waveform segments,
-not earthquake-source metadata. Unsupported method identifiers raise.
+supplies station depth in SAC `stdp`. Rc2 uses `measured_pressure` for depth,
+leaves coordinate elevation absent, and leaves SAC `stel` undefined.
+Optional SAC projections populate only
+`stla`, `stlo`, and `stdp`; never populate earthquake-source `ev*` headers.
+`waveform` rows describe original waveform segments.
 
 Repository ethos: **simple rules, clear projections, and no surprise side effects**.
 Before changing association or describing ObsPy's main Stats attributes, consult
@@ -78,18 +74,12 @@ float directories contain paired SAC/MiniSEED waveforms and GeoCSV metadata
 (including `geo_DET_REQ.csv`). Reading and copying examples into this
 repository is authorized. Never write, rename, delete, regenerate, or otherwise
 modify anything in that source tree without the user's express instruction.
-Document fixture provenance. Copy both waveform formats for each selected
-basename. Complete association GeoCSV histories are local, Git-ignored copies;
-retain their provenance/hashes in the tracked manifest. Do not stage them.
-Use small association GeoCSV subsets for
-portable tests. Preserve original header and selected record bytes, retain
-nearby candidates and measurement context, and record the mapping from subset
-indices to original source-record indices. Subsets do not establish uniqueness
-across an entire source history. Keep complete local histories unchanged for
-separate corpus checks; ordinary tests must not depend on their availability.
-Original byte-preserving subsets remain source evidence, not an active legacy
-reader requirement. Create separate new-schema fixtures with documented source
-mapping and provenance; do not overwrite protected originals or archived bytes.
+Document fixture provenance. Copy the paired waveform formats for each
+selected example. Use small, byte-preserving rc2 subsets for ordinary tests.
+Record the source hash and the mapping from subset indices to original
+source-record indices. Retain nearby candidates and measurement context.
+Full-corpus validation belongs to the publisher and uses a separate source
+tree. Never modify protected originals or archived bytes.
 
 `$MERMAID/waveforms/mseed/` and `$MERMAID/waveforms/sac/` are additional
 authorized read-only references for the waveforms described by these GeoCSV
@@ -150,8 +140,8 @@ Retain DET Q and REQ D as useful lineage/validation evidence, independent of
 rate. Loss of these distinctions in EarthScope M data, overlaps, contiguity,
 and reconstruction of transformed/merged coverage remain open design questions.
 The first-segment option adopts anchor geography without claiming that
-reconstruction. The consumer copies anchor
-STLA/STLO/STDP/STEL to the window, including SAC export. Producer estimation
+reconstruction. The consumer copies available anchor
+STLA/STLO/STDP to the window, including SAC export. Producer estimation
 methods and scientific validation belong to versioned automaid and scientific
 publication; do not explain or endorse producer models here. Missing REQ pressure remains undefined; never borrow another row's
 pressure. Do not infer original segment identity from M.
@@ -173,7 +163,7 @@ conventions, and numeric precision for the comparisons. Do not promise whole
 SAC-header equivalence for fields without a GeoCSV source or agreed mapping.
 Supporting association of SAC-derived input traces is outside current scope.
 The optional `create_sac_header=True` association argument creates fresh
-`stats.sac` headers with ObsPy's default conversion plus only stla/stlo/stel/stdp
+`stats.sac` headers with ObsPy's default conversion plus only stla/stlo/stdp
 for either association label. The destination must be absent. ObsPy's
 Trace/Stream writer owns serialization; publisher-only tooling retains final
 waveform/export verification. Do not restore a public package writer. SAC waveform samples remain raw counts, subject
@@ -277,9 +267,8 @@ not compatibility targets. Do not reproduce their incidental limitations.
 `docs/format-spec.md` is the payload authority. Producer source precedence and
 clock behavior are documented in `../automaid/docs/geocsv.md` and its clock
 matrix. Keep all four repositories synchronized before suggesting commit messages.
-Only the controlled MERMAID schema is supported. Preserve literal two-space
-Location and project explicit Recording Elevation; missing required source
-values raise without defaults.
+Only MERMAID GeoCSV 1.0.0-rc2 is supported. Preserve literal two-space waveform
+location. Missing required source values raise without defaults.
 
 Documentation and tutorial filenames use lowercase kebab-case. Retain
 the conventional `README.md`, `LICENSE`, and `AGENTS.md` names.
@@ -337,11 +326,12 @@ frames, but not after arbitrary pandas transformations or file exports.
 Keep original GeoCSV header spellings as the DataFrame column labels. Preserve
 file-wide data-record order with a zero-based `RangeIndex` named
 `source_index`, excluding headers and comments, and keep
-timestamps as a `Time` column rather than an index because source timestamps
-need not be unique. Require the schema's UTC `Z` timestamp spelling with six
+timestamps as columns rather than an index because source timestamps need not
+be unique. Use `measured_time` and `derived_time` as declared.
+Require the schema's UTC `Z` timestamp spelling with six
 fractional digits; never infer a timezone for invalid or incomplete input.
 The digit count defines display format, not clock accuracy or measurement
-precision. Require dataset-first GeoCSV 2.0 and a supported MERMAID 1.0.0-family schema
+precision. Require dataset-first GeoCSV 2.0 and the MERMAID 1.0.0-rc2 schema
 declaration. Preserve the exact revision and raw comments in provenance. Trim
 only header syntax padding, including each metadata list value; data cells
 retain their literal contents. Missing, repeated or unsupported declarations raise.

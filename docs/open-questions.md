@@ -48,7 +48,7 @@ have SNCL `MH.P0006.00.BDH` on 2018-07-06:
 | Complete GeoCSV source index 101, DET | 01:49:28.613000 | 4,736 | Q |
 | Saved EarthScope response | 01:49:28.613021 | 4,800 | M |
 
-Indices refer to the shared [P0006 snapshot](../data/fixtures/P0006/README.md).
+Indices refer to the shared [P0006 snapshot](../data/fixtures/schema-1.0.0-rc2/README.md).
 Local original MiniSEED starts are 01:49:28.590640 for REQ and
 01:49:28.613021 for DET. The response sample array equals neither original;
 the rechecked response bytes equal the earlier saved response. Its original
@@ -74,16 +74,14 @@ reconstruction, StationXML/Inventory conversion and position epochs, live
 metadata synchronization, and package-managed association persistence.
 Production promotion remains a separate [hosting decision](hosting.md).
 
-Only four geographic SAC mappings are implemented; see [SAC](sac.md).
+See the geographic SAC mappings; see [SAC](sac.md).
 Additional mappings require explicit agreement:
 
 | Concern | Constraint |
 | --- | --- |
-| `TimeCorrectionApplied` | Automaid uses `user3` in seconds; retain as metadata, never apply twice. |
-| `ClockOffset` | Needs an agreed slot and units; not `b`, `o`, or a pick header. |
-| `InstrumentDescription` | `kinst` fits a short designation, not the full description. |
-| `MethodIdentifier` | No faithful dedicated SAC field; extracting a version loses source content. |
-| `DataQuality` | SAC `iqual` has different categories; no direct Q/D/M mapping. |
+| `time_correction_applied` | Automaid uses `user3` in seconds; retain as metadata, never apply twice. |
+| `clock_offset` | Needs an agreed slot and units; not `b`, `o`, or a pick header. |
+| `data_quality` | SAC `iqual` has different categories; no direct Q/D/M mapping. |
 | Orientation | Needs a source and agreed SEED/SAC conventions; hydrophone zeros would be an explicit choice. |
 | Calibration | Outside package scope; GeoCSV supplies no counts-to-Pa factor. |
 

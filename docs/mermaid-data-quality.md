@@ -2,7 +2,7 @@
 
 Automaid assigns MiniSEED quality `Q` to detected (DET) event products and `D`
 to requested (REQ) event products, independently of sampling rate. A detected
-waveform need not be at 20 Hz. The [fixture inventory](../data/fixtures/association/README.md)
+waveform need not be at 20 Hz. The [fixture inventory](../data/fixtures/schema-1.0.0-rc2/README.md)
 records observed product groups, exact headers, and the sampled source audit.
 This document describes producer behavior and preserved examples, not a
 complete instrument-generation specification.

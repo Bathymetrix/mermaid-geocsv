@@ -1,4 +1,4 @@
-"""ObsPy's fresh SAC baseline plus four GeoCSV station location fields."""
+"""ObsPy's fresh SAC baseline plus GeoCSV station location fields."""
 
 from dataclasses import replace
 import json
@@ -14,35 +14,33 @@ from obspy.io.sac import SACTrace
 from mermaid import geocsv
 
 
-FIXTURES = Path(__file__).parents[1] / "data/fixtures/association"
-MANIFEST = json.loads((FIXTURES / "manifest.json").read_text())
-EXAMPLES = MANIFEST["examples"]
+ROOT = Path(__file__).parents[1]
+FIXTURES = ROOT / "data/fixtures/P0006/waveforms"
+EXAMPLES = json.loads((FIXTURES / "manifest.json").read_text())["examples"]
 
 
 @pytest.fixture(scope="module")
 def subsets():
-    return {item["path"]: geocsv.read(FIXTURES.parent / "schema-1.0.0-rc1/association" / item["subset"]["path"])
-            for item in MANIFEST["geocsv"]}
+    return geocsv.read(ROOT / "data/fixtures/schema-1.0.0-rc2/P0006.geocsv")
 
 
 def event(subsets):
     example = EXAMPLES[0]
-    trace, = obspy.read(str(FIXTURES / example["mseed"]))
-    frame = subsets[example["geocsv"]][0].loc[[example["subset_record_index"]]].copy()
-    return trace, frame
+    trace, = obspy.read(str(FIXTURES / example["mseed"]["path"]))
+    return trace, subsets[0].loc[[example["source_record_index"]]].copy()
 
 
-@pytest.mark.parametrize("example", EXAMPLES, ids=lambda item: item["mseed"])
+@pytest.mark.parametrize("example", EXAMPLES, ids=lambda item: item["mseed"]["path"])
 def test_real_roundtrip_and_independent_sac_reference(example, subsets, tmp_path):
-    trace, = obspy.read(str(FIXTURES / example["mseed"]))
+    trace, = obspy.read(str(FIXTURES / example["mseed"]["path"]))
     original = trace.copy()
     baseline = SACTrace.from_obspy_trace(trace, keep_sac_header=False).to_obspy_trace(
         round_sampling_interval=False).stats.sac
-    assert geocsv.associate(trace, subsets[example["geocsv"]], create_sac_header=True) is None
+    assert geocsv.associate(trace, subsets, create_sac_header=True) is None
     source = trace.stats.geocsv
-    expected = dict(baseline, stla=float(source.Latitude), stlo=float(source.Longitude),
-                    stel=0.0, stdp=-12345.0 if pd.isna(source.WaterPressure)
-                    else float(source.WaterPressure) / 100)
+    expected = dict(baseline, stla=float(source.estimated_latitude), stlo=float(source.estimated_longitude),
+                    stdp=-12345.0 if pd.isna(source.measured_pressure)
+                    else float(source.measured_pressure) / 100)
     assert trace.stats.sac == expected
     assert all(trace.stats[key] == value for key, value in original.stats.items())
     np.testing.assert_array_equal(trace.data, original.data)
@@ -51,13 +49,13 @@ def test_real_roundtrip_and_independent_sac_reference(example, subsets, tmp_path
     trace.write(str(path), format="SAC")
     actual = SACTrace.read(str(path))
     # Independent comparison reference is never supplied to association.
-    reference = SACTrace.read(str(FIXTURES / example["sac"]))
-    for field, key in (("Latitude", "stla"), ("Longitude", "stlo")):
+    reference = SACTrace.read(str(FIXTURES / example["sac"]["path"]))
+    for field, key in (("estimated_latitude", "stla"), ("estimated_longitude", "stlo")):
         assert getattr(actual, key) == np.float32(source[field])
         tolerance = 0.5e-6 + abs(float(np.spacing(np.float32(getattr(reference, key)))))
         assert getattr(actual, key) == pytest.approx(getattr(reference, key), abs=tolerance)
     assert actual.stdp == reference.stdp
-    assert actual.stel == reference.stel == 0
+    assert actual.stel is None
     np.testing.assert_array_equal(actual.data, trace.data.astype(np.float32))
     np.testing.assert_array_equal(actual.data, reference.data)
     assert actual.npts == trace.stats.npts == reference.npts
@@ -104,16 +102,16 @@ def test_option_requires_bool(value):
 
 
 @pytest.mark.parametrize("field,value", [
-    ("Elevation", pd.NA), ("Elevation", 1), ("Latitude", pd.NA), ("Longitude", None), ("Latitude", 91),
-    ("Longitude", -181), ("Latitude", np.inf),
-    ("WaterPressure", pd.NA), ("WaterPressure", -1), ("WaterPressure", np.inf),
-    ("DataQuality", pd.NA),
+    ("estimated_latitude", pd.NA), ("estimated_longitude", None), ("estimated_latitude", 91),
+    ("estimated_longitude", -181), ("estimated_latitude", np.inf),
+    ("measured_pressure", pd.NA), ("measured_pressure", -1), ("measured_pressure", np.inf),
+    ("data_quality", pd.NA),
 ])
 def test_invalid_geographic_source_fails_without_mutation(subsets, field, value):
     trace, frame = event(subsets)
     frame.loc[:, field] = value
-    if field == "DataQuality":
-        frame.loc[:, "WaterPressure"] = pd.NA
+    if field == "data_quality":
+        frame.loc[:, "measured_pressure"] = pd.NA
     before = trace.copy()
     with pytest.raises(ValueError):
         geocsv.associate(trace, [frame], create_sac_header=True)
@@ -122,8 +120,8 @@ def test_invalid_geographic_source_fails_without_mutation(subsets, field, value)
 
 
 @pytest.mark.parametrize("field,unit", [
-    ("Elevation", "kilometers"), ("Latitude", "radians"), ("Longitude", None),
-    ("WaterPressure", "dbar"), ("SampleRate", "kilohertz"),
+    ("estimated_latitude", "radians"), ("estimated_longitude", None),
+    ("measured_pressure", "dbar"), ("sample_rate", "kilohertz"),
 ])
 def test_declared_units_are_required(subsets, field, unit):
     trace, frame = event(subsets)
@@ -139,8 +137,8 @@ def test_fresh_headers_source_quality_and_no_reread(subsets, monkeypatch, tmp_pa
     trace, frame = event(subsets)
     request = trace.copy()
     requested = frame.copy()
-    requested.loc[:, "WaterPressure"] = pd.NA
-    requested.loc[:, "DataQuality"] = "D"  # Synthetic policy case; native Q stays Q.
+    requested.loc[:, "measured_pressure"] = pd.NA
+    requested.loc[:, "data_quality"] = "D"  # Synthetic policy case; native Q stays Q.
     repeated = trace.copy()
     geocsv.associate(obspy.Stream([trace, repeated]), [frame], create_sac_header=True)
     assert repeated.stats.sac is not trace.stats.sac
@@ -155,7 +153,7 @@ def test_fresh_headers_source_quality_and_no_reread(subsets, monkeypatch, tmp_pa
     trace.stats.geocsv.metadata = replace(trace.stats.geocsv.metadata, source_path=tmp_path / "gone")
     monkeypatch.setattr(geocsv, "read", lambda *args: pytest.fail("must not reopen GeoCSV"))
     trace.write(str(tmp_path / "located.sac"), format="SAC")
-    assert SACTrace.read(str(tmp_path / "located.sac")).stla == np.float32(trace.stats.geocsv.Latitude)
+    assert SACTrace.read(str(tmp_path / "located.sac")).stla == np.float32(trace.stats.geocsv.estimated_latitude)
 
 
 def test_batch_projection_failure_is_transactional(subsets):
@@ -163,10 +161,10 @@ def test_batch_projection_failure_is_transactional(subsets):
     second = first.copy()
     second.stats.station = "BAD01"
     bad = good.copy()
-    bad.loc[:, "Station"] = second.stats.station
-    bad.loc[:, "WaterPressure"] = -1
+    bad.loc[:, "station"] = second.stats.station
+    bad.loc[:, "measured_pressure"] = -1
     before = [trace.copy() for trace in (first, second)]
-    with pytest.raises(ValueError, match="WaterPressure"):
+    with pytest.raises(ValueError, match="measured_pressure"):
         geocsv.associate(obspy.Stream([first, second]), [good, bad], create_sac_header=True)
     for trace, original in zip((first, second), before):
         assert trace.stats == original.stats
@@ -175,7 +173,7 @@ def test_batch_projection_failure_is_transactional(subsets):
 
 def test_default_does_not_require_pressure(subsets):
     trace, frame = event(subsets)
-    frame.loc[:, "WaterPressure"] = pd.NA
+    frame.loc[:, "measured_pressure"] = pd.NA
     geocsv.associate(trace, [frame])
     assert "sac" not in trace.stats
 
@@ -200,14 +198,14 @@ def test_clipped_real_det_uses_containing_anchor_geography(subsets, tmp_path, st
     geocsv.associate(trace, [frame], allow_first_segment=True, create_sac_header=True)
     source = trace.stats.geocsv
     assert source.association.type == "anchor_segment"
-    assert source.SampleCount != trace.stats.npts == source.association.waveform.sample_count == 25
+    assert source.sample_count != trace.stats.npts == source.association.waveform.sample_count == 25
     path = tmp_path / "clipped.sac"
     trace.write(str(path), format="SAC")
     actual = SACTrace.read(str(path))
-    assert actual.stla == np.float32(source.Latitude)
-    assert actual.stlo == np.float32(source.Longitude)
-    assert actual.stdp == np.float32(source.WaterPressure / 100)
-    assert actual.stel == 0
+    assert actual.stla == np.float32(source.estimated_latitude)
+    assert actual.stlo == np.float32(source.estimated_longitude)
+    assert actual.stdp == np.float32(source.measured_pressure / 100)
+    assert actual.stel is None
 
 
 def test_stream_mixes_standard_and_anchor_matches_with_fresh_sac_headers(subsets):
@@ -224,11 +222,11 @@ def test_stream_mixes_standard_and_anchor_matches_with_fresh_sac_headers(subsets
     assert [trace.stats.geocsv.association.type for trace in stream] == [
         "single_segment", "anchor_segment"]
     row = frame.iloc[0]
-    expected = {"stla": float(row.Latitude), "stlo": float(row.Longitude),
-                "stel": 0.0, "stdp": float(row.WaterPressure) / 100}
+    expected = {"stla": float(row.estimated_latitude), "stlo": float(row.estimated_longitude),
+                "stdp": float(row.measured_pressure) / 100}
     for trace, native in zip(stream, before):
         assert trace.stats.geocsv.source_index == frame.index[0]
-        assert trace.stats.geocsv.SampleCount == row.SampleCount
+        assert trace.stats.geocsv.sample_count == row.sample_count
         assert trace.stats.geocsv.association.waveform.sample_count == trace.stats.npts
         assert {key: trace.stats.sac[key] for key in expected} == expected
         assert all(trace.stats[key] == value for key, value in native.stats.items())

@@ -32,31 +32,28 @@ The examples use three isolated DET segments with complete pressure metadata:
 | 169 | 2018-07-12T06:51:58.293418Z | 4,448 | 0 |
 | 239 | 2018-07-15T22:48:15.969095Z | 5,440 | −1 |
 
-These are zero-based data-record indices in the pinned full P0006 history.
-The offline replay preserves these indices in an exact prefix fixture. The producer supplies six-digit source epochs;
+These are zero-based data-record indices in the included P0006 rc2 prefix.
+The prefix preserves the indices of the complete producer export. The producer supplies six-digit source epochs;
 display width does not establish clock accuracy. All three associate as
 `single_segment`. The [association tutorial](03_associate.md#3-associate-a-clipped-window)
 demonstrates `anchor_segment` and a
 [combined window](03_associate.md#4-associate-a-combined-window).
 
-## 1. Download the matching GeoCSV snapshot
+## 1. Open the matching rc2 GeoCSV fixture
 
-Pin the full-corpus testing snapshot so the example source indices refer to
-one immutable history. Older snapshots with the previous header are not
-compatible with this reader.
+The [P0006 rc2 prefix](../data/fixtures/schema-1.0.0-rc2/README.md) matches
+the three BDH acquisitions used in this example.
 
 ```python
+from pathlib import Path
 from mermaid import geocsv
 
-base_url = "https://bathymetrix.com/geocsv/testing/"
-release = "2026-11-05T23:41:47.235000Z"
-downloads = geocsv.fetch("P0006", base_url=base_url, release=release,
-                         output_dir=None)
-release = downloads[0].provenance.release_id
-tables = geocsv.read(downloads)
+root = Path.cwd()
+if root.name in {"docs", "tutorials"}:
+    root = root.parent
+tables = geocsv.read(root / "data/fixtures/schema-1.0.0-rc2/P0006.geocsv")
 records = tables[0]
-print(downloads[0].provenance.release_id)
-print(records.loc[[98, 169, 239], ["Time", "SampleCount"]])
+print(records.loc[[98, 169, 239], ["derived_time", "sample_count"]])
 ```
 
 ## 2. Download and associate the first detection
@@ -64,7 +61,7 @@ print(records.loc[[98, 169, 239], ["Time", "SampleCount"]])
 Use EarthScope's HTTPS service directly. The one-second margin around the
 source segment requests its complete first and last samples despite the
 GeoCSV timestamp/rate precision. It is a retrieval margin, not an association
-tolerance. `Time` is already corrected; do not apply `TimeCorrectionApplied`
+tolerance. `derived_time` is already corrected; do not apply `time_correction_applied`
 again. Leave quality selection unspecified.
 
 `filename` saves the raw service response before ObsPy's client parsing and
@@ -86,12 +83,12 @@ print(f"Downloads and SAC exports: {output_dir}")
 client = Client("https://service.earthscope.org", timeout=30)
 
 row = records.loc[98]
-start = UTCDateTime(row["Time"].isoformat())
-last_sample = start + (int(row["SampleCount"]) - 1) / float(row["SampleRate"])
+start = UTCDateTime(row["derived_time"].isoformat())
+last_sample = start + (int(row["sample_count"]) - 1) / float(row["sample_rate"])
 raw_path = output_dir / "P0006_record_98.mseed"
 client.get_waveforms(
-    network=row["Network"], station=row["Station"],
-    location=row["Location"], channel=row["Channel"],
+    network=row["network"], station=row["station"],
+    location=row["location"], channel=row["channel"],
     starttime=start - 1, endtime=last_sample + 1,
     filename=str(raw_path),
 )
@@ -111,9 +108,9 @@ match. The [July 6 REQ discrepancy](../docs/open-questions.md#p0006-july-6-req-r
 is excluded because its returned start does not match its original row and the
 containing-anchor candidates are ambiguous against this history.
 
-Association uses MiniSEED identity, timing, rate, and count plus the fetched
+Association uses MiniSEED identity, timing, rate, and count plus the rc2
 GeoCSV records. SAC references supply no matching hints or missing values.
-`create_sac_header=True` creates fresh SAC headers with four GeoCSV station
+`create_sac_header=True` creates fresh SAC headers with the available GeoCSV station
 fields; the waveform samples remain uncalibrated counts.
 
 ## 3. Save and reopen SAC
@@ -130,11 +127,11 @@ print(sac_path)
 ```
 
 SAC stores waveform samples and floating headers at float32 precision. The
-station fields are `stla`/`stlo` in degrees north/east, `stel = 0` metres at the
-adopted sea-level reference, and `stdp = WaterPressure / 100` in approximate
+station fields are `stla`/`stlo` in degrees north/east and
+`stdp = measured_pressure / 100` in approximate
 metres positive downward for the MERMAID receiver (station). Pressure is in
 mbar; 100 mbar corresponds to approximately 1 m of station depth under the
-MERMAID convention. Earthquake-source metadata and `ev*` projections are
+MERMAID convention. The rc2 export leaves `stel` undefined. Earthquake-source metadata and `ev*` projections are
 outside package scope. All three DET examples have pressure. Missing REQ pressure would remain undefined (`SACTrace.stdp is None`,
 with the SAC undefined sentinel stored on disk); it must not be borrowed from
 another record.
@@ -143,7 +140,7 @@ another record.
 
 Read the reference files only after association and export. The function below
 checks identity, count, absolute first-sample time, interval, waveform samples,
-and the four supported station fields. It is reused for the next two detections.
+and the supported station fields. It is reused for the next two detections.
 
 The recorded download-minus-original start offsets above are checked exactly
 in integer nanoseconds. Their cause is not established. They are observations
@@ -153,10 +150,10 @@ original starts.
 
 MiniSEED samples must equal the independent original exactly. Exported samples
 must equal both the downloaded samples converted to float32 and the independent
-SAC samples. Latitude/longitude must equal the GeoCSV values rounded to float32;
+SAC samples. estimated_latitude/longitude must equal the GeoCSV values rounded to float32;
 the independent SAC comparison allows one float32 representable step (one ULP)
-because the calculations can round differently. Depth/elevation must agree
-exactly. The exported SAC start must agree with the downloaded start within
+because the calculations can round differently. Depth must agree exactly. The independent SAC stores zero elevation, while
+the rc2 export leaves elevation undefined. The exported SAC start must agree with the downloaded start within
 1 microsecond and retain the recorded offset from the reference SAC start
 within 1 microsecond. This is a storage allowance for these fixture comparisons,
 not a general SAC timing guarantee. Compare absolute start times,
@@ -190,14 +187,15 @@ def compare_with_fixtures(waveform, exported, basename, start_offset_ns):
     np.testing.assert_array_equal(exported.data, waveform.data.astype(np.float32))
     np.testing.assert_array_equal(exported.data, reference.data)
 
-    for key, field in (("stla", "Latitude"), ("stlo", "Longitude")):
+    for key, field in (("stla", "estimated_latitude"), ("stlo", "estimated_longitude")):
         assert getattr(exported, key) == np.float32(waveform.stats.geocsv[field])
         np.testing.assert_array_max_ulp(
             np.float32(getattr(exported, key)),
             np.float32(getattr(reference, key)), maxulp=1,
         )
-    assert exported.stel == reference.stel == 0.0
-    assert exported.stdp == np.float32(waveform.stats.geocsv.WaterPressure / 100)
+    assert exported.stel is None
+    assert reference.stel == 0.0
+    assert exported.stdp == np.float32(waveform.stats.geocsv.measured_pressure / 100)
     assert exported.stdp == reference.stdp
 
 
@@ -227,12 +225,12 @@ additional_examples = [
 ]
 for record_index, basename, start_offset_ns in additional_examples:
     row = records.loc[record_index]
-    start = UTCDateTime(row["Time"].isoformat())
-    last_sample = start + (int(row["SampleCount"]) - 1) / float(row["SampleRate"])
+    start = UTCDateTime(row["derived_time"].isoformat())
+    last_sample = start + (int(row["sample_count"]) - 1) / float(row["sample_rate"])
     raw_path = output_dir / f"P0006_record_{record_index}.mseed"
     client.get_waveforms(
-        network=row["Network"], station=row["Station"],
-        location=row["Location"], channel=row["Channel"],
+        network=row["network"], station=row["station"],
+        location=row["location"], channel=row["channel"],
         starttime=start - 1, endtime=last_sample + 1,
         filename=str(raw_path),
     )

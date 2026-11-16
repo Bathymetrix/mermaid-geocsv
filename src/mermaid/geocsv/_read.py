@@ -125,36 +125,44 @@ class GeoCSVError(ValueError):
     """Error raised for invalid or unsupported GeoCSV content."""
 
 
-_SCHEMA_VERSION = re.compile(r"1\.0\.0(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?\Z")
+_SCHEMA_VERSION = "1.0.0-rc2"
 _COLUMNS = (
-    "MethodIdentifier", "Time", "Network", "Station", "Location", "Channel",
-    "DataQuality", "Latitude", "Longitude", "Elevation", "WaterPressure",
-    "InstrumentDescription", "SampleRate", "SampleCount", "ClockOffset",
-    "TimeCorrectionApplied",
+    "type", "measured_time", "derived_time", "network", "station", "location",
+    "channel", "data_quality", "measured_latitude", "measured_longitude",
+    "estimated_latitude", "estimated_longitude", "measured_pressure",
+    "estimated_pressure", "sample_rate", "sample_count", "clock_offset",
+    "time_correction_applied",
 )
-_TYPES = ("string", "datetime", "string", "string", "string", "string", "string",
-          "float", "float", "float", "float", "string", "float", "integer", "float", "float")
-_UNITS = ("unitless", "iso8601", "unitless", "unitless", "unitless", "unitless", "unitless",
-          "degrees_north", "degrees_east", "meters", "mbar", "unitless", "hertz", "unitless",
-          "seconds", "seconds")
+_TYPES = ("string", "datetime", "datetime", "string", "string", "string", "string",
+              "string", "float", "float", "float", "float", "float", "float", "float",
+              "integer", "float", "float")
+_UNITS = ("unitless", "iso8601", "iso8601", "unitless", "unitless", "unitless",
+              "unitless", "unitless", "degrees_north", "degrees_east", "degrees_north",
+              "degrees_east", "mbar", "mbar", "hertz", "unitless", "seconds", "seconds")
+_CROSSING_FIELDS = ("derived_time", "estimated_latitude", "estimated_longitude", "estimated_pressure")
+_REQUIRED = {
+    "gps": ("measured_time", "measured_latitude", "measured_longitude"),
+    "pressure": ("measured_time", "measured_pressure"),
+    "downcrossing": _CROSSING_FIELDS,
+    "upcrossing": _CROSSING_FIELDS,
+    "waveform": ("derived_time", "location", "channel", "data_quality", "estimated_latitude",
+                 "estimated_longitude", "sample_rate", "sample_count", "time_correction_applied"),
+}
+_OPTIONAL = {
+    "gps": {"clock_offset"}, "pressure": {"estimated_latitude", "estimated_longitude"},
+    "downcrossing": set(), "upcrossing": set(), "waveform": {"measured_pressure"},
+}
 _REQUIRED_HEADERS = {"dataset", "schema", "created", "delimiter", "lineterminator", "field_type", "field_unit"}
 _FIELD_HEADERS = {"field_type", "field_unit", "field_long_name", "field_standard_name"}
 _INTEGER = re.compile(r"[+-]?[0-9]+\Z")
 _FLOAT = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?\Z")
 _UTC = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z\Z")
-_METHODS = {
-    ("Measurement", "Position"), ("Measurement", "Pressure-Absolute"),
-    ("Derivation", "Recording"), ("Interpolation", "Crossing-Descent"),
-    ("Interpolation", "Crossing-Ascent"),
-}
-
-
 def read(
     source: str | PathLike[str] | bytes | GeoCSVFetchResult | list[GeoCSVFetchResult]
     | tuple[GeoCSVFetchResult, ...],
     *, datetime_timezone: str | tzinfo | None = None,
 ) -> list[pd.DataFrame]:
-    """Read controlled MERMAID GeoCSV schema 1.0.0 into typed tables.
+    """Read MERMAID GeoCSV 1.0.0-rc2 into typed tables.
 
     Parameters
     ----------
@@ -294,7 +302,7 @@ def _timestamp(value: str) -> pd.Timestamp:
 def _convert_value(value: str, field_type: str, field_name: str) -> object:
     if value == "":
         return pd.NaT if field_type == "datetime" else pd.NA
-    if not value.strip() and not (field_name == "Location" and value == "  "):
+    if not value.strip() and not (field_name == "location" and value == "  "):
         raise ValueError("whitespace-only values are invalid")
     if field_type == "string":
         return value
@@ -317,57 +325,44 @@ def _convert_value(value: str, field_type: str, field_name: str) -> object:
     return number
 
 
-def _validate_row(row: Mapping, line_number: int) -> None:
-    """Check the selected row matrix without repairing source values."""
+def _validate_row(row, line_number):
+    """Validate the producer's measured and derived field groups."""
+    common = {"type", "network", "station"}
+
     def require(fields):
-        for name in fields:
+        for name in sorted(fields):
             if pd.isna(row[name]):
                 raise GeoCSVError(f"line {line_number}: missing required {name}")
 
-    require(("MethodIdentifier", "Time", "Network", "Station", "InstrumentDescription"))
-    parts = row["MethodIdentifier"].split(":")
-    if (len(parts) != 3 or tuple(parts[:2]) not in _METHODS or not parts[2]
-            or any(character.isspace() for character in parts[2])):
-        raise GeoCSVError(f"line {line_number}: unsupported MethodIdentifier {row['MethodIdentifier']!r}")
-    subject = parts[1]
-    if parts[0] != "Measurement" and (not parts[2].startswith("automaid-") or not parts[2][9:]):
-        raise GeoCSVError(f"line {line_number}: derivation/interpolation requires an automaid version")
-    model = row["InstrumentDescription"]
-    if not model.startswith("MERMAID_") or not model[8:].strip():
-        raise GeoCSVError(f"line {line_number}: InstrumentDescription requires MERMAID_<model>")
-    applicable = {"MethodIdentifier", "Time", "Network", "Station", "InstrumentDescription"}
-    if subject == "Position":
-        require(("Latitude", "Longitude"))
-        applicable.update(("Latitude", "Longitude", "ClockOffset"))
-    elif subject == "Pressure-Absolute":
-        require(("WaterPressure",))
-        applicable.add("WaterPressure")
-    elif subject == "Recording":
-        require(("Location", "Channel", "DataQuality", "Latitude", "Longitude", "Elevation",
-                 "SampleRate", "SampleCount", "TimeCorrectionApplied"))
-        applicable.update(("Location", "Channel", "DataQuality", "Latitude", "Longitude", "Elevation",
-                           "WaterPressure", "SampleRate", "SampleCount", "TimeCorrectionApplied"))
-        if row["DataQuality"] not in {"Q", "D"}:
-            raise GeoCSVError(f"line {line_number}: Recording DataQuality must be Q or D")
-        if row["DataQuality"] == "Q":
-            require(("WaterPressure",))
-        if row["Elevation"] != 0:
-            raise GeoCSVError(f"line {line_number}: Recording Elevation must be zero meters")
-    else:
-        require(("Latitude", "Longitude", "WaterPressure"))
-        applicable.update(("Latitude", "Longitude", "WaterPressure"))
-    for name in _COLUMNS:
-        value = row[name]
-        if name not in applicable and not pd.isna(value):
-            raise GeoCSVError(f"line {line_number}: {name} is inapplicable to {subject}")
-    for name, lower, upper in (("Latitude", -90, 90), ("Longitude", -180, 180)):
-        if not pd.isna(row[name]) and not lower <= row[name] <= upper:
-            raise GeoCSVError(f"line {line_number}: {name} outside [{lower}, {upper}]")
-    for name in ("WaterPressure", "SampleRate", "SampleCount"):
-        value = row[name]
-        if not pd.isna(value) and ((value < 0 and not (name == "WaterPressure" and subject == "Pressure-Absolute"))
-                                      or (name != "WaterPressure" and value == 0)):
-            raise GeoCSVError(f"line {line_number}: {name} outside its permitted domain")
+    require(common)
+    kind = row["type"]
+    if kind not in _REQUIRED:
+        raise GeoCSVError(f"line {line_number}: unsupported row type {kind!r}")
+    required = _REQUIRED[kind]
+    require(required)
+    applicable = common.union(required, _OPTIONAL[kind])
+    for name in row:
+        if name not in applicable and not pd.isna(row[name]):
+            raise GeoCSVError(f"line {line_number}: {name} is inapplicable to {kind}")
+    if kind == "pressure" and pd.isna(row["estimated_latitude"]) != pd.isna(row["estimated_longitude"]):
+        raise GeoCSVError(f"line {line_number}: pressure estimated coordinates must occur together")
+    if kind == "waveform":
+        if row["data_quality"] not in {"Q", "D"}:
+            raise GeoCSVError(f"line {line_number}: waveform data_quality must be Q or D")
+        if row["data_quality"] == "Q":
+            require(("measured_pressure",))
+        if row["sample_rate"] <= 0 or row["sample_count"] <= 0:
+            raise GeoCSVError(f"line {line_number}: waveform sample_rate and sample_count must be positive")
+        if not pd.isna(row["measured_pressure"]) and row["measured_pressure"] < 0:
+            raise GeoCSVError(f"line {line_number}: waveform measured_pressure must be nonnegative")
+    elif kind in {"downcrossing", "upcrossing"} and row["estimated_pressure"] < 0:
+        raise GeoCSVError(f"line {line_number}: estimated_pressure must be nonnegative")
+    for prefix in ("measured", "estimated"):
+        for coordinate, limit in (("latitude", 90), ("longitude", 180)):
+            name = f"{prefix}_{coordinate}"
+            value = row[name]
+            if not pd.isna(value) and not -limit <= value <= limit:
+                raise GeoCSVError(f"line {line_number}: {name} outside [{-limit}, {limit}]")
 
 
 def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list[pd.DataFrame]:
@@ -379,7 +374,6 @@ def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list
         raise GeoCSVError("schema requires dataset: GeoCSV 2.0 on the first physical line")
     comments = [dataset]
     declarations = {"dataset": dataset}
-    columns = {name: [] for name in _COLUMNS}
     data_lines = []
     header_seen = False
     identities = {}
@@ -405,11 +399,9 @@ def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list
                                   ("lineterminator", r"\n")):
                 if declarations[key].value != expected:
                     raise GeoCSVError(f"line {declarations[key].line_number}: #{key} must be {expected!r}")
-            schema = declarations["schema"].value
-            prefix = "MERMAID GeoCSV v"
-            schema_version = schema.removeprefix(prefix)
-            if not schema.startswith(prefix) or not _SCHEMA_VERSION.fullmatch(schema_version):
-                raise GeoCSVError("unsupported schema; requires MERMAID GeoCSV v1.0.0 family")
+            if declarations["schema"].value != f"MERMAID GeoCSV v{_SCHEMA_VERSION}":
+                raise GeoCSVError(f"unsupported schema; requires MERMAID GeoCSV v{_SCHEMA_VERSION}")
+            columns = {name: [] for name in _COLUMNS}
             try:
                 _timestamp(declarations["created"].value)
             except (ValueError, OverflowError) as exc:
@@ -418,8 +410,8 @@ def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list
                 declaration = declarations[key]
                 values = [value.strip() for value in _csv_record(
                     declaration.value + "\n", iter(()), ",", declaration.line_number)]
-                if len(values) != 16:
-                    raise GeoCSVError(f"line {declaration.line_number}: #{key} requires 16 entries")
+                if len(values) != len(_COLUMNS):
+                    raise GeoCSVError(f"line {declaration.line_number}: #{key} requires {len(_COLUMNS)} entries")
                 expected = {"field_type": _TYPES, "field_unit": _UNITS}.get(key)
                 if expected is not None and tuple(values) != expected:
                     raise GeoCSVError(f"line {declaration.line_number}: #{key} differs from MERMAID schema")
@@ -429,8 +421,8 @@ def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list
             header_seen = True
             continue
         cells = _csv_record(line, lines, ",", line_number)
-        if len(cells) != 16:
-            raise GeoCSVError(f"line {line_number}: data row has {len(cells)} fields; expected 16")
+        if len(cells) != len(_COLUMNS):
+            raise GeoCSVError(f"line {line_number}: data row has {len(cells)} fields; expected {len(_COLUMNS)}")
         row = {}
         for name, value, field_type in zip(_COLUMNS, cells, _TYPES):
             try:
@@ -438,7 +430,7 @@ def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list
             except (ValueError, OverflowError) as exc:
                 raise GeoCSVError(f"line {line_number}, field {name!r}: invalid {field_type} value {value!r}: {exc}") from exc
         _validate_row(row, line_number)
-        for name in ("Network", "Station", "InstrumentDescription"):
+        for name in ("network", "station"):
             if name in identities and row[name] != identities[name]:
                 raise GeoCSVError(f"line {line_number}: mixed {name} within one instrument file")
             identities[name] = row[name]
@@ -463,12 +455,14 @@ def _read_datasets(lines, source_path, datetime_timezone, download=None) -> list
         typed[name] = array
     frame = pd.DataFrame(typed, index=pd.RangeIndex(len(data_lines), name="source_index"))
     frame.attrs["geocsv"] = GeoCSVMetadata(
-        source_path=source_path, comments=tuple(comments), schema_version=schema_version,
+        source_path=source_path, comments=tuple(comments), schema_version=_SCHEMA_VERSION,
         created=declarations["created"].value, field_types=dict(zip(_COLUMNS, _TYPES)),
         field_units=dict(zip(_COLUMNS, _UNITS)),
         field_long_names=dict(zip(_COLUMNS, declarations["field_long_name"])) if "field_long_name" in declarations else {},
         field_standard_names=dict(zip(_COLUMNS, declarations["field_standard_name"])) if "field_standard_name" in declarations else {},
-        delimiter=",", datetime_resolution_ns={"Time": {i: 1000 for i in frame.index}},
+        delimiter=",", datetime_resolution_ns={
+            name: {i: 1000 for i, value in enumerate(columns[name]) if not pd.isna(value)}
+            for name, kind in zip(_COLUMNS, _TYPES) if kind == "datetime"},
         download=download, line_numbers=dict(enumerate(data_lines)),
     )
     return [frame]

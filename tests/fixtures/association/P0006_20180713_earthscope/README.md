@@ -16,34 +16,9 @@ headers are in `manifest.json`. `earthscope.mseed` is the exact response body:
 The manifest is sufficient to repeat the request as a separate live experiment;
 a later service response need not have identical bytes or segmentation.
 
-The source metadata is the existing tracked full
-[`P0006.geocsv`](../../../../data/fixtures/P0006/P0006.geocsv), refreshed
-verbatim from the then-current processed automaid v4.5.14 export on 2026-10-21,
-with its source path and hash retained in the manifest. These historical bytes
-remain unchanged and are not parsed by the current reader. Current tests use
-the separate [schema subset](../../../../data/fixtures/schema-1.0.0/earthscope/P0006.geocsv),
-whose [manifest](../../../../data/fixtures/schema-1.0.0/manifest.json) records
-source mappings and representation changes. It preserves indices 237 and 238;
-physical line numbers refer to the new file when association reports them.
-Rows 237 and 238 (zero-based
-file-wide records, physical starting lines 247 and 248) describe overlapping
-DET and REQ segments. Row 236 is nearby pressure context; row 239 is the next
-event. The current test matches within the retained schema subset, including competing
-rows. It does not establish uniqueness across omitted full-history records.
-
-| Original | Start UTC | Last sample UTC | Samples | Quality |
-| --- | --- | --- | ---: | --- |
-| DET, `20180713T094803.06_5B4C1D4F.MER.DET.WLT5` | 09:48:03.139974 | 09:52:01.405959 | 4,768 | Q |
-| REQ, `20180713T094831.06_5B6DEF16.MER.REQ.WLT5` | 09:48:31.908782 | 09:56:31.689607 | 9,600 | D |
-
-The request begins inside the DET segment, before the REQ begins. It ends
-inside the REQ segment, after the DET ends. Both original rates are
-20.007052186177717 Hz. Both `.mseed` and `.sac` originals were copied verbatim
-from authorized `$MERMAID/waveforms/` references; the manifest records source
-paths, resolved protected processed paths, byte counts, hashes and waveform
-headers. No originals or symlinks were modified. SAC files are comparison
-references, not association inputs. The repeated REQ deliveries documented in
-the historical observations are not copied again.
+Association uses the [rc2 P0006 prefix](../../../../data/fixtures/schema-1.0.0-rc2/P0006.geocsv).
+The [subset manifest](../../../../data/fixtures/schema-1.0.0-rc2/manifest.json)
+preserves the source index and the export hash.
 
 ## Observed response and expected behavior
 
@@ -55,24 +30,24 @@ The request times need not themselves lie on a sample grid.
 
 - Strict association rejects the changed start/count.
 - `allow_first_segment=True` succeeds without a timing override.
-  The REQ range's approximately 21.8 ms offset fits the automatic half-sample
+  The REQ range's approximately 21.0 ms offset fits the automatic half-sample
   allowance of approximately 24.991 ms. Strict start/containment tolerance is
   separate from source-grid placement. Exact midpoint ties,
   excessive endpoint drift and incomplete coverage still raise.
 - The geographic anchor is DET row 237. Clipped source ranges are `[0, 4630)`
   and `[438, 9403)`. Their 4,192-sample overlap is counted once, leaving exactly
   9,403 covered samples. Source counts remain 4,768 and 9,600.
-- The association report records a 6.898533 s waveform-minus-anchor start
-  offset, a maximum boundary-grid difference of 0.021813578 s at waveform
+- The association report records a 6.897559 s waveform-minus-anchor start
+  offset, a maximum boundary-grid difference of 0.021031578 s at waveform
   sample 438 / source row 238, and a maximum rate difference of approximately
   0.000000186178 Hz against the refreshed GeoCSV. These are different quantities.
 - SAC export preserves the returned samples at SAC float32 precision and uses
-  the DET anchor's STLA/STLO/STDP/STEL, compared with its independently read
+  the DET anchor's STLA/STLO/STDP, compared with its independently read
   paired SAC reference. Latitude/longitude must exactly equal the current
   GeoCSV values rounded to SAC float32, and may differ from the independent
   reference by at most one float32 representable step (one ULP). This allows
   the current float64 calculation to round differently without a general
-  relative-error allowance. Depth and elevation still require exact equality.
+  relative-error allowance. Depth requires exact equality, and exported elevation is undefined.
   It does not reconstruct other original SAC headers.
 
 For this specific response, the first 4,630 samples equal DET samples

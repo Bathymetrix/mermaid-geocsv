@@ -2,9 +2,8 @@
 
 Read the included P0006 data and make two plots with pandas and Matplotlib.
 These examples run offline and perform analysis after parsing. The
-[schema-converted subset](../data/fixtures/schema-1.0.0-rc1/README.md) retains
-selected historical records, including 12 GPS fixes for 2019; these plots do
-not represent a complete instrument history.
+[rc2 subset](../data/fixtures/schema-1.0.0-rc2/README.md) contains the
+first 300 rows of the producer export.
 
 Companions: [Markdown](06_plotting.md) · [Notebook](06_plotting.ipynb).
 
@@ -31,7 +30,7 @@ root = Path.cwd()
 if root.name in {"docs", "tutorials"}:
     root = root.parent
 
-records = geocsv.read(root / "data/fixtures/schema-1.0.0-rc1/P0006/P0006.geocsv")[0]
+records = geocsv.read(root / "data/fixtures/schema-1.0.0-rc2/P0006.geocsv")[0]
 ```
 
 ## 2. Plot pressure measurements
@@ -41,14 +40,14 @@ in mbar, without converting them to depth:
 
 ```python
 pressure = records.loc[
-    records["MethodIdentifier"].str.startswith("Measurement:Pressure-Absolute")
-    & records["Time"].ge("2018-06-27")
-    & records["Time"].lt("2018-07-11")
-].dropna(subset=["WaterPressure"]).sort_values("Time")
+    records["type"].eq("pressure")
+    & records["measured_time"].ge("2018-06-27")
+    & records["measured_time"].lt("2018-07-11")
+].dropna(subset=["measured_pressure"]).sort_values("measured_time")
 
 fig, ax = plt.subplots(figsize=(9, 3))
-ax.plot(pressure["Time"], pressure["WaterPressure"])
-ax.set(xlabel="Time (UTC)", ylabel="WaterPressure (mbar)",
+ax.plot(pressure["measured_time"], pressure["measured_pressure"])
+ax.set(xlabel="Time (UTC)", ylabel="Gauge pressure (mbar)",
        title="P0006 pressure measurements")
 fig.autofmt_xdate()
 fig.tight_layout()
@@ -57,19 +56,17 @@ plt.show()
 
 ## 3. Plot GPS latitude over time
 
-GPS records describe surface fixes. This plot selects the fixes from 2019:
+GPS records describe surface fixes. This plot selects the fixes in the included prefix:
 
 ```python
 gps = records.loc[
-    records["MethodIdentifier"].str.startswith("Measurement:Position")
-    & records["Time"].ge("2019-01-01")
-    & records["Time"].lt("2020-01-01")
-].dropna(subset=["Latitude"]).sort_values("Time")
+    records["type"].eq("gps")
+].dropna(subset=["measured_latitude"]).sort_values("measured_time")
 
 fig, ax = plt.subplots(figsize=(9, 3))
-ax.scatter(gps["Time"], gps["Latitude"], s=10)
+ax.scatter(gps["measured_time"], gps["measured_latitude"], s=10)
 ax.set(xlabel="Time (UTC)", ylabel="Latitude (degrees north)",
-       title="P0006 GPS fixes in 2019")
+       title="P0006 GPS fixes")
 fig.autofmt_xdate()
 fig.tight_layout()
 plt.show()

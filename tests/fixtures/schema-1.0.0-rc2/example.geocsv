@@ -1,0 +1,18 @@
+# dataset: GeoCSV 2.0
+# schema: MERMAID GeoCSV v1.0.0-rc2
+# created: 2026-10-29T00:00:00.123456Z
+# description: Synthetic schema example; not an observed instrument history
+# producer: Synthetic test data
+# lineterminator: \n
+# delimiter: ,
+# field_unit: unitless,iso8601,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,degrees_north,degrees_east,mbar,mbar,hertz,unitless,seconds,seconds
+# field_type: string,datetime,datetime,string,string,string,string,string,float,float,float,float,float,float,float,integer,float,float
+type,measured_time,derived_time,network,station,location,channel,data_quality,measured_latitude,measured_longitude,estimated_latitude,estimated_longitude,measured_pressure,estimated_pressure,sample_rate,sample_count,clock_offset,time_correction_applied
+gps,2026-01-01T12:00:00.000000Z,,MH,PTEST,,,,-20.123456,-150.654321,,,,,,,2.000000,
+pressure,2026-01-01T12:00:01.000000Z,,MH,PTEST,,,,,,,,1013,,,,,
+downcrossing,,2026-01-01T12:10:00.000000Z,MH,PTEST,,,,,,-20.123500,-150.654400,,5000,,,,
+waveform,,2026-01-01T12:20:00.250000Z,MH,PTEST,  ,BDH,Q,,,-20.123600,-150.654500,123400,,20.000000,2000,,-0.750000
+upcrossing,,2026-01-01T13:00:00.000000Z,MH,PTEST,,,,,,-20.124000,-150.655000,,5000,,,,
+gps,2026-01-01T13:10:00.000000Z,,MH,PTEST,,,,-20.124100,-150.655100,,,,,,,,
+gps,2026-01-01T14:00:00.000000Z,,MH,PTEST,,,,-20.124200,-150.655200,,,,,,,-1.000000,
+waveform,,2026-01-01T14:20:01.500000Z,MH,PTEST,01,BDH,D,,,-20.124300,-150.655300,,,20.000000,2400,,1.500000

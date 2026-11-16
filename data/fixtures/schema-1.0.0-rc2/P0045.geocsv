@@ -1,0 +1,19 @@
+# dataset: GeoCSV 2.0
+# schema: MERMAID GeoCSV v1.0.0-rc2
+# created: 2026-11-16T18:00:00.000000Z
+# description: Mobile Earthquake Recorder in Marine Areas by Independent Divers (MERMAID) hydrophone metadata (http://earthscopeoceans.org)
+# producer: automaid v4.11.2 (https://github.com/earthscopeoceans/automaid, doi: 10.5281/zenodo.5057096) creates GeoCSVs from MERMAID data
+# publisher: mermaid-publisher (https://github.com/bathymetrix/mermaid-publisher) validates and publishes immutable GeoCSV snapshots
+# hoster: bathymetrix (https://bathymetrix.com) provides read-only GeoCSV snapshot web hosting
+# consumer: mermaid-geocsv (https://github.com/bathymetrix/mermaid-geocsv) fetches, parses, and associates GeoCSV snapshots with ObsPy objects
+# lineterminator: \n
+# delimiter: ,
+# field_unit: unitless,iso8601,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,degrees_north,degrees_east,mbar,mbar,hertz,unitless,seconds,seconds
+# field_type: string,datetime,datetime,string,string,string,string,string,float,float,float,float,float,float,float,integer,float,float
+type,measured_time,derived_time,network,station,location,channel,data_quality,measured_latitude,measured_longitude,estimated_latitude,estimated_longitude,measured_pressure,estimated_pressure,sample_rate,sample_count,clock_offset,time_correction_applied
+waveform,,2022-01-15T03:44:44.916327Z,MH,P0045,00,BDH,D,,,-25.295360,-165.846067,,,20.006972,36000,,-0.085629
+waveform,,2022-01-15T04:14:44.912992Z,MH,P0045,10,BDH,D,,,-25.295510,-165.846595,,,40.013945,46216,,-0.086440
+waveform,,2022-01-15T04:33:58.910159Z,MH,P0045,00,BDH,D,,,-25.295606,-165.846933,,,20.006972,9696,,-0.086960
+waveform,,2022-01-15T04:42:02.916205Z,MH,P0045,00,BDH,D,,,-25.295647,-165.847075,,,20.006972,36000,,-0.087178
+waveform,,2022-01-15T05:12:02.912869Z,MH,P0045,00,BDH,D,,,-25.295797,-165.847603,,,20.006972,36000,,-0.087990
+waveform,,2022-01-15T05:40:35.640608Z,MH,P0045,00,BDH,Q,,,-25.295940,-165.848105,153500,,20.006972,4000,,-0.088761

@@ -3,18 +3,10 @@
   "collected": "2026-10-27",
   "obspy_version": "1.5.1",
   "obspy_source_commit": "50033e1daf95233cd4f30e95a49c37fd50be2ccd",
-  "geocsv": {
-    "path": "../P0006.geocsv",
-    "size_bytes": 3001072,
-    "sha256": "93e8807306731191545845d58bb410480ed219b6e8129d381b22fcdcf9379080",
-    "source_path": "/Users/jdsimon/mermaid/processed/452.020-P-06/geo_DET_REQ.csv",
-    "release_id": "2026-10-21T22:48:33.277Z",
-    "testing_only": true
-  },
   "examples": [
     {
       "source_record_index": 98,
-      "source_line_number": 108,
+      "source_line_number": 112,
       "basename": "20180629T170731.06_5B3F1904.MER.DET.WLT5",
       "association_type": "single_segment",
       "mseed": {
@@ -68,7 +60,7 @@
     },
     {
       "source_record_index": 169,
-      "source_line_number": 179,
+      "source_line_number": 183,
       "basename": "20180712T065158.06_5B4748AE.MER.DET.WLT5",
       "association_type": "single_segment",
       "mseed": {
@@ -122,7 +114,7 @@
     },
     {
       "source_record_index": 239,
-      "source_line_number": 249,
+      "source_line_number": 253,
       "basename": "20180715T224815.06_5B4C1D4F.MER.DET.WLT5",
       "association_type": "single_segment",
       "mseed": {

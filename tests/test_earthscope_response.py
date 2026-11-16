@@ -19,8 +19,7 @@ MANIFEST = json.loads((FIXTURE / "manifest.json").read_text())
 
 def test_response_provenance_and_known_overlapping_originals():
     request = MANIFEST["request"]
-    geocsv_source = MANIFEST["geocsv"]
-    files = [request, geocsv_source]
+    files = [request]
     files.extend(original[extension] for original in MANIFEST["originals"]
                  for extension in ("mseed", "sac"))
     for item in files:
@@ -63,7 +62,7 @@ def test_response_provenance_and_known_overlapping_originals():
 def test_clipped_earthscope_response_association_and_sac_export(tmp_path):
     # Read raw response bytes directly: no client trim, explicit merge, resampling or fill.
     waveform, = obspy.read(str(FIXTURE / MANIFEST["request"]["path"]), format="MSEED")
-    tables = geocsv.read(Path(__file__).parents[1] / "data/fixtures/schema-1.0.0-rc1/earthscope/P0006.geocsv")
+    tables = geocsv.read(Path(__file__).parents[1] / "data/fixtures/schema-1.0.0-rc2/P0006.geocsv")
     original = waveform.copy()
     with pytest.raises(ValueError, match="no match"):
         geocsv.associate(waveform, tables, time_tolerance=0.001)
@@ -75,24 +74,24 @@ def test_clipped_earthscope_response_association_and_sac_export(tmp_path):
     report = attached.association
     assert report.type == "anchor_segment"
     assert attached.source_index == 237
-    assert attached.SampleCount == 4768
-    assert attached.DataQuality == "Q"  # Native archive M is not a selection hint.
+    assert attached.sample_count == 4768
+    assert attached.data_quality == "Q"  # Native archive M is not a selection hint.
     assert report.waveform.sample_count == waveform.stats.npts == 9403
-    assert report.waveform_start_offset_seconds == 6.898533
+    assert report.waveform_start_offset_seconds == 6.897559
     first, second = report.coverage_segments
     assert first.location == second.location == waveform.stats.location == "00"
     assert [(row.dataset_index, row.source_index, row.source_line)
-            for row in (first, second)] == [(0, 237, 248), (0, 238, 249)]
+            for row in (first, second)] == [(0, 237, 251), (0, 238, 252)]
     assert [(row.waveform_sample_start, row.waveform_sample_stop)
             for row in (first, second)] == [(0, 4630), (438, 9403)]
     assert first.starttime < waveform.stats.starttime < first.endtime
     assert second.starttime < waveform.stats.endtime < second.endtime
     assert first.waveform_sample_stop - second.waveform_sample_start == 4192
     assert dict(report.max_sample_grid_offset) == {
-        "seconds": 0.021813578, "dataset_index": 0, "source_index": 238,
-        "source_line": 249, "waveform_sample_index": 438}
+        "seconds": 0.021031578, "dataset_index": 0, "source_index": 238,
+        "source_line": 252, "waveform_sample_index": 438}
     assert report.max_sample_grid_offset.seconds < waveform.stats.delta / 2
-    assert report.max_sample_rate_difference.hz == pytest.approx(1.8617771502249525e-7, abs=1e-15)
+    assert report.max_sample_rate_difference.hz == pytest.approx(1.8617771502252525e-7, abs=1e-15)
     assert all(waveform.stats[key] == value for key, value in original.stats.items())
     np.testing.assert_array_equal(waveform.data, original.data)
 
@@ -101,7 +100,7 @@ def test_clipped_earthscope_response_association_and_sac_export(tmp_path):
     assert waveform.write(str(output), format="SAC") is None
     actual = SACTrace.read(str(output))
     reference = SACTrace.read(str(FIXTURE / MANIFEST["originals"][0]["sac"]["path"]))
-    for key, field in (("stla", "Latitude"), ("stlo", "Longitude")):
+    for key, field in (("stla", "estimated_latitude"), ("stlo", "estimated_longitude")):
         # The export must exactly reflect the current source at SAC precision.
         assert getattr(actual, key) == np.float32(attached[field])
         # GeoCSV's float64 calculation and the independent float32 SAC
@@ -109,8 +108,8 @@ def test_clipped_earthscope_response_association_and_sac_export(tmp_path):
         np.testing.assert_array_max_ulp(
             np.float32(getattr(actual, key)),
             np.float32(getattr(reference, key)), maxulp=1)
-    for key in ("stdp", "stel"):
-        assert getattr(actual, key) == getattr(reference, key)
+    assert actual.stdp == reference.stdp
+    assert actual.stel is None
     assert actual.npts == waveform.stats.npts
     assert actual.delta == np.float32(waveform.stats.delta)
     reopened = actual.to_obspy_trace(round_sampling_interval=False)

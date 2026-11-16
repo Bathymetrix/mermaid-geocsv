@@ -1,7 +1,7 @@
 # Fetch GeoCSV files
 
-Fetch verified metadata from the full-corpus testing collection. The hosted
-rc1 snapshot uses the dataset-first header supported by this reader.
+After an rc2 testing snapshot is activated, use this example to fetch verified
+metadata from the testing collection.
 
 Companions: [Markdown](01_fetch.md) · [Notebook](01_fetch.ipynb).
 
@@ -14,7 +14,7 @@ source .venv/bin/activate
 python -m pip install .
 ```
 
-The examples require mermaid-geocsv 0.29.0 or newer.
+The examples require mermaid-geocsv 0.30.0 or newer for rc2 payloads.
 Internet access is required. Tests replay small, exact snapshot prefixes
 through a local HTTP server; live downloads contain complete instrument histories.
 See [installation and notebook setup](../docs/installation.md).
@@ -39,7 +39,7 @@ Inspect the selected snapshot and its schema:
 release = downloads[0].provenance.release_id
 print(release)
 print(downloads[0].provenance.testing_only)  # True
-print(records.attrs["geocsv"].schema_version)  # 1.0.0-rc1
+print(records.attrs["geocsv"].schema_version)
 ```
 
 Without `release`, fetch resolves the collection's latest pointer. Latest can change;
@@ -63,8 +63,8 @@ for item in saved:
 
 Identical local files are verified and reused. Conflicting bytes raise rather
 than being overwritten. The snapshot directory replaces only the timestamp's
-two time-separator colons with hyphens: the rc1 snapshot uses
-`2026-11-05T23-41-47.235000Z`. Provenance retains the original colons and every
+two time-separator colons with hyphens: a release can use a component such as
+`2026-11-16T18-00-00.000000Z`. Provenance retains the original colons and every
 fractional digit. Pass saved results directly to `read` to retain download
 provenance. `fetch(["P0006", "P0045"], ...)` selects instruments explicitly.
 

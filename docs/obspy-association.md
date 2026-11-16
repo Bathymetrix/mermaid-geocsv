@@ -19,10 +19,10 @@ against GeoCSV; it never repairs a mismatch by rewriting either source.
 Paired SAC files are independent comparison references, never association
 inputs or sources of missing metadata.
 
-Eligible source rows have `MethodIdentifier` beginning with `Derivation:Recording:`.
-These are detected and requested waveform acquisitions, independent of producer
-version. The subject `Recording` identifies an original contiguous waveform segment.
-Position, pressure and crossing rows are not waveform candidates.
+Eligible rc2 source rows have `type == "waveform"`. These describe original
+contiguous detected and requested acquisitions. Matching uses `derived_time`,
+`sample_count`, `sample_rate`, and the four lowercase SNCL columns. The raw
+attachment preserves all original rc2 column names.
 
 In the MERMAID construction, each original contiguous segment has one
 event row. Multiple traces may independently match that row, including
@@ -53,14 +53,14 @@ A standard match requires:
    nanoseconds. The default is 1 millisecond; an override must be finite
    nonnegative seconds, and zero requires exact equality. `None` is invalid.
    Source lexical resolution does not enlarge the tolerance.
-3. GeoCSV `SampleCount == stats.npts == len(data) > 0` exactly, with loaded,
+3. GeoCSV `sample_count == stats.npts == len(data) > 0` exactly, with loaded,
    unmasked samples. There is no sample-count tolerance.
 4. Finite positive rates satisfying the inclusive floating-point endpoint
    check `waveform_rate - 0.00001 <= source_rate <= waveform_rate + 0.00001`, in Hz.
    The 0.00001 Hz threshold is an agreement criterion, not an instrument
    accuracy bound or proof that whole-trace sampling grids agree.
 
-DataQuality is retained independently from MiniSEED quality and does not
+data_quality is retained independently from MiniSEED quality and does not
 filter or disambiguate matches. See the [data-quality reference](mermaid-data-quality.md)
 for DET Q, REQ D, raw-buffer R, and legacy archive M distinctions.
 
@@ -126,7 +126,7 @@ Each `coverage_segments` entry contains:
 | Fields | Meaning |
 | --- | --- |
 | `network`, `station`, `location`, `channel` | Complete source identity, including the literal two-space known blank Location. |
-| `starttime`, `endtime` | Full original source segment bounds as UTCDateTime values. End is the last sample, computed as `Time + (SampleCount - 1) / SampleRate`, rounded to integer nanoseconds. |
+| `starttime`, `endtime` | Full original source segment bounds as UTCDateTime values. End is the last sample, computed as `derived_time + (sample_count - 1) / sample_rate`, rounded to integer nanoseconds. |
 | `sampling_rate_hz`, `sample_count` | Original source rate/count, not a clipped count. |
 | `dataset_index` | Zero-based position of the dataset in the supplied DataFrame list. |
 | `source_index` | Zero-based file-wide data-source index, excluding headers and comments; it does not restart for each dataset. |
@@ -166,25 +166,19 @@ responsibility; the package provides no sidecar writer or round-trip guarantee.
 
 ### Adopted sea-level reference
 
-`stats.coordinates.elevation` and SAC `stel` use the explicit matched Recording
-`Elevation`, declared `float` with unit `meters` and required to be zero. Missing,
-invalid or nonzero source elevation raises before mutation. No zero default is
-supplied. The source denotes the adopted sea-level reference, not the submerged
-sensor's physical elevation. No geoid, ellipsoid or tidal correction is inferred.
-
-Zero has the same numeric value in metres and kilometres; ObsPy array processing
-expects kilometres while SAC `stel` uses metres. This profile defines no nonzero
-coordinate-elevation conversion. Raw source Elevation remains attached unchanged.
+`estimated_latitude` and `estimated_longitude` supply receiver coordinates
+at the first sample. `stats.coordinates` contains latitude and longitude.
+Optional SAC projection leaves `stel` undefined.
 
 ## Clipped and combined windows
 
 For `allow_first_segment=True`:
 
 1. Use complete exact SNCL, including known empty Location, as in strict mode.
-   Require zoned source timestamps and positive integer source SampleCount,
-   with finite positive source SampleRate declared in hertz to establish a
+   Require zoned source timestamps and positive integer source sample_count,
+   with finite positive source sample_rate declared in hertz to establish a
    source interval. Its inclusive last sample is
-   `Time + (SampleCount - 1) / SampleRate`, rounded to UTC nanoseconds.
+   `derived_time + (sample_count - 1) / sample_rate`, rounded to UTC nanoseconds.
 2. Require exactly one source interval containing the waveform's first sample,
    allowing the explicit `time_tolerance` at interval boundaries. A preceding
    interval that ended earlier is not an anchor. Zero or multiple anchors raise.
@@ -204,7 +198,7 @@ For `allow_first_segment=True`:
    Comparison is in sample units before rounding waveform times to nanoseconds;
    the report retains the existing nanosecond-rounded boundary measurements.
 5. Require the union of those clipped integer ranges to cover every waveform
-   sample without gaps, counting overlaps once. Source SampleCount is not
+   sample without gaps, counting overlaps once. Source sample_count is not
    rewritten and need not equal waveform `npts`. Full source metadata coverage
    is still required; trimming the window does not waive it.
 6. Reject empty or masked waveform data, incomplete coordinates, existing
@@ -272,12 +266,12 @@ publisher owns final export verification.
 
 ## Timing evidence
 
-The schema 1.0.0 automaid writer serializes already corrected waveform starts
+The automaid writer serializes already corrected waveform starts
 as UTC with six fractional digits, rounding exact microsecond ties to even.
 Historical pre-migration output retained milliseconds. Association must not apply
 `TimeCorrectionApplied` again. The unchanged default start tolerance retains its
 historical fixture basis; the new spelling does not justify tightening it. The
-[fixture evidence](../data/fixtures/association/README.md#tolerance-evidence)
+[fixture evidence](../data/fixtures/schema-1.0.0-rc2/README.md)
 records the bounded sample behind that choice; it is not a clock-accuracy
 specification. The MERMAID timing convention gives stored digits finer than
 0.01 s no physical accuracy claim. Preserve those digits anyway.

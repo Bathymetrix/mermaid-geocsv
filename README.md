@@ -12,18 +12,12 @@ approximate depth from water pressure. Optional SAC projections populate only
 `stla`, `stlo`, `stel`, and `stdp`. Earthquake-source metadata and `ev*` header
 projections are outside this package's scope.
 
-The reader supports only the controlled [MERMAID GeoCSV 1.0.0 schema family](docs/format-spec.md),
-with its dataset-first GeoCSV 2.0 declaration and explicit 1.0.0-family schema, fixed 16 columns and five method identifiers.
-It returns typed pandas tables preserving source order, literal identities,
-comments, units and schema/creation provenance. Only empty decoded cells are
-missing; two literal Location spaces denote known blank. Finite signed gauge
-measurements remain unchanged. Recording Elevation must explicitly supply zero
-metres; coordinate elevation and SAC `stel` use that source value.
-Legacy MERMAID and generic GeoCSV formats are unsupported. General GeoCSV
-[specification examples](docs/references/geocsv-v2.0.4-examples/README.md) are
-preserved as reference material. The [fixture inventory](data/fixtures/README.md)
-distinguishes active schema inputs from frozen historical evidence. Scientific
-analysis stays downstream.
+The reader uses the [MERMAID GeoCSV 1.0.0-rc2 schema](docs/format-spec.md).
+It returns typed pandas tables with 18 columns, separate measured and derived
+values, and source order and provenance. Two literal location spaces represent
+a known blank code. GPS fixes and signed gauge pressure readings are preserved.
+Waveform rows supply estimated position and measured pressure where available.
+Coordinate elevation is absent and SAC `stel` is undefined.
 
 ## Install
 
@@ -49,27 +43,24 @@ CI coverage, and notebook setup.
 ```python
 from mermaid import geocsv
 
-downloads = geocsv.fetch("P0006", base_url="https://bathymetrix.com/geocsv/testing/",
-                         output_dir=None)
-release = downloads[0].provenance.release_id
-records = geocsv.read(downloads)[0]
-print(release, records.head())
+from pathlib import Path
+
+path = Path("data/fixtures/schema-1.0.0-rc2/P0006.geocsv")
+records, = geocsv.read(path)
+print(records.head())
 ```
 
-For the full waveform workflow, install the ObsPy extra and use the included
-original MiniSEED example with the fetched P0006 table:
+For waveform association, install the ObsPy extra and use the included
+original MiniSEED example with the P0006 table:
 
 ```python
-from pathlib import Path
-import hashlib
 from obspy import read as read_waveforms
 
 mseed = Path("data/fixtures/P0006/waveforms/20180629T170731.06_5B3F1904.MER.DET.WLT5.mseed")
 trace, = read_waveforms(str(mseed))
 geocsv.associate(trace, [records], create_sac_header=True)
 project_metadata = {
-    "release_id": release,
-    "manifest_sha256": hashlib.sha256(downloads[0].provenance.manifest).hexdigest(),
+    "metadata_path": str(path),
     "source_index": trace.stats.geocsv.source_index,
     "source_line": trace.stats.geocsv.source_line,
     "mseed_filename": mseed.name,
@@ -78,7 +69,7 @@ project_metadata = {
 # trace.write("my-output.sac", format="SAC")
 ```
 
-Retain `project_metadata`, the fetched manifest and original MiniSEED with the
+Retain `project_metadata`, the source GeoCSV and original MiniSEED with the
 research project. SAC does not preserve the complete GeoCSV attachment. This is
 an example of project metadata, not a package-managed sidecar contract.
 
@@ -99,11 +90,9 @@ associates their metadata, and compares SAC exports with independent fixtures.
 | EarthScope workflow | Download P0006 waveforms, associate metadata, and verify SAC exports. | [05_earthscope.md](tutorials/05_earthscope.md) | [05_earthscope.ipynb](tutorials/05_earthscope.ipynb) |
 | Plot and analyze records | Use pandas and Matplotlib downstream. | [06_plotting.md](tutorials/06_plotting.md) | [06_plotting.ipynb](tutorials/06_plotting.ipynb) |
 
-Hosted GeoCSV collections remain testing only. Testing latest serves the
-full-corpus schema `1.0.0-rc1` snapshot `2026-11-05T23:41:47.235000Z`, generated
-by automaid v4.10.0. Fetch and EarthScope tutorials use this compatible collection;
-unit tests replay exact metadata prefixes and recorded waveform responses offline.
-Older retained snapshots may have incompatible headers. Production is inactive.
+The public testing workflow uses immutable, manifest-pinned snapshots.
+The fetch tutorial applies after a testing snapshot is activated. Unit tests
+serve rc2 fixtures over local HTTP and replay saved EarthScope responses.
 See [hosting](docs/hosting.md) and [fetch](docs/fetch.md).
 
 Detailed matching rules, association reports, SAC precision and provenance
@@ -112,11 +101,8 @@ limits, format rules, and fixture references are in the
 
 Developed and maintained by [Bathymetrix®](https://bathymetrix.com).
 
-The example resolves testing latest once and retains its identity. Pin any further
-fetches with `release=release`. Final schema 1.0.0 is reserved for paper
-publication. Measurement rows supply observations; derived times and locations
-are producer estimates. Users may reinterpolate measurements. Consult
-the automaid version in `producer` for estimation methods and assumptions.
+Measurement rows supply observations. Derived times and estimated positions
+come from automaid. The `producer` comment identifies the software version.
 
 GeoCSV references use `source_index` for zero-based data rows and `source_line`
 for one-based physical starting lines, as in a text editor. Metadata

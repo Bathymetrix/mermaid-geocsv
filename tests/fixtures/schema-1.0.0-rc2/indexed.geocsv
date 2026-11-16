@@ -1,0 +1,17 @@
+# dataset: GeoCSV 2.0
+# schema: MERMAID GeoCSV v1.0.0-rc2
+# created: 2026-10-29T00:00:00.123456Z
+# description: Synthetic schema example; not an observed instrument history
+# producer: Synthetic test data
+# lineterminator: \n
+# delimiter: ,
+# field_unit: unitless,iso8601,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,degrees_north,degrees_east,mbar,mbar,hertz,unitless,seconds,seconds
+# field_type: string,datetime,datetime,string,string,string,string,string,float,float,float,float,float,float,float,integer,float,float
+type,measured_time,derived_time,network,station,location,channel,data_quality,measured_latitude,measured_longitude,estimated_latitude,estimated_longitude,measured_pressure,estimated_pressure,sample_rate,sample_count,clock_offset,time_correction_applied
+waveform,,2025-01-01T00:00:00.000200Z,MH,SYN01,00,BDH,Q,,,50,60,10000,,20,4,,0
+waveform,,2025-01-01T00:00:00.000000Z,MH,SYN01,00,BDH,Q,,,10,20,10000,,20,4,,0
+gps,2025-01-01T00:00:00.000100Z,,MH,SYN01,,,,30,40,,,,,,,,
+waveform,,2024-12-31T23:59:59.999999Z,MH,SYN01,00,BDH,Q,,,51,61,10000,,20,4,,0
+waveform,,2025-01-01T00:00:00.000100Z,MH,SYN01,00,BDH,Q,,,52,62,10000,,20,8,,0
+waveform,,2025-01-01T00:00:00.000100Z,MH,SYN01,00,BDH,Q,,,53,63,10000,,20,4,,0
+waveform,,2025-01-02T00:00:00.000000Z,MH,SYN01,00,BDH,Q,,,54,64,10000,,20,4,,0

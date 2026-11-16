@@ -9,15 +9,15 @@ import pandas as pd
 import pytest
 from mermaid import geocsv
 
-FIXTURE = Path(__file__).parent / 'fixtures/schema-1.0.0-rc1/example.geocsv'
+FIXTURE = Path(__file__).parent / 'fixtures/schema-1.0.0-rc2/example.geocsv'
 
 
 def payload(rows=None, headers=None):
     lines = FIXTURE.read_text().splitlines(keepends=True)
-    boundary = next(i for i, line in enumerate(lines) if line.startswith('MethodIdentifier,'))
+    boundary = next(i for i, line in enumerate(lines) if line.startswith('type,'))
     if headers is not None:
         lines[:boundary] = headers(lines[:boundary])
-        boundary = next(i for i, line in enumerate(lines) if line.startswith('MethodIdentifier,'))
+        boundary = next(i for i, line in enumerate(lines) if line.startswith('type,'))
     if rows is not None:
         records = list(csv.reader(lines[boundary:]))
         rows(records)
@@ -31,42 +31,47 @@ def test_complete_example_types_order_and_provenance(tmp_path):
     source = tmp_path / 'source.geocsv'
     source.write_bytes(payload())
     frame, = geocsv.read(source)
-    assert frame.shape == (8, 16)
+    assert frame.shape == (8, 18)
     assert frame.index.equals(pd.RangeIndex(8, name='source_index'))
-    assert str(frame.Time.dtype) == 'datetime64[ns, UTC]'
-    assert frame.SampleCount.dtype == 'Int64'
-    assert all(frame[name].dtype == 'Float64' for name in ['Latitude', 'Elevation', 'ClockOffset'])
-    assert frame.Location.loc[3] == '  '
-    assert frame.Location.loc[7] == '01'
-    assert pd.isna(frame.WaterPressure.loc[7]) and pd.isna(frame.ClockOffset.loc[5])
-    assert frame.TimeCorrectionApplied.loc[3] == -.75
-    assert frame.TimeCorrectionApplied.loc[7] == 1.5
-    assert frame.Elevation.loc[[3, 7]].tolist() == [0., 0.]
+    assert str(frame.measured_time.dtype) == 'datetime64[ns, UTC]'
+    assert frame.sample_count.dtype == 'Int64'
+    assert all(frame[name].dtype == 'Float64' for name in ['measured_latitude', 'estimated_latitude', 'clock_offset'])
+    assert frame.location.loc[3] == '  '
+    assert frame.location.loc[7] == '01'
+    assert pd.isna(frame.measured_pressure.loc[7]) and pd.isna(frame.clock_offset.loc[5])
+    assert frame.time_correction_applied.loc[3] == -.75
+    assert frame.time_correction_applied.loc[7] == 1.5
     metadata = frame.attrs['geocsv']
     assert metadata.source_path == source.resolve()
-    assert metadata.schema_version == '1.0.0-rc1'
+    assert metadata.schema_version == '1.0.0-rc2'
     assert metadata.created == '2026-10-29T00:00:00.123456Z'
-    assert metadata.field_units['Elevation'] == 'meters'
-    assert dict(metadata.datetime_resolution_ns['Time']) == dict.fromkeys(range(8), 1000)
+    assert metadata.field_units['measured_pressure'] == 'mbar'
+    assert dict(metadata.datetime_resolution_ns['measured_time']) == dict.fromkeys([0, 1, 5, 6], 1000)
+    assert dict(metadata.datetime_resolution_ns['derived_time']) == dict.fromkeys([2, 3, 4, 7], 1000)
     assert metadata.line_numbers[0] == 11
     assert deepcopy(metadata) is metadata
     with pytest.raises(TypeError):
-        metadata.field_types['Time'] = 'string'
+        metadata.field_types['measured_time'] = 'string'
     with pytest.raises(FrozenInstanceError):
         metadata.created = 'changed'
     converted, = geocsv.read(source, datetime_timezone='Pacific/Honolulu')
-    assert converted.Time.loc[0].value == frame.Time.loc[0].value
+    assert converted.measured_time.loc[0].value == frame.measured_time.loc[0].value
 
 
 @pytest.mark.parametrize('literal', ['nan', 'NA', 'NULL', 'NaT', '01', ' comma,"quote"\n#continuation'])
 def test_literal_strings_and_csv_escaping(literal):
-    content = payload(rows=lambda records: [row.__setitem__(3, literal) for row in records[1:]])
+    content = payload(rows=lambda records: [row.__setitem__(4, literal) for row in records[1:]])
     frame, = geocsv.read(content)
-    assert frame.Station.tolist() == [literal] * 8
+    assert frame.station.tolist() == [literal] * 8
     assert frame.attrs['geocsv'].line_numbers[1] == (13 if '\n' in literal else 12)
 
 
-@pytest.mark.parametrize('field,value', [(4, ''), (4, ' '), (9, ''), (9, '0 m'), (9, '1'), (10, ''), (10, '-1'), (12, '0'), (13, '0'), (13, '1.0'), (13, '9223372036854775808'), (15, ''), (7, '91'), (8, '-181'), (7, 'nan'), (7, 'inf'), (7, '1e999'), (7, '1e-999'), (7, ' 1'), (14, '0'), (6, 'M'), (0, 'Algorithm(event):automaid:v4'), (0, 'Derivation:Recording:'), (0, 'Derivation:Recording:automaid-'), (0, 'Derivation:Recording:automaid-v1 extra'), (11, 'MERMAID_')])
+@pytest.mark.parametrize('field,value', [
+    (5, ''), (5, ' '), (12, ''), (12, '-1'), (14, '0'),
+    (15, '0'), (15, '1.0'), (15, '9223372036854775808'), (17, ''),
+    (10, '91'), (11, '-181'), (10, 'nan'), (10, 'inf'), (10, '1e999'),
+    (10, '1e-999'), (10, ' 1'), (16, '0'), (7, 'M'), (0, 'unknown'),
+])
 def test_invalid_recording_row(field, value):
     with pytest.raises(geocsv.GeoCSVError):
         geocsv.read(payload(rows=lambda records: records[4].__setitem__(field, value)))
@@ -105,13 +110,13 @@ def test_descriptive_comments_and_absence():
     assert not any(c.key in {'description', 'producer'} for c in frame.attrs['geocsv'].comments)
 
 
-@pytest.mark.parametrize('field', [2, 3, 11])
+@pytest.mark.parametrize('field', [3, 4])
 def test_mixed_file_identity_rejected(field):
     with pytest.raises(geocsv.GeoCSVError, match='mixed'):
-        geocsv.read(payload(rows=lambda rows: rows[1].__setitem__(field, 'MERMAID_other' if field == 11 else 'other')))
+        geocsv.read(payload(rows=lambda rows: rows[1].__setitem__(field, 'other')))
 
 
-@pytest.mark.parametrize('mutation', [lambda b: b + b'\n', lambda b: b + b'#comment\n', lambda b: b + b'#dataset: GeoCSV\n', lambda b: b[:-1], lambda b: b.replace(b'Derivation:Recording', b'Unknown:Recording'), lambda b: b.replace(b'MethodIdentifier,Time', b'MethodIdentifier,StartTime'), lambda b: b.replace(b',seconds,seconds\n', b',seconds,meters\n')])
+@pytest.mark.parametrize('mutation', [lambda b: b + b'\n', lambda b: b + b'#comment\n', lambda b: b + b'#dataset: GeoCSV\n', lambda b: b[:-1], lambda b: b.replace(b'waveform,', b'unknown,'), lambda b: b.replace(b'type,measured_time', b'type,start_time'), lambda b: b.replace(b',seconds,seconds\n', b',seconds,meters\n')])
 def test_invalid_structure(mutation):
     with pytest.raises(geocsv.GeoCSVError):
         geocsv.read(mutation(payload()))
@@ -127,45 +132,37 @@ def test_equal_times_empty_optional_crlf_and_terminated_records():
     content = payload(rows=lambda rows: rows[2].__setitem__(1, rows[1][1]))
     content = content.replace(b',,,,\n', b',,,,""\n').replace(b'\n', b'\r\n')
     frame, = geocsv.read(content)
-    assert frame.Time.loc[0] == frame.Time.loc[1]
+    assert frame.measured_time.loc[0] == frame.measured_time.loc[1]
     assert frame.index.tolist() == list(range(8))
-    assert pd.isna(frame.TimeCorrectionApplied.loc[0])
+    assert pd.isna(frame.time_correction_applied.loc[0])
 
 
 @pytest.mark.parametrize('record', [b'"broken\n', b'not"quoted\n', b'"closed" padding\n'])
 def test_malformed_quotes(record):
-    prefix = payload().split(b'Measurement:Position:')[0]
+    prefix = payload().split(b'gps,', 1)[0]
     with pytest.raises(geocsv.GeoCSVError):
         geocsv.read(prefix + record)
 
 
 def test_signed_gauge_measurement_is_preserved_without_changing_depth_rules():
-    frame, = geocsv.read(payload(rows=lambda rows: rows[2].__setitem__(10, '-1')))
-    assert frame.loc[1, 'WaterPressure'] == -1
+    frame, = geocsv.read(payload(rows=lambda rows: rows[2].__setitem__(12, '-1')))
+    assert frame.loc[1, 'measured_pressure'] == -1
     with pytest.raises(geocsv.GeoCSVError):
-        geocsv.read(payload(rows=lambda rows: rows[3].__setitem__(10, '-1')))
+        geocsv.read(payload(rows=lambda rows: rows[3].__setitem__(13, '-1')))
 
 
 @pytest.mark.parametrize('year', ['0001', '9999'])
 def test_valid_gregorian_epochs_outside_nanosecond_storage_range(year):
     stamp = f'{year}-01-01T12:00:00.123456Z'
-    frame, = geocsv.read(payload(rows=lambda rows: [row.__setitem__(1, stamp) for row in rows[1:]]))
-    assert str(frame.Time.dtype) == 'datetime64[us, UTC]'
-    assert frame.Time.iloc[0].year == int(year)
-    assert frame.Time.iloc[0].microsecond == 123456
+    frame, = geocsv.read(payload(rows=lambda rows: [row.__setitem__(1 if row[1] else 2, stamp) for row in rows[1:]]))
+    assert str(frame.measured_time.dtype) == 'datetime64[us, UTC]'
+    assert frame.measured_time.iloc[0].year == int(year)
+    assert frame.measured_time.iloc[0].microsecond == 123456
 
 
-@pytest.mark.parametrize('version', ['1.0.0', '1.0.0-rc1', '1.0.0-rc2', '1.0.0-beta.3', '1.0.0-rc1+test.5'])
-def test_schema_family_preserves_literal_revision(version):
-    content = payload().replace(b'MERMAID GeoCSV v1.0.0-rc1', f'MERMAID GeoCSV v{version}'.encode())
-    frame, = geocsv.read(content)
-    assert frame.attrs['geocsv'].schema_version == version
-
-
-@pytest.mark.parametrize('version', ['1.0.01', '1.0.1', '1.0.0evil', '1.0.0-', '1.0.0-rc.','2.0.0'])
-def test_unsupported_schema_family_rejected(version):
+def test_unsupported_schema_declaration_rejected():
     with pytest.raises(geocsv.GeoCSVError, match='schema'):
-        geocsv.read(payload().replace(b'MERMAID GeoCSV v1.0.0-rc1', f'MERMAID GeoCSV v{version}'.encode()))
+        geocsv.read(payload().replace(b'MERMAID GeoCSV v1.0.0-rc2', b'unknown schema'))
 
 
 def test_header_padding_is_normalized_without_trimming_data_or_raw_comments():
@@ -177,14 +174,14 @@ def test_header_padding_is_normalized_without_trimming_data_or_raw_comments():
     assert metadata.comments[0].value == 'GeoCSV 2.0'
     assert metadata.comments[0].raw.startswith('#\t dataset \t:')
     assert metadata.comments[0].raw.endswith(' \t')
-    assert frame.Location.loc[3] == '  '
-    assert frame.Location.loc[7] == '01'
+    assert frame.location.loc[3] == '  '
+    assert frame.location.loc[7] == '01'
 
 
 def test_field_list_padding_and_unquoted_delimiter():
     content = payload().replace(b'# field_type: ', b'#field_type :  ').replace(b'string,datetime', b' string , datetime ')
     frame, = geocsv.read(content)
-    assert frame.attrs['geocsv'].field_types['Time'] == 'datetime'
+    assert frame.attrs['geocsv'].field_types['measured_time'] == 'datetime'
     with pytest.raises(geocsv.GeoCSVError, match='delimiter'):
         geocsv.read(content.replace(b'# delimiter: ,', b"# delimiter: ','"))
     with pytest.raises(geocsv.GeoCSVError, match='lineterminator'):
