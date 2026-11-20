@@ -19,12 +19,13 @@ not a discovery API for fetch.
 
 ## Testing service
 
-The public testing collection is `https://bathymetrix.com/geocsv/testing/`.
-For a human-readable link that follows new publications, use
-`https://bathymetrix.com/geocsv/testing/latest/`. It temporarily redirects to
-the release directory selected by the testing latest pointer without caching.
-Only the MERMAID rc2 schema is used by this workflow. A fresh testing snapshot
-requires a complete rebuilt source and candidate-bound validation.
+The public testing collection is `https://bathymetrix.com/geocsv/testing/`.  For
+a human-readable link that follows new publications, use
+`https://bathymetrix.com/geocsv/testing/latest/` (or slashless `latest`
+alias). It temporarily redirects to the release directory selected by the
+testing latest pointer without caching.  Only the MERMAID rc2 schema is used by
+this workflow. A fresh testing snapshot requires a complete rebuilt source and
+candidate-bound validation.
 
 Keep matching `testing_only: true` flags and isolated testing paths/pointers.
 Testing publication and scientific acceptance do not authorize production
